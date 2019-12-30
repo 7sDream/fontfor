@@ -61,26 +61,26 @@ impl OneChar {
     }
 
     pub fn from_utf8_bytes(s: &str) -> Result<Self, ParseError> {
-        let mut chars = s.chars();
-        let chunks = (0..)
-            .map(|_| chars.by_ref().take(2).collect::<String>())
-            .take_while(|s| !s.is_empty());
+        let mut digits = s.chars();
 
-        let utf8 = String::from_utf8(
-            chunks
-                .map(|two_digits| -> Result<u8, ParseError> {
-                    let mut digits = two_digits.chars();
-                    let c1 = digits.next().unwrap(); // at least one char because of the `take_while`
-                    let c2 = digits.next().ok_or(ParseError::UTF8BytesStrCantAlignToBytes)?;
-                    if c1.is_ascii_hexdigit() && c2.is_ascii_hexdigit() {
-                        #[allow(clippy::cast_possible_truncation)] // because two digit hex meets u8 type
-                        Ok((c1.to_digit(16).unwrap() * 16 + c2.to_digit(16).unwrap()) as u8)
-                    } else {
-                        Err(ParseError::InvalidDigitInRadix(16))
-                    }
-                })
-                .collect::<Result<Vec<_>, _>>()?
-        ).map_err(|_| ParseError::UTF8BytesInvalid)?;
+        let bytes = (0..)
+            .map(|_| {
+                let mut byte = digits.by_ref().take(2);
+                (byte.next(), byte.next())
+            })
+            .take_while(|(c1, _)| c1.is_some())
+            .map(|(c1, c2)| -> Result<u8, ParseError> {
+                let c1 = c1.unwrap(); // at least one char because of the `take_while`
+                let c2 = c2.ok_or(ParseError::UTF8BytesStrCantAlignToBytes)?;
+                if c1.is_ascii_hexdigit() && c2.is_ascii_hexdigit() {
+                    #[allow(clippy::cast_possible_truncation)] // because two digit hex meets u8 type
+                    Ok((c1.to_digit(16).unwrap() * 16 + c2.to_digit(16).unwrap()) as u8)
+                } else {
+                    Err(ParseError::InvalidDigitInRadix(16))
+                }
+            }).collect::<Result<Vec<_>, _>>()?;
+
+        let utf8 = String::from_utf8(bytes).map_err(|_| ParseError::UTF8BytesInvalid)?;
 
         let mut iter = utf8.chars();
 
