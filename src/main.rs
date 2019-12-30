@@ -16,6 +16,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+#![deny(warnings)]
+
+mod args;
+mod one_char;
+
 fn main() {
-    println!("Hello, world!");
+    println!("{:?}", args::get());
 }
