@@ -1,0 +1,9 @@
+# IDE
+## JetBrains
+/.idea
+
+# Rust
+/target
+**/*.rs.bk
+
+# Project

@@ -1,0 +1,9 @@
+cognitive-complexity-threshold = 25
+literal-representation-threshold = 0
+enum-variant-name-threshold = 0
+enum-variant-size-threshold = 32
+single-char-binding-names-threshold = 4
+too-many-arguments-threshold = 5
+too-many-lines-threshold = 50
+trivial-copy-size-limit = 8
+verbose-bit-mask-threshold = 1
