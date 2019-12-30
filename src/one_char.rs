@@ -74,7 +74,7 @@ impl OneChar {
                 let c2 = c2.ok_or(ParseError::UTF8BytesStrCantAlignToBytes)?;
                 if c1.is_ascii_hexdigit() && c2.is_ascii_hexdigit() {
                     #[allow(clippy::cast_possible_truncation)] // because two digit hex meets u8 type
-                    Ok((c1.to_digit(16).unwrap() * 16 + c2.to_digit(16).unwrap()) as u8)
+                    Ok((c1.to_digit(16).unwrap() << 4 | c2.to_digit(16).unwrap()) as u8)
                 } else {
                     Err(ParseError::InvalidDigitInRadix(16))
                 }
