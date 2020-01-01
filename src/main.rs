@@ -20,8 +20,49 @@
 #![deny(warnings)]
 
 mod args;
+mod fc;
 mod one_char;
 
+use {std::collections::HashMap, unicode_width::UnicodeWidthStr};
+
 fn main() {
-    println!("{:?}", args::get());
+    let argument = args::get();
+
+    fc::init().expect("init fontconfig failed");
+
+    let charset = fc::Charset::default().add_char(argument.char.0);
+    let pattern = fc::Pattern::default().add_charset(charset);
+
+    println!("Fonts support the character {}: ", argument.char.description());
+
+    let mut families: HashMap<(String, usize), u32> = HashMap::new();
+
+    fc::FontSet::match_pattern(&pattern)
+        .fonts()
+        .map(|font| font.family())
+        .filter_map(|mut family| family.pop())
+        // TODO: figure out the meaning of prefix dot
+        .filter(|family| !family.starts_with('.'))
+        .for_each(|family| {
+            let len = UnicodeWidthStr::width(family.as_str());
+            *families.entry((family, len)).or_insert(0) += 1;
+        });
+
+    fc::finalize();
+
+    let mut families: Vec<_> = families.into_iter().collect();
+
+    families.sort();
+
+    let max_len = families.iter().map(|((_, len), _)| *len).max().unwrap_or(0);
+
+    for ((family, len), count) in families {
+        println!(
+            "{}{} with {} style{}",
+            family,
+            " ".repeat(max_len - len),
+            count,
+            if count == 1 { "" } else { "s" }
+        );
+    }
 }

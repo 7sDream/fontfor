@@ -16,25 +16,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::one_char::OneChar;
-use structopt::StructOpt;
+mod charset;
+mod consts;
+mod font;
+mod font_set;
+mod object_set;
+mod pattern;
 
-#[derive(StructOpt, Debug)]
-#[structopt(author, about)]
-pub struct Args {
-    /// Verbose mode, show all fonts in a font family
-    #[structopt(short, long)]
-    pub verbose: bool,
+pub use {
+    charset::Charset,
+    consts::*,
+    font::Font,
+    font_set::{FontSet, Fonts},
+    object_set::ObjectSet,
+    pattern::Pattern,
+};
 
-    /// Preview character render result using output font in browser
-    #[structopt(short, long)]
-    pub preview: bool,
+use fontconfig::fontconfig as fc;
 
-    /// The character
-    #[structopt(name = "CHAR")]
-    pub char: OneChar,
+pub fn init() -> Result<(), ()> {
+    let config = unsafe { fc::FcInitLoadConfigAndFonts() };
+    if config.is_null() {
+        Err(())
+    } else {
+        unsafe { fc::FcConfigDestroy(config) };
+        Ok(())
+    }
 }
 
-pub fn get() -> Args {
-    Args::from_args()
+pub fn finalize() {
+    unsafe {
+        fc::FcFini();
+    }
 }

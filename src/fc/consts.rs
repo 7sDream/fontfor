@@ -16,25 +16,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::one_char::OneChar;
-use structopt::StructOpt;
+use {super::ObjectSet, once_cell::unsync::Lazy};
 
-#[derive(StructOpt, Debug)]
-#[structopt(author, about)]
-pub struct Args {
-    /// Verbose mode, show all fonts in a font family
-    #[structopt(short, long)]
-    pub verbose: bool,
+pub const FC_FAMILY: &str = "family";
+pub const FC_FULLNAME: &str = "fullname";
 
-    /// Preview character render result using output font in browser
-    #[structopt(short, long)]
-    pub preview: bool,
-
-    /// The character
-    #[structopt(name = "CHAR")]
-    pub char: OneChar,
-}
-
-pub fn get() -> Args {
-    Args::from_args()
-}
+#[allow(clippy::declare_interior_mutable_const)]
+pub const THE_OBJECT_SET: Lazy<ObjectSet> =
+    Lazy::new(|| ObjectSet::default().add(FC_FAMILY).add(FC_FULLNAME));
