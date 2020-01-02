@@ -21,9 +21,13 @@
 
 mod args;
 mod fc;
+mod font_info;
 mod one_char;
 
-use {std::collections::HashMap, unicode_width::UnicodeWidthStr};
+use {
+    font_info::{Family, FontInfo},
+    std::{collections::HashMap, convert::TryFrom},
+};
 
 fn main() {
     let argument = args::get();
@@ -35,35 +39,36 @@ fn main() {
 
     println!("Fonts support the character {}: ", argument.char.description());
 
-    let mut families: HashMap<(&str, usize), u32> = HashMap::new();
+    let mut families: HashMap<&str, Family> = HashMap::new();
 
     let matches = fc::FontSet::match_pattern(&pattern);
 
-    matches
-        .fonts()
-        .filter_map(|font| font.family().pop())
-        // TODO: figure out the meaning of prefix dot
-        .filter(|family| !family.starts_with('.'))
-        .for_each(|family| {
-            let len = UnicodeWidthStr::width(family);
-            *families.entry((family, len)).or_insert(0) += 1;
-        });
+    matches.fonts().for_each(|fc_font| {
+        if let Ok(font) = FontInfo::try_from(fc_font) {
+            let family = font.default_family_name();
+            families
+                .entry(*family)
+                .or_insert_with(|| Family::new(font.family_names.clone()))
+                .add_font(font);
+        }
+    });
 
-    fc::finalize();
+    let max_len =
+        families.values().map(|family| family.default_name_width).max().unwrap_or_default();
 
     let mut families: Vec<_> = families.into_iter().collect();
 
-    families.sort();
+    families.sort_by_key(|v| v.0); // Sort by name
 
-    let max_len = families.iter().map(|((_, len), _)| *len).max().unwrap_or(0);
-
-    for ((family, len), count) in families {
+    for (name, family) in families {
         println!(
             "{}{} with {} style{}",
-            family,
-            " ".repeat(max_len - len),
-            count,
-            if count == 1 { "" } else { "s" }
+            name,
+            " ".repeat(max_len - family.default_name_width),
+            family.styles_count(),
+            if family.styles_count() > 1 { "s" } else { "" }
         );
     }
+
+    fc::finalize();
 }

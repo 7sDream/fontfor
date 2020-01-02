@@ -20,7 +20,10 @@ use {super::ObjectSet, once_cell::unsync::Lazy};
 
 pub const FC_FAMILY: &str = "family";
 pub const FC_FULLNAME: &str = "fullname";
+pub const FC_FAMILY_LANG: &str = "familylang";
+pub const FC_FULLNAME_LANG: &str = "fullnamelang";
 
 #[allow(clippy::declare_interior_mutable_const)]
-pub const THE_OBJECT_SET: Lazy<ObjectSet> =
-    Lazy::new(|| ObjectSet::default().add(FC_FAMILY).add(FC_FULLNAME));
+pub const THE_OBJECT_SET: Lazy<ObjectSet> = Lazy::new(|| {
+    ObjectSet::default().add(FC_FAMILY).add(FC_FULLNAME).add(FC_FAMILY_LANG).add(FC_FULLNAME_LANG)
+});

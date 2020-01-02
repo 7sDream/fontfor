@@ -20,11 +20,14 @@ use {
     super::consts::*,
     fontconfig::fontconfig as fc,
     std::{
+        collections::HashMap,
         ffi::{CStr, CString},
         marker::PhantomData,
         os::raw::c_char,
     },
 };
+
+pub type StrByLang<'a> = HashMap<&'a str, Vec<&'a str>>;
 
 /// This struct is a convenient type to represent fonts in `FontSet`'s font array.
 ///
@@ -60,12 +63,27 @@ impl<'a> Font<'a> {
         ret
     }
 
-    pub fn family(&self) -> Vec<&'a str> {
-        self.get_string_property(FC_FAMILY)
+    fn get_string_by_lang_property(
+        &self, value_key: &str, lang_key: &str,
+    ) -> Result<StrByLang<'a>, ()> {
+        let values = self.get_string_property(value_key);
+        let langs = self.get_string_property(lang_key);
+        if values.len() == langs.len() {
+            let mut ret = StrByLang::new();
+            langs.into_iter().zip(values.into_iter()).for_each(|(lang, value)| {
+                ret.entry(lang).or_insert_with(|| vec![]).push(value);
+            });
+            Ok(ret)
+        } else {
+            Err(())
+        }
     }
 
-    #[allow(dead_code)]
-    pub fn fullname(&self) -> Vec<&'a str> {
-        self.get_string_property(FC_FULLNAME)
+    pub fn family_names(&self) -> Result<StrByLang<'a>, ()> {
+        self.get_string_by_lang_property(FC_FAMILY, FC_FAMILY_LANG)
+    }
+
+    pub fn fullnames(&self) -> Result<StrByLang<'a>, ()> {
+        self.get_string_by_lang_property(FC_FULLNAME, FC_FULLNAME_LANG)
     }
 }
