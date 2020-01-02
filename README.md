@@ -33,7 +33,7 @@ Times New Roman              with 4 styles
 ## Install
 
 ```bash
-cargo install fontfor
+cargo install --force --git https://git.7sdre.am/7sDream/fontfor-rs.git
 ```
 
 ## LICENSE
