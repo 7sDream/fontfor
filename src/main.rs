@@ -35,16 +35,17 @@ fn main() {
 
     println!("Fonts support the character {}: ", argument.char.description());
 
-    let mut families: HashMap<(String, usize), u32> = HashMap::new();
+    let mut families: HashMap<(&str, usize), u32> = HashMap::new();
 
-    fc::FontSet::match_pattern(&pattern)
+    let matches = fc::FontSet::match_pattern(&pattern);
+
+    matches
         .fonts()
-        .map(|font| font.family())
-        .filter_map(|mut family| family.pop())
+        .filter_map(|font| font.family().pop())
         // TODO: figure out the meaning of prefix dot
         .filter(|family| !family.starts_with('.'))
         .for_each(|family| {
-            let len = UnicodeWidthStr::width(family.as_str());
+            let len = UnicodeWidthStr::width(family);
             *families.entry((family, len)).or_insert(0) += 1;
         });
 

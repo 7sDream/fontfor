@@ -38,7 +38,7 @@ pub struct Font<'a> {
 }
 
 impl<'a> Font<'a> {
-    fn get_string_property(&self, name: &str) -> Vec<String> {
+    fn get_string_property(&self, name: &str) -> Vec<&'a str> {
         let c_name = CString::new(name).unwrap();
         let mut ret = vec![];
         let mut n = 0;
@@ -49,7 +49,9 @@ impl<'a> Font<'a> {
             };
             if result == fc::FcResultMatch {
                 let value_str = unsafe { CStr::from_ptr(value as *mut c_char) };
-                ret.push(value_str.to_string_lossy().to_string());
+                if let Ok(value_str) = value_str.to_str() {
+                    ret.push(value_str);
+                }
                 n += 1;
             } else {
                 break;
@@ -58,12 +60,12 @@ impl<'a> Font<'a> {
         ret
     }
 
-    pub fn family(&self) -> Vec<String> {
+    pub fn family(&self) -> Vec<&'a str> {
         self.get_string_property(FC_FAMILY)
     }
 
     #[allow(dead_code)]
-    pub fn fullname(&self) -> Vec<String> {
+    pub fn fullname(&self) -> Vec<&'a str> {
         self.get_string_property(FC_FULLNAME)
     }
 }
