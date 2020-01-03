@@ -21,11 +21,11 @@ use {super::one_char::OneChar, structopt::StructOpt};
 #[derive(StructOpt, Debug)]
 #[structopt(author, about)]
 pub struct Args {
-    /// Verbose mode, show all font style in family
+    /// Verbose mode, show all font styles
     #[structopt(short, long)]
     pub verbose: bool,
 
-    /// Preview character render result in browser
+    /// Preview character use supported fonts in browser
     #[structopt(short, long)]
     pub preview: bool,
 

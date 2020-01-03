@@ -2,6 +2,12 @@
 
 Find fonts which can show a specified character and preview them in browser.
 
+This is port from my early python script called [which_fonts_support], but with some improvements:
+
+- Write in Rust, safe and faster
+- Use `fontconfig` library instead of depends on `fc-list` command installed
+- Support preview in shell, no GUI or browser needed (in plan)
+
 ## Usage
 
 ### Basic
@@ -38,16 +44,16 @@ You can use the following formats for the character:
 
 - Character: `א`
 - Unicode scalar value
-  - `U+XXXXXX`: `U+5d0`, `U+05d0`, `U+0005d0`
-  - Direct input
-    - dec format: `1488`
-    - oct format: `0o2720`
-    - binary format: `0b010111010000`
+  + `U+XXXXXX`: `U+5d0`, `U+05d0`, `U+0005d0`
+  + Direct input
+    * Dec format: `1488`
+    * Oct format: `0o2720`
+    * Binary format: `0b010111010000`
 - UTF8 bytes: `0xd790`
 
 ### Preview
 
-Add `-p` option to enable preview:
+Add `-p` flag to enable browser preview:
 
 ![preview]
 
@@ -63,5 +69,6 @@ GPLv3 or later.
 
 See [COPYING][COPYING-file].
 
+[which_fonts_support-github]: https://github.com/7sDream/which_fonts_support
 [preview]: https://rikka.7sdre.am/files/81994541-9e44-4e96-827f-ddc960c03b26.png
 [COPYING-file]: https://git.7sdre.am/7sDream/fontfor-rs/src/branch/master/COPYING
