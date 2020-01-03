@@ -8,9 +8,8 @@ homepage = "https://github.com/7sDream/fontfor-rs"
 repository = "https://github.com/7sDream/fontfor-rs"
 readme = "README.md"
 license-file = "COPYING"
-keywords = ["font", "character", "cli", "command line", "tools"]
+keywords = ["font", "character", "cli", "utilities"]
 categories = ["command-line-utilities", "text-processing", "visualization"]
-publish = false
 
 [dependencies]
 structopt = "0.3.7"

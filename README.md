@@ -8,6 +8,12 @@ This is port from my early python script called [which_fonts_support][which_font
 - Use `fontconfig` library instead of depends on `fc-list` command installed
 - Support preview in shell, no GUI or browser needed (in plan)
 
+## Install
+
+```bash
+cargo install fontfor
+```
+
 ## Usage
 
 ### Basic
@@ -56,12 +62,6 @@ You can use the following formats for the character:
 Add `-p` flag to enable browser preview:
 
 ![preview]
-
-## Install
-
-```bash
-cargo install --force --git https://github.com/7sDream/fontfor.git
-```
 
 ## LICENSE
 
