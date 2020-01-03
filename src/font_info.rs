@@ -17,14 +17,14 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use {
-    super::fc::{Font, StrByLang},
-    std::convert::TryFrom,
+    super::fc::{Font, StrByLang, ValueByLang},
+    std::{cmp::Ordering, collections::BinaryHeap, convert::TryFrom},
     unicode_width::UnicodeWidthStr,
 };
 
 const DEFAULT_LANG: &str = "en";
 
-trait GetValueByLang {
+pub trait GetValueByLang {
     type Item;
 
     fn get_by_lang(&self, lang: &str) -> Option<&Self::Item>;
@@ -40,8 +40,8 @@ trait GetValueByLang {
     }
 }
 
-impl<'a> GetValueByLang for StrByLang<'a> {
-    type Item = &'a str;
+impl<'a, T> GetValueByLang for ValueByLang<'a, T> {
+    type Item = T;
 
     fn get_by_lang(&self, lang: &str) -> Option<&Self::Item> {
         self.get(lang).and_then(|values| values.iter().next())
@@ -54,8 +54,7 @@ impl<'a> GetValueByLang for StrByLang<'a> {
 
 pub struct Family<'a> {
     pub name: StrByLang<'a>,
-    pub fonts: Vec<FontInfo<'a>>,
-    pub default_name: &'a str,
+    pub fonts: BinaryHeap<FontInfo<'a>>,
     pub default_name_width: usize,
 }
 
@@ -63,7 +62,7 @@ impl<'a> Family<'a> {
     pub fn new(name: StrByLang<'a>) -> Self {
         let default_name = *name.get_default();
         let default_name_width = UnicodeWidthStr::width(default_name);
-        Self { name, fonts: vec![], default_name, default_name_width }
+        Self { name, fonts: BinaryHeap::new(), default_name_width }
     }
 
     pub fn styles_count(&self) -> usize {
@@ -76,9 +75,34 @@ impl<'a> Family<'a> {
     }
 }
 
+#[derive(Eq)]
 pub struct FontInfo<'a> {
     pub family_names: StrByLang<'a>,
     pub fullnames: StrByLang<'a>,
+}
+
+impl<'a> PartialEq for FontInfo<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.fullnames.get_default() == other.fullnames.get_default()
+    }
+}
+
+impl<'a> Ord for FontInfo<'a> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let self_name = *self.fullnames.get_default();
+        let other_name = *other.fullnames.get_default();
+        let length_ordering = self_name.len().cmp(&other_name.len());
+        match length_ordering {
+            Ordering::Equal => self_name.cmp(other_name),
+            other => other,
+        }
+    }
+}
+
+impl<'a> PartialOrd for FontInfo<'a> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 impl<'a> TryFrom<Font<'a>> for FontInfo<'a> {
@@ -91,16 +115,5 @@ impl<'a> TryFrom<Font<'a>> for FontInfo<'a> {
         } else {
             Ok(f)
         }
-    }
-}
-
-impl<'a> FontInfo<'a> {
-    pub fn default_family_name(&self) -> &&'a str {
-        self.family_names.get_default()
-    }
-
-    #[allow(dead_code)]
-    pub fn default_fullname(&self) -> &&'a str {
-        self.fullnames.get_default()
     }
 }

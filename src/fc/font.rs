@@ -27,7 +27,8 @@ use {
     },
 };
 
-pub type StrByLang<'a> = HashMap<&'a str, Vec<&'a str>>;
+pub type ValueByLang<'a, T> = HashMap<&'a str, Vec<T>>;
+pub type StrByLang<'a> = ValueByLang<'a, &'a str>;
 
 /// This struct is a convenient type to represent fonts in `FontSet`'s font array.
 ///
