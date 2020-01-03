@@ -16,17 +16,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::one_char::OneChar;
-use structopt::StructOpt;
+use {super::one_char::OneChar, structopt::StructOpt};
 
 #[derive(StructOpt, Debug)]
 #[structopt(author, about)]
 pub struct Args {
-    /// Verbose mode, show all fonts in a font family
+    /// Verbose mode, show all font style in family
     #[structopt(short, long)]
     pub verbose: bool,
 
-    /// Preview character render result using output font in browser
+    /// Preview character render result in browser
     #[structopt(short, long)]
     pub preview: bool,
 

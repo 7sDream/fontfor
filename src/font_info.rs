@@ -17,13 +17,14 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use {
-    super::fc::{Font, StrByLang, ValueByLang},
+    super::fc::{Font, StrValuesByLang, ValuesByLang},
     std::{cmp::Ordering, collections::BinaryHeap, convert::TryFrom},
     unicode_width::UnicodeWidthStr,
 };
 
 const DEFAULT_LANG: &str = "en";
 
+/// Convenient trait for quickly get property value in default language
 pub trait GetValueByLang {
     type Item;
 
@@ -40,26 +41,26 @@ pub trait GetValueByLang {
     }
 }
 
-impl<'a, T> GetValueByLang for ValueByLang<'a, T> {
+impl<'a, T> GetValueByLang for ValuesByLang<'a, T> {
     type Item = T;
 
     fn get_by_lang(&self, lang: &str) -> Option<&Self::Item> {
-        self.get(lang).and_then(|values| values.iter().next())
+        self.get(lang).and_then(|values| values.first())
     }
 
     fn when_missing(&self) -> &Self::Item {
-        self.values().next().unwrap().iter().next().unwrap()
+        self.values().next().unwrap().first().unwrap()
     }
 }
 
 pub struct Family<'a> {
-    pub name: StrByLang<'a>,
+    pub name: StrValuesByLang<'a>,
     pub fonts: BinaryHeap<FontInfo<'a>>,
     pub default_name_width: usize,
 }
 
 impl<'a> Family<'a> {
-    pub fn new(name: StrByLang<'a>) -> Self {
+    pub fn new(name: StrValuesByLang<'a>) -> Self {
         let default_name = *name.get_default();
         let default_name_width = UnicodeWidthStr::width(default_name);
         Self { name, fonts: BinaryHeap::new(), default_name_width }
@@ -77,8 +78,8 @@ impl<'a> Family<'a> {
 
 #[derive(Eq)]
 pub struct FontInfo<'a> {
-    pub family_names: StrByLang<'a>,
-    pub fullnames: StrByLang<'a>,
+    pub family_names: StrValuesByLang<'a>,
+    pub fullnames: StrValuesByLang<'a>,
 }
 
 impl<'a> PartialEq for FontInfo<'a> {
@@ -87,15 +88,14 @@ impl<'a> PartialEq for FontInfo<'a> {
     }
 }
 
+/// Implement `Ord` trait for store `FontInfo` in `BinaryHeap` struct
+///
+/// We sort font by it's fullname of default language(en).
 impl<'a> Ord for FontInfo<'a> {
     fn cmp(&self, other: &Self) -> Ordering {
         let self_name = *self.fullnames.get_default();
         let other_name = *other.fullnames.get_default();
-        let length_ordering = self_name.len().cmp(&other_name.len());
-        match length_ordering {
-            Ordering::Equal => self_name.cmp(other_name),
-            other => other,
-        }
+        self_name.cmp(other_name)
     }
 }
 

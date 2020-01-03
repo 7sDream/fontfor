@@ -25,7 +25,7 @@ mod pattern;
 
 pub use {
     charset::Charset,
-    font::{Font, StrByLang, ValueByLang},
+    font::{Font, StrValuesByLang, ValuesByLang},
     font_set::{FontSet, Fonts},
     object_set::ObjectSet,
     pattern::Pattern,
