@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["7sDream <i@7sdre.am>"]
 edition = "2018"
 description = "find fonts which can show a specified character"
+homepage = "https://github.com/7sDream/fontfor-rs"
 repository = "https://github.com/7sDream/fontfor-rs"
 readme = "README.md"
 license-file = "COPYING"
