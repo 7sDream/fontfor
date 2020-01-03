@@ -60,7 +60,7 @@ Add `-p` flag to enable browser preview:
 ## Install
 
 ```bash
-cargo install --force --git https://github.com/7sDream/fontfor-rs.git
+cargo install --force --git https://github.com/7sDream/fontfor.git
 ```
 
 ## LICENSE
