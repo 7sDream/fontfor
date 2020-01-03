@@ -2,7 +2,7 @@
 
 Find fonts which can show a specified character and preview them in browser.
 
-This is port from my early python script called [which_fonts_support], but with some improvements:
+This is port from my early python script called [which_fonts_support][which_fonts_support-github], but with some improvements:
 
 - Write in Rust, safe and faster
 - Use `fontconfig` library instead of depends on `fc-list` command installed
@@ -60,7 +60,7 @@ Add `-p` flag to enable browser preview:
 ## Install
 
 ```bash
-cargo install --force --git https://git.7sdre.am/7sDream/fontfor-rs.git
+cargo install --force --git https://github.com/7sDream/fontfor-rs.git
 ```
 
 ## LICENSE
