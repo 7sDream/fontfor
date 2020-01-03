@@ -36,12 +36,12 @@ pub type StrValuesByLang<'a> = ValuesByLang<'a, &'a str>;
 /// memory of its inner `FcPattern`.
 ///
 /// The lifetime `'a` must be smaller then corresponding `FontSet` object's.
-pub struct Font<'a> {
+pub struct FontInfo<'a> {
     pub(super) ptr: *mut fc::FcPattern,
     pub(super) phantom: PhantomData<&'a ()>,
 }
 
-impl<'a> Font<'a> {
+impl<'a> FontInfo<'a> {
     fn get_string_property(&self, name: &str) -> Vec<&'a str> {
         let c_name = CString::new(name).unwrap();
         let mut ret = vec![];

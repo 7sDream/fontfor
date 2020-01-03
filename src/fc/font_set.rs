@@ -17,7 +17,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use {
-    super::{consts::*, Font, Pattern},
+    super::{consts::*, FontInfo, Pattern},
     fontconfig::fontconfig as fc,
     std::marker::PhantomData,
 };
@@ -70,12 +70,12 @@ pub struct Fonts<'a> {
 }
 
 impl<'a> Iterator for Fonts<'a> {
-    type Item = Font<'a>;
+    type Item = FontInfo<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.current < self.fonts_array.len() {
             self.current += 1;
-            Some(Font { ptr: self.fonts_array[self.current - 1], phantom: PhantomData })
+            Some(FontInfo { ptr: self.fonts_array[self.current - 1], phantom: PhantomData })
         } else {
             None
         }

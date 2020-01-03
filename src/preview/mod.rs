@@ -16,35 +16,4 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod charset;
-mod consts;
-mod font_info;
-mod font_set;
-mod object_set;
-mod pattern;
-
-pub use {
-    charset::Charset,
-    font_info::{FontInfo, StrValuesByLang, ValuesByLang},
-    font_set::{FontSet, Fonts},
-    object_set::ObjectSet,
-    pattern::Pattern,
-};
-
-use fontconfig::fontconfig as fc;
-
-pub fn init() -> Result<(), ()> {
-    let config = unsafe { fc::FcInitLoadConfigAndFonts() };
-    if config.is_null() {
-        Err(())
-    } else {
-        unsafe { fc::FcConfigDestroy(config) };
-        Ok(())
-    }
-}
-
-pub fn finalize() {
-    unsafe {
-        fc::FcFini();
-    }
-}
+pub mod server;

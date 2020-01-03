@@ -21,12 +21,13 @@
 
 mod args;
 mod fc;
-mod font_info;
+mod font;
 mod one_char;
+mod preview;
 
+use std::io::Write;
 use {
-    font_info::{Family, FontInfo, GetValueByLang},
-    std::{collections::HashMap, convert::TryFrom},
+    font::GetValueByLang, preview::server::Builder as PreviewServerBuilder, std::iter::FromIterator,
 };
 
 fn main() {
@@ -36,34 +37,24 @@ fn main() {
 
     let charset = fc::Charset::default().add_char(argument.char.0);
     let pattern = fc::Pattern::default().add_charset(charset);
+    let font_set = fc::FontSet::match_pattern(&pattern);
 
-    println!("Fonts support the character {}: ", argument.char.description());
+    let families = font::SortedFamilies::from(&font_set);
 
-    let mut families: HashMap<&str, Family> = HashMap::new();
-
-    let matches = fc::FontSet::match_pattern(&pattern);
-
-    matches.fonts().for_each(|fc_font| {
-        if let Ok(font) = FontInfo::try_from(fc_font) {
-            let family = font.family_names.get_default();
-            families
-                .entry(*family)
-                .or_insert_with(|| Family::new(font.family_names.clone()))
-                .add_font(font);
-        }
-    });
+    let server = if argument.preview {
+        Some(PreviewServerBuilder::from_iter(families.iter()))
+    } else {
+        None
+    };
 
     let max_len = if argument.verbose {
         0
     } else {
-        families.values().map(|family| family.default_name_width).max().unwrap_or_default()
+        families.iter().map(|f| f.default_name_width).max().unwrap_or_default()
     };
 
-    let mut families: Vec<_> = families.into_iter().collect();
-
-    families.sort_by_key(|v| v.0); // Sort by name
-
-    for (name, family) in families {
+    println!("Fonts support the character {}: ", argument.char.description());
+    families.into_iter().for_each(|family| {
         if argument.verbose {
             println!("{}", family.name.get_default());
             for font in family.fonts.into_sorted_vec() {
@@ -72,12 +63,26 @@ fn main() {
         } else {
             println!(
                 "{}{} with {} style{}",
-                name,
+                family.name.get_default(),
                 " ".repeat(max_len - family.default_name_width),
                 family.styles_count(),
                 if family.styles_count() > 1 { "s" } else { "" }
             );
         }
+    });
+
+    if argument.preview {
+        let server = server.unwrap().build_for(argument.char.0);
+        server.run_until(move |addr| {
+            println!("{}", "-".repeat(40));
+            println!("Please visit http://{}/ in your browser for preview", addr);
+            print!("And press Enter after your finish...");
+            std::io::stdout().flush().unwrap();
+
+            // Wait until user input any character before stop the server
+            let mut line = " ".to_string();
+            std::io::stdin().read_line(&mut line).unwrap();
+        })
     }
 
     fc::finalize();

@@ -1,8 +1,10 @@
 # FontFor
 
-Find fonts which can show a specified character.
+Find fonts which can show a specified character and preview them in browser.
 
 ## Usage
+
+### Basic
 
 ```bash
 $ fontfor א
@@ -30,6 +32,25 @@ Tahoma                       with 2 styles
 Times New Roman              with 4 styles
 ```
 
+### Character input format
+
+You can use the following formats for the character:
+
+- Character: `א`
+- Unicode scalar value
+  - `U+XXXXXX`: `U+5d0`, `U+05d0`, `U+0005d0`
+  - Direct input
+    - dec format: `1488`
+    - oct format: `0o2720`
+    - binary format: `0b010111010000`
+- UTF8 bytes: `0xd790`
+
+### Preview
+
+Add `-p` option to enable preview:
+
+![preview]
+
 ## Install
 
 ```bash
@@ -42,4 +63,5 @@ GPLv3 or later.
 
 See [COPYING][COPYING-file].
 
+[preview]: https://rikka.7sdre.am/files/81994541-9e44-4e96-827f-ddc960c03b26.png
 [COPYING-file]: https://git.7sdre.am/7sDream/fontfor-rs/src/branch/master/COPYING
