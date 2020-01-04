@@ -71,4 +71,4 @@ See [COPYING][COPYING-file].
 
 [which_fonts_support-github]: https://github.com/7sDream/which_fonts_support
 [preview]: https://rikka.7sdre.am/files/81994541-9e44-4e96-827f-ddc960c03b26.png
-[COPYING-file]: https://git.7sdre.am/7sDream/fontfor-rs/src/branch/master/COPYING
+[COPYING-file]: https://github.com/7sDream/fontfor/blob/master/COPYING
