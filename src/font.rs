@@ -24,7 +24,6 @@ use {
         convert::TryFrom,
         slice::Iter,
     },
-    unicode_width::UnicodeWidthStr,
 };
 
 const DEFAULT_LANG: &str = "en";
@@ -67,7 +66,7 @@ pub struct Family<'a> {
 impl<'a> Family<'a> {
     pub fn new(name: StrValuesByLang<'a>) -> Self {
         let default_name = *name.get_default();
-        let default_name_width = UnicodeWidthStr::width(default_name);
+        let default_name_width = default_name.len();
         Self { name, fonts: BinaryHeap::new(), default_name_width }
     }
 

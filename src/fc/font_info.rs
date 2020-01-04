@@ -68,10 +68,10 @@ impl<'a> FontInfo<'a> {
         &self, value_key: &str, lang_key: &str,
     ) -> Result<StrValuesByLang<'a>, ()> {
         let values = self.get_string_property(value_key);
-        let langs = self.get_string_property(lang_key);
-        if values.len() == langs.len() {
+        let languages = self.get_string_property(lang_key);
+        if values.len() == languages.len() {
             let mut ret = StrValuesByLang::new();
-            langs.into_iter().zip(values.into_iter()).for_each(|(lang, value)| {
+            languages.into_iter().zip(values.into_iter()).for_each(|(lang, value)| {
                 ret.entry(lang).or_insert_with(|| vec![]).push(value);
             });
             Ok(ret)

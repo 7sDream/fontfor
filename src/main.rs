@@ -25,9 +25,10 @@ mod font;
 mod one_char;
 mod preview;
 
-use std::io::Write;
 use {
-    font::GetValueByLang, preview::server::Builder as PreviewServerBuilder, std::iter::FromIterator,
+    font::GetValueByLang,
+    preview::server::Builder as PreviewServerBuilder,
+    std::{io::Write, iter::FromIterator},
 };
 
 fn main() {
@@ -62,11 +63,11 @@ fn main() {
             }
         } else {
             println!(
-                "{}{} with {} style{}",
+                "{:<line_length$} with {} style{}",
                 family.name.get_default(),
-                " ".repeat(max_len - family.default_name_width),
                 family.styles_count(),
-                if family.styles_count() > 1 { "s" } else { "" }
+                if family.styles_count() > 1 { "s" } else { "" },
+                line_length = max_len,
             );
         }
     });
