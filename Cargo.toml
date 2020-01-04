@@ -7,7 +7,7 @@ description = "find fonts which can show a specified character and preview them 
 homepage = "https://github.com/7sDream/fontfor"
 repository = "https://github.com/7sDream/fontfor"
 readme = "README.md"
-license-file = "COPYING"
+license = "GPL-3.0-or-later"
 keywords = ["font", "character", "cli", "utilities"]
 categories = ["command-line-utilities", "text-processing", "visualization"]
 

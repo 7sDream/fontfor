@@ -20,7 +20,7 @@ cargo install fontfor
 
 ```bash
 $ fontfor א
-Fonts support the character א [U+05D0, 1488, 0xd790]: 
+Font(s) support the character "א"(U+05D0, 1488, 0xD7 0x90):
 .Arial Hebrew Desk Interface with 3 styles
 .LastResort                  with 1 style
 Arial                        with 4 styles
