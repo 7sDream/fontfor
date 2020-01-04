@@ -2,6 +2,8 @@
 
 ## WIP
 
+- Remove prefix dot(`.`) in output font name
+
 ## 0.1.1
 
 - Remove dependency of `unicode-width` due to only output font family name in english

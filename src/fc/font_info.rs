@@ -64,15 +64,20 @@ impl<'a> FontInfo<'a> {
         ret
     }
 
-    fn get_string_by_lang_property(
-        &self, value_key: &str, lang_key: &str,
-    ) -> Result<StrValuesByLang<'a>, ()> {
+    fn get_string_by_lang_property<F>(
+        &self, value_key: &str, lang_key: &str, value_map: Option<&F>,
+    ) -> Result<StrValuesByLang<'a>, ()>
+    where
+        F: Fn(&'a str) -> &'a str,
+    {
         let values = self.get_string_property(value_key);
         let languages = self.get_string_property(lang_key);
         if values.len() == languages.len() {
             let mut ret = StrValuesByLang::new();
             languages.into_iter().zip(values.into_iter()).for_each(|(lang, value)| {
-                ret.entry(lang).or_insert_with(|| vec![]).push(value);
+                ret.entry(lang)
+                    .or_insert_with(|| vec![])
+                    .push(value_map.map_or(value, |f| f(value)));
             });
             Ok(ret)
         } else {
@@ -80,11 +85,20 @@ impl<'a> FontInfo<'a> {
         }
     }
 
+    fn remove_prefix_dot(name: &str) -> &str {
+        // TODO: figure out what's the meaning of prefix dot then decide remove it or not.
+        name.trim_start_matches('.')
+    }
+
     pub fn family_names(&self) -> Result<StrValuesByLang<'a>, ()> {
-        self.get_string_by_lang_property(FC_FAMILY, FC_FAMILY_LANG)
+        self.get_string_by_lang_property(FC_FAMILY, FC_FAMILY_LANG, Some(&Self::remove_prefix_dot))
     }
 
     pub fn fullnames(&self) -> Result<StrValuesByLang<'a>, ()> {
-        self.get_string_by_lang_property(FC_FULLNAME, FC_FULLNAME_LANG)
+        self.get_string_by_lang_property(
+            FC_FULLNAME,
+            FC_FULLNAME_LANG,
+            Some(&Self::remove_prefix_dot),
+        )
     }
 }
