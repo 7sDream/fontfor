@@ -1,6 +1,6 @@
 [package]
 name = "fontfor"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["7sDream <i@7sdre.am>"]
 edition = "2018"
 description = "find fonts which can show a specified character and preview them in browser"

@@ -2,6 +2,8 @@
 
 ## WIP
 
+## 0.1.2
+
 - Remove prefix dot(`.`) in output font name
 
 ## 0.1.1
