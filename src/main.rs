@@ -54,7 +54,7 @@ fn main() {
         families.iter().map(|f| f.default_name_width).max().unwrap_or_default()
     };
 
-    println!("Fonts support the character {}: ", argument.char.description());
+    println!("Font(s) support the character {}:", argument.char.description());
     families.into_iter().for_each(|family| {
         if argument.verbose {
             println!("{}", family.name.get_default());
@@ -63,11 +63,11 @@ fn main() {
             }
         } else {
             println!(
-                "{:<line_length$} with {} style{}",
+                "{:<family_name_length$} with {} style{}",
                 family.name.get_default(),
                 family.styles_count(),
                 if family.styles_count() > 1 { "s" } else { "" },
-                line_length = max_len,
+                family_name_length = max_len,
             );
         }
     });
