@@ -2,6 +2,8 @@
 
 ## WIP
 
+## 0.1.1
+
 - Remove dependency of `unicode-width` due to only output font family name in english
 - Adjust character output format
 
