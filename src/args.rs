@@ -1,5 +1,5 @@
 // FontFor: find fonts which can show a specified character
-// Copyright (C) 2019 7sDream <i@7sdre.am> and contributors
+// Copyright (C) 2019 - 2020 7sDream <i@7sdre.am> and contributors
 //
 // This file is part of FontFor.
 //
