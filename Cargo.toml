@@ -15,8 +15,4 @@ categories = ["command-line-utilities", "text-processing", "visualization"]
 structopt = "0.3.7"
 servo-fontconfig = "0.4.0"
 once_cell = "1.2.0"
-hyper = "0.13.1"
-
-[dependencies.tokio]
-version = "0.2.6"
-features = ["rt-core", "blocking"]
+httparse = "1.3.4"

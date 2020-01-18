@@ -16,4 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod browser;
+mod builder;
+mod server;
+
+pub use {builder::Builder as ServerBuilder, server::SingleThread as SingleThreadServer};

@@ -27,7 +27,7 @@ mod preview;
 
 use {
     font::GetValueByLang,
-    preview::server::Builder as PreviewServerBuilder,
+    preview::browser::ServerBuilder as PreviewServerBuilder,
     std::{io::Write, iter::FromIterator},
 };
 
@@ -83,7 +83,7 @@ fn main() {
             // Wait until user input any character before stop the server
             let mut line = " ".to_string();
             std::io::stdin().read_line(&mut line).unwrap();
-        })
+        });
     }
 
     fc::finalize();

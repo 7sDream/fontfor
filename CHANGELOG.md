@@ -2,6 +2,9 @@
 
 ## WIP
 
+- Remove dependency of `tokio` and `hyper`. Because I only need a simple static single page HTTP server, use them itos too heavy for me.
+- Add a simple signal thread HTTP server  preview in browser
+
 ## 0.1.2
 
 - Remove prefix dot(`.`) in output font name
