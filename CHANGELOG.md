@@ -2,8 +2,9 @@
 
 ## WIP
 
-- Remove dependency of `tokio` and `hyper`. Because I only need a simple static single page HTTP server, use them itos too heavy for me.
-- Add a simple signal thread HTTP server  preview in browser
+- Remove dependency of `tokio` and `hyper`. Because I only need a simple static single page HTTP server, use them is too heavy for me
+- Add a simple signal thread HTTP server for preview in browser
+- Update `once_cell` to `1.3.1`
 
 ## 0.1.2
 
