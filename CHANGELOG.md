@@ -1,6 +1,6 @@
 # Changelog
 
-## WIP
+## 0.1.3
 
 - Remove dependency of `tokio` and `hyper`. Because I only need a simple static single page HTTP server, use them is too heavy for me
 - Add a simple signal thread HTTP server for preview in browser
