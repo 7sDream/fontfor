@@ -10,10 +10,10 @@ This is port from my early python script called [which_fonts_support][which_font
 - Use `fontconfig` library instead of depends on `fc-list` command installed
 - Support preview in shell, no GUI or browser needed (in plan)
 
-## Install
+## Install or Update
 
 ```bash
-cargo install fontfor
+cargo install -f fontfor
 ```
 
 ## Usage
@@ -46,24 +46,30 @@ Tahoma                      with 2 styles
 Times New Roman             with 4 styles
 ```
 
-### Character input format
+### Character Input Format
 
 You can use the following formats for the character:
 
 - Character: `א`
 - Unicode scalar value
-  + `U+XXXXXX`: `U+5d0`, `U+05d0`, `U+0005d0`
-  + Direct input
-    * Dec format: `1488`
-    * Oct format: `0o2720`
-    * Binary format: `0b010111010000`
+  - `U+XXXXXX`: `U+5d0`, `U+05d0`, `U+0005d0`
+  - Direct input
+    - Dec format: `1488`
+    - Oct format: `0o2720`
+    - Binary format: `0b010111010000`
 - UTF8 bytes: `0xd790`
 
-### Preview
+### Show All Font Styles
+
+add `-v` flag to show all font style.
+
+We don't show [screenshot picture][verbose-mode-screenshot] here because it's a bit long.
+
+### Preview in Browser
 
 Add `-p` flag to enable browser preview:
 
-![preview]
+![browser-preview-screenshot]
 
 ## LICENSE
 
@@ -74,5 +80,6 @@ See [COPYING][COPYING-file].
 [license-badge]: https://img.shields.io/crates/l/fontfor?style=flat-square
 [version-badge]: https://img.shields.io/crates/v/fontfor?style=flat-square
 [which_fonts_support-github]: https://github.com/7sDream/which_fonts_support
-[preview]: https://rikka.7sdre.am/files/81994541-9e44-4e96-827f-ddc960c03b26.png
+[verbose-mode-screenshot]: https://rikka.7sdre.am/files/22ea7500-525b-47ba-9c4e-6ef963999983.png
+[browser-preview-screenshot]: https://rikka.7sdre.am/files/81994541-9e44-4e96-827f-ddc960c03b26.png
 [COPYING-file]: https://github.com/7sDream/fontfor/blob/master/COPYING

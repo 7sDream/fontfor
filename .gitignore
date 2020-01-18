@@ -1,6 +1,8 @@
 # IDE
-## JetBrains
+## JetBrains CLion
 /.idea
+## VSCode
+/.vscode
 
 # Rust
 /target
