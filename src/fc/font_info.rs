@@ -23,7 +23,7 @@ use {
         collections::HashMap,
         ffi::{CStr, CString},
         marker::PhantomData,
-        os::raw::c_char,
+        os::raw::{c_char, c_int},
     },
 };
 
@@ -85,6 +85,25 @@ impl<'a> FontInfo<'a> {
         }
     }
 
+    fn get_int_property(&self, name: &str) -> Vec<c_int> {
+        let c_name = CString::new(name).unwrap();
+        let mut ret = vec![];
+        let mut n = 0;
+        loop {
+            let mut value = 0;
+            let result = unsafe {
+                fc::FcPatternGetInteger(self.ptr, c_name.as_ptr(), n, &mut value as *mut c_int)
+            };
+            if result == fc::FcResultMatch {
+                ret.push(value);
+                n += 1;
+            } else {
+                break;
+            }
+        }
+        ret
+    }
+
     fn remove_prefix_dot(name: &str) -> &str {
         // TODO: figure out what's the meaning of prefix dot then decide remove it or not.
         name.trim_start_matches('.')
@@ -100,5 +119,13 @@ impl<'a> FontInfo<'a> {
             FC_FULLNAME_LANG,
             Some(&Self::remove_prefix_dot),
         )
+    }
+
+    pub fn path(&self) -> Result<&'a str, ()> {
+        self.get_string_property(FC_FILE).pop().ok_or(())
+    }
+
+    pub fn index(&self) -> Result<c_int, ()> {
+        self.get_int_property(FC_INDEX).pop().ok_or(())
     }
 }

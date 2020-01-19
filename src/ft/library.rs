@@ -16,23 +16,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use {super::ObjectSet, once_cell::unsync::Lazy};
+use {
+    super::{CheckFreeTypeError, FontFace},
+    freetype::freetype as ft,
+    std::{path::Path, ptr},
+};
 
-pub const FC_FAMILY: &str = "family";
-pub const FC_FULLNAME: &str = "fullname";
-pub const FC_FAMILY_LANG: &str = "familylang";
-pub const FC_FULLNAME_LANG: &str = "fullnamelang";
-// TODO: Figure out why we do not need join the rel path with sysroot
-pub const FC_FILE: &str = "file";
-pub const FC_INDEX: &str = "index";
+pub struct Library {
+    pub(super) library: ft::FT_Library,
+}
 
-#[allow(clippy::declare_interior_mutable_const)]
-pub const THE_OBJECT_SET: Lazy<ObjectSet> = Lazy::new(|| {
-    ObjectSet::default()
-        .add(FC_FAMILY)
-        .add(FC_FULLNAME)
-        .add(FC_FAMILY_LANG)
-        .add(FC_FULLNAME_LANG)
-        .add(FC_FILE)
-        .add(FC_INDEX)
-});
+impl Library {
+    pub fn new() -> Result<Self, i32> {
+        let mut library = ptr::null_mut();
+        let ret = unsafe { ft::FT_Init_FreeType(&mut library as *mut ft::FT_Library) };
+        ret.as_result(Self { library })
+    }
+
+    pub fn load_font<P>(&mut self, path: P, index: ft::FT_Long) -> Result<FontFace, ft::FT_Error>
+    where
+        P: AsRef<Path>,
+    {
+        let path = path.as_ref();
+        FontFace::new(self, path, index)
+    }
+}
+
+impl Drop for Library {
+    fn drop(&mut self) {
+        unsafe {
+            ft::FT_Done_Library(self.library);
+        }
+    }
+}

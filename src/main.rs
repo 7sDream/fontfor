@@ -22,6 +22,8 @@
 mod args;
 mod fc;
 mod font;
+#[allow(dead_code)]
+mod ft;
 mod one_char;
 mod preview;
 

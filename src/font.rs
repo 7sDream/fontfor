@@ -22,6 +22,7 @@ use {
         cmp::Ordering,
         collections::{BinaryHeap, HashMap},
         convert::TryFrom,
+        os::raw::c_int,
         slice::Iter,
     },
 };
@@ -84,6 +85,8 @@ impl<'a> Family<'a> {
 pub struct Font<'a> {
     pub family_names: StrValuesByLang<'a>,
     pub fullnames: StrValuesByLang<'a>,
+    pub path: &'a str,
+    pub index: c_int,
 }
 
 impl<'a> PartialEq for Font<'a> {
@@ -113,7 +116,12 @@ impl<'a> TryFrom<FontInfo<'a>> for Font<'a> {
     type Error = ();
 
     fn try_from(font_info: FontInfo<'a>) -> Result<Self, Self::Error> {
-        let f = Self { family_names: font_info.family_names()?, fullnames: font_info.fullnames()? };
+        let f = Self {
+            family_names: font_info.family_names()?,
+            fullnames: font_info.fullnames()?,
+            path: font_info.path()?,
+            index: font_info.index()?,
+        };
         if f.family_names.is_empty() || f.fullnames.is_empty() {
             Err(())
         } else {
