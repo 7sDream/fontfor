@@ -54,4 +54,8 @@ impl<T> CheckFreeTypeError<T> for ft::FT_Error {
     }
 }
 
-pub use {font_face::FontFace, library::Library};
+pub use {
+    bitmap::{Bitmap, Metrics},
+    font_face::FontFace,
+    library::Library,
+};

@@ -17,6 +17,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+#![allow(clippy::module_name_repetitions)]
 #![deny(warnings)]
 
 mod args;
