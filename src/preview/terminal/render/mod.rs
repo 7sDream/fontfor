@@ -16,34 +16,64 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::ft::Bitmap;
-
 mod ascii;
+mod moon;
 
-pub use ascii::{AsciiRender, AsciiRenders};
+use {
+    crate::ft::Bitmap,
+    std::fmt::{Display, Error, Formatter, Write},
+};
+
+pub use {
+    ascii::{AsciiRender, AsciiRenders},
+    moon::MoonRender,
+};
+
+#[derive(Clone)]
+pub struct RenderResult(Vec<Vec<char>>);
+
+impl Display for RenderResult {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        for line in &self.0 {
+            for c in line.iter() {
+                f.write_char(*c)?;
+            }
+            f.write_char('\n')?;
+        }
+        Ok(())
+    }
+}
 
 pub trait Render<'lib> {
     #[allow(clippy::too_many_arguments)]
     fn gray_to_char(&self, up: u8, left: u8, gray: u8, right: u8, down: u8) -> char;
 
-    fn render(&self, bitmap: &Bitmap<'lib>) -> Vec<char> {
+    fn render(&self, bitmap: &Bitmap<'lib>) -> RenderResult {
         let m = bitmap.get_metrics();
         let buffer = bitmap.get_buffer();
 
-        (0..m.height)
-            .flat_map(|row| {
-                (0..m.width).map(move |col| {
-                    let index = (row * m.width + col) as usize;
-                    let gray = buffer[index];
+        RenderResult(
+            (0..m.height)
+                .map(|row| {
+                    (0..m.width)
+                        .map(move |col| {
+                            let index = (row * m.width + col) as usize;
+                            let gray = buffer[index];
 
-                    let l = if col > 0 { buffer[index - 1] } else { 0 };
-                    let r = if col < m.width - 1 { buffer[index + 1] } else { 0 };
-                    let u = if row > 0 { buffer[index - m.width as usize] } else { 0 };
-                    let d = if row < m.height - 1 { buffer[index + m.width as usize] } else { 0 };
+                            let l = if col > 0 { buffer[index - 1] } else { 0 };
+                            let r = if col < m.width - 1 { buffer[index + 1] } else { 0 };
+                            let u = if row > 0 { buffer[index - m.width as usize] } else { 0 };
+                            let d = if row < m.height - 1 {
+                                buffer[index + m.width as usize]
+                            } else {
+                                0
+                            };
 
-                    self.gray_to_char(u, l, gray, r, d)
+                            self.gray_to_char(u, l, gray, r, d)
+                        })
+                        .collect::<Vec<_>>()
                 })
-            })
-            .collect()
+                .collect::<Vec<_>>(),
+        )
     }
 }

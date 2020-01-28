@@ -17,7 +17,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
-#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::module_name_repetitions, clippy::needless_pass_by_value)]
 #![deny(warnings)]
 
 mod args;
@@ -29,11 +29,13 @@ mod one_char;
 mod preview;
 
 use {
-    font::GetValueByLang,
-    preview::browser::ServerBuilder as PreviewServerBuilder,
+    args::Args,
+    font::{GetValueByLang, SortedFamilies},
+    preview::{browser::ServerBuilder as PreviewServerBuilder, terminal::ui::UI},
     std::{io::Write, iter::FromIterator},
 };
 
+#[allow(clippy::too_many_lines)]
 fn main() {
     let argument = args::get();
 
@@ -45,18 +47,34 @@ fn main() {
 
     let families = font::SortedFamilies::from(&font_set);
 
+    if families.is_empty() {
+        println!("No font support this character.");
+        return;
+    }
+
+    if argument.tui {
+        let ui = UI::new(families).unwrap();
+        ui.show().unwrap_or_else(|err| {
+            eprintln!("{:?}", err);
+        });
+    } else {
+        show_fonts(argument, families);
+    }
+
+    fc::finalize();
+}
+
+fn show_fonts(argument: Args, families: SortedFamilies) {
     let server = if argument.preview {
         Some(PreviewServerBuilder::from_iter(families.iter()))
     } else {
         None
     };
-
     let max_len = if argument.verbose {
         0
     } else {
         families.iter().map(|f| f.default_name_width).max().unwrap_or_default()
     };
-
     println!("Font(s) support the character {}:", argument.char.description());
     families.into_iter().for_each(|family| {
         if argument.verbose {
@@ -74,7 +92,6 @@ fn main() {
             );
         }
     });
-
     if argument.preview {
         let server = server.unwrap().build_for(argument.char.0);
         server.run_until(move |addr| {
@@ -88,6 +105,4 @@ fn main() {
             std::io::stdin().read_line(&mut line).unwrap();
         });
     }
-
-    fc::finalize();
 }

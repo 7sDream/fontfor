@@ -16,29 +16,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use {super::one_char::OneChar, structopt::StructOpt};
+use crate::{
+    font::{GetValueByLang, SortedFamilies},
+    preview::terminal::render::RenderResult,
+};
 
-#[derive(StructOpt, Debug)]
-#[structopt(author, about)]
-pub struct Args {
-    /// Verbose mode, show all font styles
-    #[structopt(short, long)]
-    pub verbose: bool,
-
-    /// Preview character use supported fonts in browser
-    #[structopt(short, long)]
-    pub preview: bool,
-
-    /// Enable Terminal UI mode
-    /// enable this mode will disable the --preview/-p and ignore --verbose/-v arg
-    #[structopt(short, long)]
-    pub tui: bool,
-
-    /// The character
-    #[structopt(name = "CHAR")]
-    pub char: OneChar,
+pub struct State<'a> {
+    pub(super) families: SortedFamilies<'a>,
+    pub(super) names: Vec<&'a str>,
+    pub(super) name_max_width: usize,
+    pub(super) index: usize,
+    pub(super) cache: Vec<Option<RenderResult>>,
 }
 
-pub fn get() -> Args {
-    Args::from_args()
+impl<'a> State<'a> {
+    pub fn new(families: SortedFamilies<'a>) -> Self {
+        let name_max_width =
+            families.iter().map(|f| f.default_name_width).max().unwrap_or_default();
+        let names = families.iter().map(|f| *f.name.get_default()).collect();
+        let cache = vec![None; families.len()];
+        Self { families, names, index: 0, name_max_width, cache }
+    }
+
+    pub fn current_name(&self) -> &'a str {
+        self.names[self.index]
+    }
 }

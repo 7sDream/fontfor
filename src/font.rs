@@ -22,8 +22,8 @@ use {
         cmp::Ordering,
         collections::{BinaryHeap, HashMap},
         convert::TryFrom,
+        ops::Deref,
         os::raw::c_int,
-        slice::Iter,
     },
 };
 
@@ -164,8 +164,10 @@ impl<'a> IntoIterator for SortedFamilies<'a> {
     }
 }
 
-impl<'a> SortedFamilies<'a> {
-    pub fn iter(&self) -> Iter<'_, Family<'a>> {
-        self.0.iter()
+impl<'a> Deref for SortedFamilies<'a> {
+    type Target = Vec<Family<'a>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
