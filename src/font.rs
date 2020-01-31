@@ -58,14 +58,14 @@ impl<'a, T> GetValueByLang for ValuesByLang<'a, T> {
     }
 }
 
-pub struct Family<'a> {
-    pub name: StrValuesByLang<'a>,
-    pub fonts: BinaryHeap<Font<'a>>,
+pub struct Family<'fs> {
+    pub name: StrValuesByLang<'fs>,
+    pub fonts: BinaryHeap<Font<'fs>>,
     pub default_name_width: usize,
 }
 
-impl<'a> Family<'a> {
-    pub fn new(name: StrValuesByLang<'a>) -> Self {
+impl<'fs> Family<'fs> {
+    pub fn new(name: StrValuesByLang<'fs>) -> Self {
         let default_name = *name.get_default();
         let default_name_width = default_name.len();
         Self { name, fonts: BinaryHeap::new(), default_name_width }
@@ -75,21 +75,21 @@ impl<'a> Family<'a> {
         self.fonts.len()
     }
 
-    pub fn add_font(&mut self, font: Font<'a>) -> &mut Self {
+    pub fn add_font(&mut self, font: Font<'fs>) -> &mut Self {
         self.fonts.push(font);
         self
     }
 }
 
 #[derive(Eq)]
-pub struct Font<'a> {
-    pub family_names: StrValuesByLang<'a>,
-    pub fullnames: StrValuesByLang<'a>,
-    pub path: &'a str,
+pub struct Font<'fi> {
+    pub family_names: StrValuesByLang<'fi>,
+    pub fullnames: StrValuesByLang<'fi>,
+    pub path: &'fi str,
     pub index: c_int,
 }
 
-impl<'a> PartialEq for Font<'a> {
+impl<'fi> PartialEq for Font<'fi> {
     fn eq(&self, other: &Self) -> bool {
         self.fullnames.get_default() == other.fullnames.get_default()
     }
@@ -98,7 +98,7 @@ impl<'a> PartialEq for Font<'a> {
 /// Implement `Ord` trait for store `FontInfo` in `BinaryHeap` struct
 ///
 /// We sort font by it's fullname of default language(en).
-impl<'a> Ord for Font<'a> {
+impl<'fi> Ord for Font<'fi> {
     fn cmp(&self, other: &Self) -> Ordering {
         let self_name = *self.fullnames.get_default();
         let other_name = *other.fullnames.get_default();
@@ -106,16 +106,16 @@ impl<'a> Ord for Font<'a> {
     }
 }
 
-impl<'a> PartialOrd for Font<'a> {
+impl<'fi> PartialOrd for Font<'fi> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl<'a> TryFrom<FontInfo<'a>> for Font<'a> {
+impl<'fi> TryFrom<FontInfo<'fi>> for Font<'fi> {
     type Error = ();
 
-    fn try_from(font_info: FontInfo<'a>) -> Result<Self, Self::Error> {
+    fn try_from(font_info: FontInfo<'fi>) -> Result<Self, Self::Error> {
         let f = Self {
             family_names: font_info.family_names()?,
             fullnames: font_info.fullnames()?,
@@ -130,10 +130,10 @@ impl<'a> TryFrom<FontInfo<'a>> for Font<'a> {
     }
 }
 
-pub struct SortedFamilies<'a>(Vec<Family<'a>>);
+pub struct SortedFamilies<'fs>(Vec<Family<'fs>>);
 
-impl<'a> From<&'a FontSet> for SortedFamilies<'a> {
-    fn from(font_set: &'a FontSet) -> Self {
+impl<'fs> From<&'fs FontSet> for SortedFamilies<'fs> {
+    fn from(font_set: &'fs FontSet) -> Self {
         let mut families: HashMap<&str, Family> = HashMap::new();
 
         font_set.fonts().for_each(|fc_font| {
@@ -146,26 +146,26 @@ impl<'a> From<&'a FontSet> for SortedFamilies<'a> {
             }
         });
 
-        let mut families: Vec<Family<'a>> =
+        let mut families: Vec<Family<'fs>> =
             families.into_iter().map(|(_, family)| family).collect();
 
-        families.sort_by_key(|f| -> &'a str { f.name.get_default() });
+        families.sort_by_key(|f| -> &'fs str { f.name.get_default() });
 
         Self(families)
     }
 }
 
-impl<'a> IntoIterator for SortedFamilies<'a> {
-    type Item = <Vec<Family<'a>> as IntoIterator>::Item;
-    type IntoIter = <Vec<Family<'a>> as IntoIterator>::IntoIter;
+impl<'fs> IntoIterator for SortedFamilies<'fs> {
+    type Item = <Vec<Family<'fs>> as IntoIterator>::Item;
+    type IntoIter = <Vec<Family<'fs>> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
     }
 }
 
-impl<'a> Deref for SortedFamilies<'a> {
-    type Target = Vec<Family<'a>>;
+impl<'fs> Deref for SortedFamilies<'fs> {
+    type Target = Vec<Family<'fs>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0

@@ -17,7 +17,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use {
-    super::{CheckFreeTypeError, FontFace},
+    super::{FreeTypeError, FontFace},
     freetype::freetype as ft,
     std::{path::Path, ptr},
 };

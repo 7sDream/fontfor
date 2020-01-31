@@ -51,26 +51,26 @@ impl FontSet {
         }
     }
 
-    pub fn fonts<'a>(&'a self) -> Fonts<'a> {
+    pub fn fonts<'fs>(&'fs self) -> Fonts<'fs> {
         let fs = unsafe { self.ptr.as_ref() }.unwrap();
 
         assert!(fs.nfont >= 0);
         #[allow(clippy::cast_sign_loss)]
         let fonts_count = fs.nfont as usize;
 
-        let fonts_array = unsafe { std::slice::from_raw_parts::<'a>(fs.fonts, fonts_count) };
+        let fonts_array = unsafe { std::slice::from_raw_parts::<'fs>(fs.fonts, fonts_count) };
 
         Fonts { current: 0, fonts_array }
     }
 }
 
-pub struct Fonts<'a> {
+pub struct Fonts<'fs> {
     current: usize,
-    fonts_array: &'a [*mut fc::FcPattern],
+    fonts_array: &'fs [*mut fc::FcPattern],
 }
 
-impl<'a> Iterator for Fonts<'a> {
-    type Item = FontInfo<'a>;
+impl<'fs> Iterator for Fonts<'fs> {
+    type Item = FontInfo<'fs>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.current < self.fonts_array.len() {

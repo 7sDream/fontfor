@@ -35,7 +35,7 @@ impl MoonRender {
     }
 }
 
-impl<'lib> Render<'lib> for MoonRender {
+impl<'ft> Render<'ft> for MoonRender {
     fn gray_to_char(&self, _up: u8, left: u8, gray: u8, right: u8, _down: u8) -> char {
         if gray == 0 {
             return MOON_CHARS[self.pair_count - 1][0];

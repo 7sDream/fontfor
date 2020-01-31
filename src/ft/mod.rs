@@ -22,7 +22,7 @@ mod library;
 
 use freetype::freetype as ft;
 
-pub trait CheckFreeTypeError<T> {
+pub trait FreeTypeError<T> {
     fn get_err(&self) -> Option<ft::FT_Error>;
     fn as_result(&self, result: T) -> Result<T, ft::FT_Error> {
         if let Some(err) = self.get_err() {
@@ -44,7 +44,7 @@ pub trait CheckFreeTypeError<T> {
     }
 }
 
-impl<T> CheckFreeTypeError<T> for ft::FT_Error {
+impl<T> FreeTypeError<T> for ft::FT_Error {
     fn get_err(&self) -> Option<i32> {
         if *self == 0 {
             None

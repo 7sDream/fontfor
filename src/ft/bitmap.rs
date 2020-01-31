@@ -25,15 +25,15 @@ pub struct Metrics {
     pub width: raw::c_uint,
 }
 
-pub struct Bitmap<'lib> {
-    face: FontFace<'lib>,
+pub struct Bitmap<'ft> {
+    face: FontFace<'ft>,
     metrics: Metrics,
     bitmap: &'static [u8],
 }
 
-impl<'lib> Bitmap<'lib> {
+impl<'ft> Bitmap<'ft> {
     #[allow(unused_mut)]
-    pub(super) fn new(mut face: FontFace<'lib>) -> Self {
+    pub(super) fn new(mut face: FontFace<'ft>) -> Self {
         let face_rec = unsafe { &*face.face };
         let glyph = unsafe { &*face_rec.glyph };
         let left = glyph.bitmap_left;
@@ -45,7 +45,7 @@ impl<'lib> Bitmap<'lib> {
         Self { face, metrics: Metrics { left, top, height, width }, bitmap }
     }
 
-    pub const fn return_face(self) -> FontFace<'lib> {
+    pub const fn return_face(self) -> FontFace<'ft> {
         self.face
     }
 

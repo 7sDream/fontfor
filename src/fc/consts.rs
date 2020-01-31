@@ -22,7 +22,7 @@ pub const FC_FAMILY: &str = "family";
 pub const FC_FULLNAME: &str = "fullname";
 pub const FC_FAMILY_LANG: &str = "familylang";
 pub const FC_FULLNAME_LANG: &str = "fullnamelang";
-// TODO: Figure out why we do not need join the rel path with sysroot
+// TODO: Figure out why we do not need join the rel path with FontConfig's `sysroot`
 pub const FC_FILE: &str = "file";
 pub const FC_INDEX: &str = "index";
 

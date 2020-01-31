@@ -44,11 +44,11 @@ impl Display for RenderResult {
     }
 }
 
-pub trait Render<'lib> {
+pub trait Render<'ft> {
     #[allow(clippy::too_many_arguments)]
     fn gray_to_char(&self, up: u8, left: u8, gray: u8, right: u8, down: u8) -> char;
 
-    fn render(&self, bitmap: &Bitmap<'lib>) -> RenderResult {
+    fn render(&self, bitmap: &Bitmap<'ft>) -> RenderResult {
         let m = bitmap.get_metrics();
         let buffer = bitmap.get_buffer();
 

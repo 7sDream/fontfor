@@ -35,14 +35,14 @@ pub type StrValuesByLang<'a> = ValuesByLang<'a, &'a str>;
 /// Because all inner memory will be auto freed when `FontSet` dropped, this type **DO NOT** free
 /// memory of its inner `FcPattern`.
 ///
-/// The lifetime `'a` must be smaller then corresponding `FontSet` object's.
-pub struct FontInfo<'a> {
+/// The lifetime `'font` must be smaller then corresponding `FontSet` object's.
+pub struct FontInfo<'font> {
     pub(super) ptr: *mut fc::FcPattern,
-    pub(super) phantom: PhantomData<&'a ()>,
+    pub(super) phantom: PhantomData<&'font ()>,
 }
 
-impl<'a> FontInfo<'a> {
-    fn get_string_property(&self, name: &str) -> Vec<&'a str> {
+impl<'font> FontInfo<'font> {
+    fn get_string_property(&self, name: &str) -> Vec<&'font str> {
         let c_name = CString::new(name).unwrap();
         let mut ret = vec![];
         let mut n = 0;
@@ -66,9 +66,9 @@ impl<'a> FontInfo<'a> {
 
     fn get_string_by_lang_property<F>(
         &self, value_key: &str, lang_key: &str, value_map: Option<&F>,
-    ) -> Result<StrValuesByLang<'a>, ()>
+    ) -> Result<StrValuesByLang<'font>, ()>
     where
-        F: Fn(&'a str) -> &'a str,
+        F: Fn(&'font str) -> &'font str,
     {
         let values = self.get_string_property(value_key);
         let languages = self.get_string_property(lang_key);
@@ -109,11 +109,11 @@ impl<'a> FontInfo<'a> {
         name.trim_start_matches('.')
     }
 
-    pub fn family_names(&self) -> Result<StrValuesByLang<'a>, ()> {
+    pub fn family_names(&self) -> Result<StrValuesByLang<'font>, ()> {
         self.get_string_by_lang_property(FC_FAMILY, FC_FAMILY_LANG, Some(&Self::remove_prefix_dot))
     }
 
-    pub fn fullnames(&self) -> Result<StrValuesByLang<'a>, ()> {
+    pub fn fullnames(&self) -> Result<StrValuesByLang<'font>, ()> {
         self.get_string_by_lang_property(
             FC_FULLNAME,
             FC_FULLNAME_LANG,
@@ -121,7 +121,7 @@ impl<'a> FontInfo<'a> {
         )
     }
 
-    pub fn path(&self) -> Result<&'a str, ()> {
+    pub fn path(&self) -> Result<&'font str, ()> {
         self.get_string_property(FC_FILE).pop().ok_or(())
     }
 
