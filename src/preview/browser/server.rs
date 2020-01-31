@@ -147,6 +147,7 @@ impl SingleThread {
 
             if next_offset == TRY_PARSE_SIZE {
                 // Too big as a simple `GET /` request, don't handle it
+                stream.write_all(Self::response_400().as_bytes())?;
                 return Ok(true);
             }
 
@@ -192,6 +193,7 @@ impl SingleThread {
         let addr = server.local_addr().unwrap();
         addr_tx.send(addr).unwrap();
 
+        // set non-blocking mode to give chance to receive exit message
         server.set_nonblocking(true)?;
 
         for stream in server.incoming() {

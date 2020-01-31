@@ -21,8 +21,9 @@ mod state;
 
 use {
     crate::font::SortedFamilies,
+    crate::ft::Library as FtLibrary,
     crossterm::{
-        event::{KeyCode as CTKeyCode, KeyModifiers as CTKM},
+        event::{KeyCode as CtKeyCode, KeyModifiers as CtKM},
         execute,
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
         Result as CTResult,
@@ -47,15 +48,15 @@ enum OnEventResult {
     Exit,
 }
 
-pub struct UI<'a> {
-    state: State<'a>,
+pub struct UI<'fc, 'ft> {
+    state: State<'fc, 'ft>,
 }
 
 #[allow(clippy::unused_self)] // TODO: use them
-impl<'a> UI<'a> {
-    pub fn new(families: SortedFamilies<'a>) -> Option<Self> {
+impl<'fc, 'ft> UI<'fc, 'ft> {
+    pub fn new(families: SortedFamilies<'fc>, ft: &'ft FtLibrary) -> Option<Self> {
         if families.len() > 0 {
-            Some(Self { state: State::new(families) })
+            Some(Self { state: State::new(families, ft) })
         } else {
             None
         }
@@ -125,11 +126,11 @@ impl<'a> UI<'a> {
         match event? {
             TerminalEvent::Tick => Ok(OnEventResult::ReDraw),
             TerminalEvent::Key(key) => {
-                if key.modifiers.contains(CTKM::ALT) || key.modifiers.contains(CTKM::CONTROL) {
+                if key.modifiers.contains(CtKM::ALT) || key.modifiers.contains(CtKM::CONTROL) {
                     Ok(OnEventResult::Continue)
                 } else {
                     match key.code {
-                        CTKeyCode::Char('q') => Ok(OnEventResult::Exit),
+                        CtKeyCode::Char('q') => Ok(OnEventResult::Exit),
                         _ => Ok(OnEventResult::Continue),
                     }
                 }

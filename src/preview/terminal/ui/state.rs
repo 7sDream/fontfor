@@ -18,27 +18,29 @@
 
 use crate::{
     font::{GetValueByLang, SortedFamilies},
+    ft::Library as FtLibrary,
     preview::terminal::render::RenderResult,
 };
 
-pub struct State<'a> {
-    pub(super) families: SortedFamilies<'a>,
-    pub(super) names: Vec<&'a str>,
+pub struct State<'fc, 'ft> {
+    pub(super) families: SortedFamilies<'fc>,
+    pub(super) names: Vec<&'fc str>,
     pub(super) name_max_width: usize,
     pub(super) index: usize,
-    pub(super) cache: Vec<Option<RenderResult>>,
+    cache: Vec<Option<RenderResult>>,
+    ft: &'ft FtLibrary,
 }
 
-impl<'a> State<'a> {
-    pub fn new(families: SortedFamilies<'a>) -> Self {
+impl<'fc, 'ft> State<'fc, 'ft> {
+    pub fn new(families: SortedFamilies<'fc>, ft: &'ft FtLibrary) -> Self {
         let name_max_width =
             families.iter().map(|f| f.default_name_width).max().unwrap_or_default();
         let names = families.iter().map(|f| *f.name.get_default()).collect();
         let cache = vec![None; families.len()];
-        Self { families, names, index: 0, name_max_width, cache }
+        Self { families, names, index: 0, name_max_width, cache, ft }
     }
 
-    pub fn current_name(&self) -> &'a str {
+    pub fn current_name(&self) -> &'fc str {
         self.names[self.index]
     }
 }

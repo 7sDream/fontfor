@@ -28,8 +28,9 @@ mod ft;
 mod one_char;
 mod preview;
 
+use std::net::SocketAddr;
+use std::process::exit;
 use {
-    args::Args,
     font::{GetValueByLang, SortedFamilies},
     preview::{browser::ServerBuilder as PreviewServerBuilder, terminal::ui::UI},
     std::{io::Write, iter::FromIterator},
@@ -39,7 +40,10 @@ use {
 fn main() {
     let argument = args::get();
 
-    fc::init().expect("init fontconfig failed");
+    fc::init().unwrap_or_else(|_| {
+        eprintln!("init FontConfig failed");
+        exit(1);
+    });
 
     let charset = fc::Charset::default().add_char(argument.char.0);
     let pattern = fc::Pattern::default().add_charset(charset);
@@ -53,31 +57,52 @@ fn main() {
     }
 
     if argument.tui {
-        let ui = UI::new(families).unwrap();
+        let ft_library = ft::Library::new().unwrap_or_else(|e| {
+            eprintln!("init FreeType failed: {}", e);
+            exit(2);
+        });
+        let ui = UI::new(families, &ft_library).unwrap();
         ui.show().unwrap_or_else(|err| {
             eprintln!("{:?}", err);
         });
     } else {
-        show_fonts(argument, families);
+        let builder = if argument.preview {
+            Some(PreviewServerBuilder::from_iter(families.iter()))
+        } else {
+            None
+        };
+
+        println!("Font(s) support the character {}:", argument.char.description());
+        show_font_list(families, argument.verbose);
+
+        if let Some(builder) = builder {
+            builder.build_for(argument.char.0).run_until(show_preview_addr_and_wait);
+        }
     }
 
     fc::finalize();
 }
 
-fn show_fonts(argument: Args, families: SortedFamilies) {
-    let server = if argument.preview {
-        Some(PreviewServerBuilder::from_iter(families.iter()))
-    } else {
-        None
-    };
-    let max_len = if argument.verbose {
+fn show_preview_addr_and_wait(addr: SocketAddr) {
+    println!("{}", "-".repeat(40));
+    println!("Please visit http://{}/ in your browser for preview", addr);
+    print!("And press Enter after your finish...");
+    std::io::stdout().flush().unwrap();
+
+    // Wait until user input any character before stop the server
+    let mut line = " ".to_string();
+    std::io::stdin().read_line(&mut line).unwrap();
+}
+
+fn show_font_list(families: SortedFamilies, verbose: bool) {
+    let max_len = if verbose {
         0
     } else {
         families.iter().map(|f| f.default_name_width).max().unwrap_or_default()
     };
-    println!("Font(s) support the character {}:", argument.char.description());
+
     families.into_iter().for_each(|family| {
-        if argument.verbose {
+        if verbose {
             println!("{}", family.name.get_default());
             for font in family.fonts.into_sorted_vec() {
                 println!("    {}", font.fullnames.get_default());
@@ -92,17 +117,4 @@ fn show_fonts(argument: Args, families: SortedFamilies) {
             );
         }
     });
-    if argument.preview {
-        let server = server.unwrap().build_for(argument.char.0);
-        server.run_until(move |addr| {
-            println!("{}", "-".repeat(40));
-            println!("Please visit http://{}/ in your browser for preview", addr);
-            print!("And press Enter after your finish...");
-            std::io::stdout().flush().unwrap();
-
-            // Wait until user input any character before stop the server
-            let mut line = " ".to_string();
-            std::io::stdin().read_line(&mut line).unwrap();
-        });
-    }
 }
