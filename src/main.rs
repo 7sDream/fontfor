@@ -57,11 +57,11 @@ fn main() {
     }
 
     if argument.tui {
-        let ft_library = ft::Library::new().unwrap_or_else(|e| {
+        let mut ft_library = ft::Library::new().unwrap_or_else(|e| {
             eprintln!("init FreeType failed: {}", e);
             exit(2);
         });
-        let ui = UI::new(families, &ft_library).unwrap();
+        let ui = UI::new(argument.char.0, families, &mut ft_library).unwrap();
         ui.show().unwrap_or_else(|err| {
             eprintln!("{:?}", err);
         });

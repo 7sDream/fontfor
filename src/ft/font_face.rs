@@ -29,10 +29,10 @@ pub struct FontFace<'ft> {
 }
 
 impl<'ft> FontFace<'ft> {
-    pub(super) fn new(
-        library: &'ft mut Library, path: &Path, index: ft::FT_Long,
+    pub(super) fn new<'a>(
+        library: &'ft Library, path: &'a Path, index: ft::FT_Long,
     ) -> Result<Self, ft::FT_Error> {
-        // TODO: Test windows path with non-ASCII character
+        // TODO: Test Windows path with non-ASCII character
         let path_str = path.as_os_str().to_str().unwrap();
         let path_c_string = CString::new(path_str).unwrap();
 
@@ -49,12 +49,33 @@ impl<'ft> FontFace<'ft> {
         ret.as_result(Self { face, phantom: PhantomData })
     }
 
+    pub fn set_cell_pixel(
+        &mut self, height: ft::FT_Long, width: ft::FT_Long,
+    ) -> Result<(), ft::FT_Error> {
+        let mut request = ft::FT_Size_RequestRec {
+            type_: ft::FT_Size_Request_Type::FT_SIZE_REQUEST_TYPE_CELL,
+            width: width << 6,
+            height: height << 6,
+            horiResolution: 0,
+            vertResolution: 0,
+        };
+
+        let ret = unsafe { ft::FT_Request_Size(self.face, &mut request as *mut _) };
+
+        ret.as_result(())
+    }
+
     pub fn set_height_pixel(&mut self, height: ft::FT_UInt) -> Result<(), ft::FT_Error> {
         let ret = unsafe { ft::FT_Set_Pixel_Sizes(self.face, 0, height) };
         ret.as_result(())
     }
 
-    pub fn load_char(self, c: char) -> Result<Bitmap<'ft>, ft::FT_Error> {
+    pub fn set_width_pixel(&mut self, width: ft::FT_UInt) -> Result<(), ft::FT_Error> {
+        let ret = unsafe { ft::FT_Set_Pixel_Sizes(self.face, width, 0) };
+        ret.as_result(())
+    }
+
+    pub fn load_char(self, c: char) -> Result<Bitmap<'ft>, (Self, ft::FT_Error)> {
         let ret = unsafe {
             #[allow(clippy::cast_possible_wrap)]
             ft::FT_Load_Char(
@@ -63,6 +84,11 @@ impl<'ft> FontFace<'ft> {
                 ft::FT_LOAD_RENDER as ft::FT_Int,
             )
         };
-        ret.map_result(|| Bitmap::new(self))
+
+        if ret == 0 {
+            Ok(Bitmap::new(self))
+        } else {
+            Err((self, ret))
+        }
     }
 }

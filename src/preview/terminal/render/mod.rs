@@ -17,6 +17,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 mod ascii;
+mod mono;
 mod moon;
 
 use {
@@ -26,11 +27,12 @@ use {
 
 pub use {
     ascii::{AsciiRender, AsciiRenders},
+    mono::MonoRender,
     moon::MoonRender,
 };
 
 #[derive(Clone)]
-pub struct RenderResult(Vec<Vec<char>>);
+pub struct RenderResult(pub Vec<Vec<char>>);
 
 impl Display for RenderResult {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
@@ -44,11 +46,21 @@ impl Display for RenderResult {
     }
 }
 
-pub trait Render<'ft> {
+impl RenderResult {
+    pub fn height(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn width(&self) -> usize {
+        self.0.first().map_or(0, Vec::len)
+    }
+}
+
+pub trait Render: Send {
     #[allow(clippy::too_many_arguments)]
     fn gray_to_char(&self, up: u8, left: u8, gray: u8, right: u8, down: u8) -> char;
 
-    fn render(&self, bitmap: &Bitmap<'ft>) -> RenderResult {
+    fn render(&self, bitmap: &Bitmap) -> RenderResult {
         let m = bitmap.get_metrics();
         let buffer = bitmap.get_buffer();
 

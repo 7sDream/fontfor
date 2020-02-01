@@ -49,7 +49,7 @@ impl AsciiRender {
     }
 }
 
-impl<'lib> Render<'lib> for AsciiRender {
+impl Render for AsciiRender {
     fn gray_to_char(&self, _up: u8, _left: u8, gray: u8, _right: u8, _down: u8) -> char {
         #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
         let index = (f64::from(gray) * self.multiplier).floor() as usize;

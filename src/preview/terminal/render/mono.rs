@@ -16,36 +16,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use {
-    super::{FontFace, FreeTypeError},
-    freetype::freetype as ft,
-    std::{path::Path, ptr},
-};
+use super::Render;
 
-pub struct Library {
-    pub(super) library: ft::FT_Library,
-}
+pub struct MonoRender {}
 
-impl Library {
-    pub fn new() -> Result<Self, i32> {
-        let mut library = ptr::null_mut();
-        let ret = unsafe { ft::FT_Init_FreeType(&mut library as *mut ft::FT_Library) };
-        ret.map_result(|| Self { library })
-    }
-
-    pub fn load_font<P>(&self, path: P, index: ft::FT_Long) -> Result<FontFace, ft::FT_Error>
-    where
-        P: AsRef<Path>,
-    {
-        let path = path.as_ref();
-        FontFace::new(self, path, index)
+impl Default for MonoRender {
+    fn default() -> Self {
+        Self {}
     }
 }
 
-impl Drop for Library {
-    fn drop(&mut self) {
-        unsafe {
-            ft::FT_Done_Library(self.library);
+impl Render for MonoRender {
+    fn gray_to_char(&self, _up: u8, _left: u8, gray: u8, _right: u8, _down: u8) -> char {
+        if gray >= 128 {
+            '#'
+        } else {
+            ' '
         }
     }
 }

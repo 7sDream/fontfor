@@ -16,31 +16,204 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{
-    font::{GetValueByLang, SortedFamilies},
-    ft::Library as FtLibrary,
-    preview::terminal::render::RenderResult,
+use {
+    crate::{
+        font::{GetValueByLang, SortedFamilies},
+        ft::{FontFace as FtFontFace, Library as FtLibrary},
+        preview::terminal::render::{
+            AsciiRender, AsciiRenders, MonoRender, MoonRender, Render, RenderResult,
+        },
+    },
+    once_cell::sync::Lazy,
+    std::{
+        cell::{Cell, RefCell},
+        collections::hash_map::HashMap,
+        rc::Rc,
+    },
 };
 
+#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash)]
+pub enum RenderType {
+    AsciiLevel10,
+    AsciiLevel70,
+    Moon,
+    Mono,
+}
+
+static RENDERS: Lazy<HashMap<RenderType, Box<dyn Render + Sync>>> = Lazy::new(|| {
+    let mut renders: HashMap<RenderType, Box<dyn Render + Sync>> = HashMap::new();
+    renders.insert(RenderType::AsciiLevel10, Box::new(AsciiRender::new(AsciiRenders::Level10)));
+    renders.insert(RenderType::AsciiLevel70, Box::new(AsciiRender::new(AsciiRenders::Level70)));
+    renders.insert(RenderType::Moon, Box::new(MoonRender::new()));
+    renders.insert(RenderType::Mono, Box::new(MonoRender::default()));
+    renders
+});
+
+#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+struct CacheKey(usize, RenderType, u16, u16);
+
 pub struct State<'fc, 'ft> {
-    pub(super) families: SortedFamilies<'fc>,
-    pub(super) names: Vec<&'fc str>,
-    pub(super) name_max_width: usize,
-    pub(super) index: usize,
-    cache: Vec<Option<RenderResult>>,
+    c: char,
+    family_names: Vec<&'fc str>,
+    name_width_max: usize,
+    index: usize,
+    height: Cell<u16>,
+    width: Cell<u16>,
+    rt: RenderType,
+    families: SortedFamilies<'fc>,
+    cache: RefCell<HashMap<CacheKey, Rc<Result<RenderResult, &'static str>>>>,
+    font_faces: Vec<Cell<Option<FtFontFace<'ft>>>>,
     ft: &'ft FtLibrary,
 }
 
 impl<'fc, 'ft> State<'fc, 'ft> {
-    pub fn new(families: SortedFamilies<'fc>, ft: &'ft FtLibrary) -> Self {
-        let name_max_width =
+    pub fn new(c: char, families: SortedFamilies<'fc>, ft: &'ft FtLibrary) -> Self {
+        let name_width_max =
             families.iter().map(|f| f.default_name_width).max().unwrap_or_default();
-        let names = families.iter().map(|f| *f.name.get_default()).collect();
-        let cache = vec![None; families.len()];
-        Self { families, names, index: 0, name_max_width, cache, ft }
+
+        let family_names = families.iter().map(|f| *f.name.get_default()).collect();
+
+        let mut font_faces = Vec::new();
+        for _ in 0..families.len() {
+            font_faces.push(Cell::new(None));
+        }
+
+        let cache = RefCell::default();
+
+        Self {
+            c,
+            family_names,
+            name_width_max,
+            index: 0,
+            height: Cell::new(0),
+            width: Cell::new(0),
+            rt: RenderType::AsciiLevel10,
+            families,
+            cache,
+            font_faces,
+            ft,
+        }
+    }
+
+    fn cache_key(&self) -> CacheKey {
+        CacheKey(self.index, self.rt, self.height.get(), self.width.get())
+    }
+
+    pub fn render(&self) -> Rc<Result<RenderResult, &'static str>> {
+        let key = self.cache_key();
+        self.cache.borrow_mut().entry(key).or_insert_with(|| Rc::new(self.real_render())).clone()
+    }
+
+    fn get_font_face(&self) -> Result<FtFontFace<'ft>, &'static str> {
+        let font_face_slot = self.font_faces.get(self.index).unwrap();
+
+        font_face_slot
+            .take()
+            .ok_or(())
+            .or_else(|_| {
+                let font_info = self.families[self.index].fonts.peek().unwrap();
+                self.ft
+                    .load_font(font_info.path, font_info.index.into())
+                    .map_err(|_| "Can't load current font")
+            })
+            .and_then(|font_face| self.set_font_face_size(font_face))
+    }
+
+    fn return_font_face(&self, font: FtFontFace<'ft>) {
+        let font_face_slot = self.font_faces.get(self.index).unwrap();
+        font_face_slot.set(Some(font));
+    }
+
+    fn set_font_face_size(
+        &self, mut font_face: FtFontFace<'ft>,
+    ) -> Result<FtFontFace<'ft>, &'static str> {
+        let mut height = self.height.get();
+        let mut width = self.width.get();
+
+        if self.rt == RenderType::Moon {
+            width /= 2;
+        }
+
+        if self.rt == RenderType::Mono {
+            width *= 2;
+            height *= 4;
+        }
+
+        font_face
+            .set_cell_pixel(height.into(), width.into())
+            .map(|_| font_face)
+            .map_err(|_| "Current font don't support this size")
+    }
+
+    fn real_render(&self) -> Result<RenderResult, &'static str> {
+        let font_face = self.get_font_face()?;
+
+        match font_face.load_char(self.c) {
+            Ok(bitmap) => {
+                let render = RENDERS.get(&self.rt).unwrap();
+                let result = render.render(&bitmap);
+                self.return_font_face(bitmap.return_font_face());
+                Ok(result)
+            }
+            Err((font, _)) => {
+                self.return_font_face(font);
+                Err("Can't get glyph info from current font")
+            }
+        }
     }
 
     pub fn current_name(&self) -> &'fc str {
-        self.names[self.index]
+        self.family_names[self.index]
+    }
+
+    pub const fn name_width_max(&self) -> usize {
+        self.name_width_max
+    }
+
+    pub const fn family_names(&self) -> &Vec<&'fc str> {
+        &self.family_names
+    }
+
+    pub const fn index(&self) -> usize {
+        self.index
+    }
+
+    pub fn move_up(&mut self) {
+        self.index = self.index.saturating_sub(1);
+    }
+
+    pub fn move_down(&mut self) {
+        self.index = self.index.saturating_add(1).min(self.family_names.len().saturating_sub(1))
+    }
+
+    pub const fn get_render_type(&self) -> &RenderType {
+        &self.rt
+    }
+
+    pub fn next_render_type(&mut self) {
+        self.rt = match self.rt {
+            RenderType::AsciiLevel10 => RenderType::AsciiLevel70,
+            RenderType::AsciiLevel70 => RenderType::Moon,
+            RenderType::Moon => RenderType::Mono,
+            RenderType::Mono => RenderType::AsciiLevel10,
+        }
+    }
+
+    pub fn prev_render_type(&mut self) {
+        self.rt = match self.rt {
+            RenderType::AsciiLevel10 => RenderType::Mono,
+            RenderType::AsciiLevel70 => RenderType::AsciiLevel10,
+            RenderType::Moon => RenderType::AsciiLevel70,
+            RenderType::Mono => RenderType::Moon,
+        }
+    }
+
+    pub fn update_rect(&self, width: u16, height: u16) {
+        self.width.replace(width);
+        self.height.replace(height);
+    }
+
+    pub fn get_rect(&self) -> (u16, u16) {
+        (self.width.get(), self.height.get())
     }
 }

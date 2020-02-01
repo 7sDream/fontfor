@@ -26,15 +26,15 @@ pub struct Metrics {
 }
 
 pub struct Bitmap<'ft> {
-    face: FontFace<'ft>,
+    font_face: FontFace<'ft>,
     metrics: Metrics,
     bitmap: &'static [u8],
 }
 
 impl<'ft> Bitmap<'ft> {
     #[allow(unused_mut)]
-    pub(super) fn new(mut face: FontFace<'ft>) -> Self {
-        let face_rec = unsafe { &*face.face };
+    pub(super) fn new(mut font_face: FontFace<'ft>) -> Self {
+        let face_rec = unsafe { &*font_face.face };
         let glyph = unsafe { &*face_rec.glyph };
         let left = glyph.bitmap_left;
         let top = glyph.bitmap_top;
@@ -42,11 +42,11 @@ impl<'ft> Bitmap<'ft> {
         let height = glyph.bitmap.rows;
         let size = (width * height) as usize;
         let bitmap = unsafe { std::slice::from_raw_parts(glyph.bitmap.buffer, size) };
-        Self { face, metrics: Metrics { left, top, height, width }, bitmap }
+        Self { font_face, metrics: Metrics { left, top, height, width }, bitmap }
     }
 
-    pub const fn return_face(self) -> FontFace<'ft> {
-        self.face
+    pub const fn return_font_face(self) -> FontFace<'ft> {
+        self.font_face
     }
 
     pub const fn get_metrics(&self) -> &Metrics {
