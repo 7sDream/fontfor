@@ -39,6 +39,7 @@ use {
     tui::{
         backend::CrosstermBackend,
         layout::{Alignment, Constraint, Direction, Layout, Rect},
+        style::{Color, Modifier, Style},
         terminal::{Frame, Terminal},
         widgets::{canvas::Canvas, Block, Borders, Paragraph, SelectableList, Text, Widget},
     },
@@ -51,6 +52,7 @@ enum OnEventResult {
 }
 
 pub struct UI<'fc, 'ft> {
+    idle_redraw: u8,
     state: State<'fc, 'ft>,
 }
 
@@ -58,7 +60,7 @@ pub struct UI<'fc, 'ft> {
 impl<'fc, 'ft> UI<'fc, 'ft> {
     pub fn new(c: char, families: SortedFamilies<'fc>, ft: &'ft mut FtLibrary) -> Option<Self> {
         if families.len() > 0 {
-            Some(Self { state: State::new(c, families, ft) })
+            Some(Self { state: State::new(c, families, ft), idle_redraw: 0 })
         } else {
             None
         }
@@ -68,11 +70,15 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
     where
         B: tui::backend::Backend,
     {
+        let families = self.state.family_names();
+        let index = self.state.index();
+        let title = format!("Fonts {}/{}", index + 1, families.len());
+
         SelectableList::default()
-            .block(Block::default().title("Fonts").borders(Borders::ALL))
-            .items(self.state.family_names())
-            .select(Some(self.state.index()))
-            .highlight_symbol(">>")
+            .block(Block::default().title(&title).borders(Borders::ALL))
+            .items(families)
+            .select(Some(index))
+            .highlight_style(Style::default().fg(Color::LightBlue).modifier(Modifier::BOLD))
             .render(f, area);
     }
 
@@ -83,9 +89,10 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         let result = self.state.render();
 
         if self.state.get_render_type() == &RenderType::Mono && result.is_ok() {
-            let (canvas_width, canvas_height) = self.state.get_rect();
-            let canvas_width = f64::from(canvas_width) * 2.0;
-            let canvas_height = f64::from(canvas_height) * 4.0;
+            // Mono render to canvas
+            let (canvas_width, canvas_height) = self.state.get_char_pixel_cell();
+            let canvas_width = f64::from(canvas_width);
+            let canvas_height = f64::from(canvas_height);
             Canvas::default()
                 .block(Block::default().title("Preview").borders(Borders::ALL))
                 .x_bounds([0.0, canvas_width - 1.0])
@@ -97,7 +104,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
                 })
                 .render(f, area);
         } else {
-            // Mono render to canvas
+            // Others render to paragraph
             let (height, result) = match result.as_ref() {
                 Ok(result) => (result.height(), result.to_string()),
                 Err(err) => (err.lines().count(), (*err).to_string()),
@@ -111,23 +118,115 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
             Paragraph::new(texts.iter())
                 .block(Block::default().title("Preview").borders(Borders::ALL))
                 .alignment(Alignment::Center)
+                .style(Style::default().fg(Color::Reset).modifier(Modifier::BOLD))
                 .wrap(false)
                 .render(f, area);
         }
     }
 
-    fn draw_info<B>(&self, area: Rect, f: &mut Frame<B>)
+    #[allow(clippy::too_many_arguments)]
+    fn generate_help_text<'a>(key: &'a str, help: &'a str) -> Vec<Text<'a>> {
+        vec![
+            Text::styled(key, Style::default().fg(Color::Cyan).modifier(Modifier::BOLD)),
+            Text::raw(": "),
+            Text::styled(help, Style::default().fg(Color::Blue).modifier(Modifier::BOLD)),
+        ]
+    }
+
+    fn draw_status_bar_info<B>(&self, area: Rect, f: &mut Frame<B>)
     where
         B: tui::backend::Backend,
     {
-        let mut texts = Vec::new();
-        texts.push(Text::raw(format!("Font: {}", self.state.current_name())));
-        texts.push(Text::raw(" | "));
-        texts.push(Text::raw(format!("Mode: {:?}", self.state.get_render_type())));
+        let cols = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(65), Constraint::Percentage(35)].as_ref())
+            .split(area);
+
+        let name = cols[0];
+        let mode = cols[1];
+
+        let texts = vec![
+            Text::styled("Font Face", Style::default().fg(Color::Green)),
+            Text::raw(": "),
+            Text::styled(
+                self.state.current_name(),
+                Style::default().fg(Color::Blue).modifier(Modifier::BOLD),
+            ),
+        ];
         Paragraph::new(texts.iter())
-            .block(Block::default().title("info").borders(Borders::ALL))
+            .block(Block::default().title("Info").borders(Borders::TOP | Borders::LEFT))
+            .alignment(Alignment::Left)
             .wrap(false)
-            .render(f, area);
+            .render(f, name);
+
+        let texts = vec![
+            Text::styled("Render Mode", Style::default().fg(Color::Green)),
+            Text::raw(": "),
+            Text::styled(
+                format!("{:?}", self.state.get_render_type()),
+                Style::default().fg(Color::Blue).modifier(Modifier::BOLD),
+            ),
+        ];
+        Paragraph::new(texts.iter())
+            .block(Block::default().borders(Borders::TOP | Borders::RIGHT))
+            .alignment(Alignment::Right)
+            .wrap(false)
+            .render(f, mode);
+    }
+
+    fn draw_status_bar_help<B>(&self, area: Rect, f: &mut Frame<B>)
+    where
+        B: tui::backend::Backend,
+    {
+        let cols = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(
+                [Constraint::Ratio(2, 5), Constraint::Ratio(2, 5), Constraint::Ratio(1, 5)]
+                    .as_ref(),
+            )
+            .split(area);
+
+        let mut list_help = Self::generate_help_text("[Up]", "Prev Font ");
+        list_help.append(&mut Self::generate_help_text("[Down]", "Next Font"));
+
+        let mut mode_help = Self::generate_help_text("[Left]", "Prev Mode ");
+        mode_help.append(&mut Self::generate_help_text("[Right]", "Next Font"));
+
+        let quit_help = Self::generate_help_text("[Q]", "Quit");
+
+        Paragraph::new(list_help.iter())
+            .block(Block::default().borders(Borders::BOTTOM | Borders::LEFT))
+            .alignment(Alignment::Left)
+            .wrap(false)
+            .render(f, cols[0]);
+
+        Paragraph::new(mode_help.iter())
+            .block(Block::default().borders(Borders::BOTTOM))
+            .alignment(Alignment::Center)
+            .wrap(false)
+            .render(f, cols[1]);
+
+        Paragraph::new(quit_help.iter())
+            .block(Block::default().borders(Borders::BOTTOM | Borders::RIGHT))
+            .alignment(Alignment::Right)
+            .wrap(false)
+            .render(f, cols[2]);
+    }
+
+    fn draw_status_bar<B>(&self, area: Rect, f: &mut Frame<B>)
+    where
+        B: tui::backend::Backend,
+    {
+        let rows = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(2), Constraint::Length(2)].as_ref())
+            .split(area);
+
+        let info = rows[0];
+        let help = rows[1];
+
+        self.draw_status_bar_info(info, f);
+        self.draw_status_bar_help(help, f);
     }
 
     fn draw<B>(&self, f: &mut Frame<B>)
@@ -136,14 +235,14 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
     {
         let layout = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Min(24), Constraint::Length(3)].as_ref())
+            .constraints([Constraint::Min(3), Constraint::Length(4)].as_ref())
             .split(f.size());
 
         let main = layout[0];
-        let info = layout[1];
+        let status_bar = layout[1];
 
         #[allow(clippy::cast_possible_truncation)] // never truncation because we `min` with 24
-        let list_width = self.state.name_width_max().min(24) as u16;
+        let list_width = self.state.name_width_max().min(32) as u16;
 
         let main = Layout::default()
             .direction(Direction::Horizontal)
@@ -153,19 +252,34 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         let list = main[0];
         let canvas = main[1];
 
-        let width = canvas.width.saturating_sub(2);
-        let height = canvas.height.saturating_sub(2);
-        self.state.update_rect(width, height);
+        let mut width = u32::from(canvas.width.saturating_sub(2));
+        let mut height = u32::from(canvas.height.saturating_sub(2));
+        let rt = self.state.get_render_type();
+        if rt == &RenderType::Moon {
+            width /= 2;
+        } else if rt == &RenderType::Mono {
+            width = width.saturating_mul(2);
+            height = height.saturating_mul(4);
+        }
+
+        self.state.update_char_pixel_cell(width, height);
 
         self.draw_list(list, f);
         self.draw_canvas(canvas, f);
-        self.draw_info(info, f);
+        self.draw_status_bar(status_bar, f);
     }
 
     #[allow(clippy::unused_self)]
     fn on_event(&mut self, event: CTResult<TerminalEvent>) -> CTResult<OnEventResult> {
         match event? {
-            TerminalEvent::Tick => Ok(OnEventResult::Continue),
+            TerminalEvent::Tick => {
+                self.idle_redraw += 1;
+                Ok(if self.idle_redraw == 10 {
+                    OnEventResult::Continue
+                } else {
+                    OnEventResult::ReDraw
+                })
+            }
             TerminalEvent::Key(key) => {
                 if key.modifiers.contains(CtKM::ALT) || key.modifiers.contains(CtKM::CONTROL) {
                     Ok(OnEventResult::Continue)
@@ -174,18 +288,22 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
                         CtKeyCode::Char('q') => Ok(OnEventResult::Exit),
                         CtKeyCode::Up | CtKeyCode::Char('k') => {
                             self.state.move_up();
+                            self.idle_redraw = 0;
                             Ok(OnEventResult::ReDraw)
                         }
                         CtKeyCode::Down | CtKeyCode::Char('j') => {
                             self.state.move_down();
+                            self.idle_redraw = 0;
                             Ok(OnEventResult::ReDraw)
                         }
                         CtKeyCode::Left | CtKeyCode::Char('h') => {
                             self.state.prev_render_type();
+                            self.idle_redraw = 0;
                             Ok(OnEventResult::ReDraw)
                         }
                         CtKeyCode::Right | CtKeyCode::Char('l') => {
                             self.state.next_render_type();
+                            self.idle_redraw = 0;
                             Ok(OnEventResult::ReDraw)
                         }
                         _ => Ok(OnEventResult::Continue),

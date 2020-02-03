@@ -18,7 +18,7 @@
 
 use {
     crate::{
-        font::{GetValueByLang, SortedFamilies},
+        font::{Font, GetValueByLang, SortedFamilies},
         ft::{FontFace as FtFontFace, Library as FtLibrary},
         preview::terminal::render::{
             AsciiRender, AsciiRenders, MonoRender, MoonRender, Render, RenderResult,
@@ -50,17 +50,17 @@ static RENDERS: Lazy<HashMap<RenderType, Box<dyn Render + Sync>>> = Lazy::new(||
 });
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-struct CacheKey(usize, RenderType, u16, u16);
+struct CacheKey(usize, RenderType, u32, u32);
 
 pub struct State<'fc, 'ft> {
     c: char,
-    family_names: Vec<&'fc str>,
+    font_faces_info: Vec<Font<'fc>>,
+    font_faces_name: Vec<&'fc str>,
     name_width_max: usize,
     index: usize,
-    height: Cell<u16>,
-    width: Cell<u16>,
+    height: Cell<u32>,
+    width: Cell<u32>,
     rt: RenderType,
-    families: SortedFamilies<'fc>,
     cache: RefCell<HashMap<CacheKey, Rc<Result<RenderResult, &'static str>>>>,
     font_faces: Vec<Cell<Option<FtFontFace<'ft>>>>,
     ft: &'ft FtLibrary,
@@ -68,13 +68,14 @@ pub struct State<'fc, 'ft> {
 
 impl<'fc, 'ft> State<'fc, 'ft> {
     pub fn new(c: char, families: SortedFamilies<'fc>, ft: &'ft FtLibrary) -> Self {
-        let name_width_max =
-            families.iter().map(|f| f.default_name_width).max().unwrap_or_default();
-
-        let family_names = families.iter().map(|f| *f.name.get_default()).collect();
+        let font_faces_info: Vec<_> =
+            families.into_iter().flat_map(|f| f.fonts.into_iter().map(|r| r.0)).collect();
+        let font_faces_name: Vec<_> =
+            font_faces_info.iter().map(|f| *f.fullnames.get_default()).collect();
+        let name_width_max = font_faces_name.iter().map(|f| f.len()).max().unwrap_or_default();
 
         let mut font_faces = Vec::new();
-        for _ in 0..families.len() {
+        for _ in 0..font_faces_info.len() {
             font_faces.push(Cell::new(None));
         }
 
@@ -82,13 +83,13 @@ impl<'fc, 'ft> State<'fc, 'ft> {
 
         Self {
             c,
-            family_names,
+            font_faces_info,
+            font_faces_name,
             name_width_max,
             index: 0,
             height: Cell::new(0),
             width: Cell::new(0),
             rt: RenderType::AsciiLevel10,
-            families,
             cache,
             font_faces,
             ft,
@@ -111,7 +112,7 @@ impl<'fc, 'ft> State<'fc, 'ft> {
             .take()
             .ok_or(())
             .or_else(|_| {
-                let font_info = self.families[self.index].fonts.peek().unwrap();
+                let font_info = &self.font_faces_info[self.index];
                 self.ft
                     .load_font(font_info.path, font_info.index.into())
                     .map_err(|_| "Can't load current font")
@@ -127,17 +128,8 @@ impl<'fc, 'ft> State<'fc, 'ft> {
     fn set_font_face_size(
         &self, mut font_face: FtFontFace<'ft>,
     ) -> Result<FtFontFace<'ft>, &'static str> {
-        let mut height = self.height.get();
-        let mut width = self.width.get();
-
-        if self.rt == RenderType::Moon {
-            width /= 2;
-        }
-
-        if self.rt == RenderType::Mono {
-            width *= 2;
-            height *= 4;
-        }
+        let height = self.height.get();
+        let width = self.width.get();
 
         font_face
             .set_cell_pixel(height.into(), width.into())
@@ -163,7 +155,7 @@ impl<'fc, 'ft> State<'fc, 'ft> {
     }
 
     pub fn current_name(&self) -> &'fc str {
-        self.family_names[self.index]
+        self.font_faces_name[self.index]
     }
 
     pub const fn name_width_max(&self) -> usize {
@@ -171,7 +163,7 @@ impl<'fc, 'ft> State<'fc, 'ft> {
     }
 
     pub const fn family_names(&self) -> &Vec<&'fc str> {
-        &self.family_names
+        &self.font_faces_name
     }
 
     pub const fn index(&self) -> usize {
@@ -183,7 +175,7 @@ impl<'fc, 'ft> State<'fc, 'ft> {
     }
 
     pub fn move_down(&mut self) {
-        self.index = self.index.saturating_add(1).min(self.family_names.len().saturating_sub(1))
+        self.index = self.index.saturating_add(1).min(self.font_faces_name.len().saturating_sub(1))
     }
 
     pub const fn get_render_type(&self) -> &RenderType {
@@ -208,12 +200,12 @@ impl<'fc, 'ft> State<'fc, 'ft> {
         }
     }
 
-    pub fn update_rect(&self, width: u16, height: u16) {
+    pub fn update_char_pixel_cell(&self, width: u32, height: u32) {
         self.width.replace(width);
         self.height.replace(height);
     }
 
-    pub fn get_rect(&self) -> (u16, u16) {
+    pub fn get_char_pixel_cell(&self) -> (u32, u32) {
         (self.width.get(), self.height.get())
     }
 }

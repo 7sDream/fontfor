@@ -19,7 +19,7 @@
 use {
     super::fc::{FontInfo, FontSet, StrValuesByLang, ValuesByLang},
     std::{
-        cmp::Ordering,
+        cmp::{Ordering, Reverse},
         collections::{BinaryHeap, HashMap},
         convert::TryFrom,
         ops::Deref,
@@ -60,7 +60,7 @@ impl<'a, T> GetValueByLang for ValuesByLang<'a, T> {
 
 pub struct Family<'fs> {
     pub name: StrValuesByLang<'fs>,
-    pub fonts: BinaryHeap<Font<'fs>>,
+    pub fonts: BinaryHeap<Reverse<Font<'fs>>>,
     pub default_name_width: usize,
 }
 
@@ -76,7 +76,7 @@ impl<'fs> Family<'fs> {
     }
 
     pub fn add_font(&mut self, font: Font<'fs>) -> &mut Self {
-        self.fonts.push(font);
+        self.fonts.push(Reverse(font));
         self
     }
 }

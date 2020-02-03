@@ -33,7 +33,7 @@ use std::process::exit;
 use {
     font::{GetValueByLang, SortedFamilies},
     preview::{browser::ServerBuilder as PreviewServerBuilder, terminal::ui::UI},
-    std::{io::Write, iter::FromIterator},
+    std::{cmp::Reverse, io::Write, iter::FromIterator},
 };
 
 #[allow(clippy::too_many_lines)]
@@ -101,11 +101,11 @@ fn show_font_list(families: SortedFamilies, verbose: bool) {
         families.iter().map(|f| f.default_name_width).max().unwrap_or_default()
     };
 
-    families.into_iter().for_each(|family| {
+    families.into_iter().for_each(|mut family| {
         if verbose {
             println!("{}", family.name.get_default());
-            for font in family.fonts.into_sorted_vec() {
-                println!("    {}", font.fullnames.get_default());
+            while let Some(Reverse(face)) = family.fonts.pop() {
+                println!("    {}", face.fullnames.get_default());
             }
         } else {
             println!(
