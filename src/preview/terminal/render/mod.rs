@@ -60,26 +60,20 @@ pub trait Render: Send {
     #[allow(clippy::too_many_arguments)]
     fn gray_to_char(&self, up: u8, left: u8, gray: u8, right: u8, down: u8) -> char;
 
-    fn render(&self, bitmap: &Bitmap) -> RenderResult {
-        let m = bitmap.get_metrics();
-        let buffer = bitmap.get_buffer();
+    fn render(&self, bm: &Bitmap) -> RenderResult {
+        let m = bm.get_metrics();
 
         RenderResult(
             (0..m.height)
                 .map(|row| {
                     (0..m.width)
                         .map(move |col| {
-                            let index = (row * m.width + col) as usize;
-                            let gray = buffer[index];
+                            let gray = bm.get_pixel(row, col);
 
-                            let l = if col > 0 { buffer[index - 1] } else { 0 };
-                            let r = if col < m.width - 1 { buffer[index + 1] } else { 0 };
-                            let u = if row > 0 { buffer[index - m.width as usize] } else { 0 };
-                            let d = if row < m.height - 1 {
-                                buffer[index + m.width as usize]
-                            } else {
-                                0
-                            };
+                            let l = if col > 0 { bm.get_pixel(row, col - 1) } else { 0 };
+                            let r = if col < m.width - 1 { bm.get_pixel(row, col + 1) } else { 0 };
+                            let u = if row > 0 { bm.get_pixel(row - 1, col) } else { 0 };
+                            let d = if row < m.height - 1 { bm.get_pixel(row + 1, col) } else { 0 };
 
                             self.gray_to_char(u, l, gray, r, d)
                         })

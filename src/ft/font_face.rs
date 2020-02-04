@@ -75,14 +75,15 @@ impl<'ft> FontFace<'ft> {
         ret.as_result(())
     }
 
-    pub fn load_char(self, c: char) -> Result<Bitmap<'ft>, (Self, ft::FT_Error)> {
+    pub fn load_char(self, c: char, mono: bool) -> Result<Bitmap<'ft>, (Self, ft::FT_Error)> {
+        let mut flag = ft::FT_LOAD_RENDER as ft::FT_Int;
+        if mono {
+            flag |= ft::FT_LOAD_MONOCHROME as ft::FT_Int;
+        }
+        let c = ft::FT_ULong::from(u32::from(c));
         let ret = unsafe {
             #[allow(clippy::cast_possible_wrap)]
-            ft::FT_Load_Char(
-                self.face,
-                ft::FT_ULong::from(u32::from(c)),
-                ft::FT_LOAD_RENDER as ft::FT_Int,
-            )
+            ft::FT_Load_Char(self.face, c, flag)
         };
 
         if ret == 0 {

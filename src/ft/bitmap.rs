@@ -27,6 +27,8 @@ pub struct Metrics {
 
 pub struct Bitmap<'ft> {
     font_face: FontFace<'ft>,
+    pixel_mode: u8,
+    pitch: u32,
     metrics: Metrics,
     bitmap: &'static [u8],
 }
@@ -40,9 +42,11 @@ impl<'ft> Bitmap<'ft> {
         let top = glyph.bitmap_top;
         let width = glyph.bitmap.width;
         let height = glyph.bitmap.rows;
-        let size = (width * height) as usize;
+        let pixel_mode = glyph.bitmap.pixel_mode;
+        let pitch = glyph.bitmap.pitch.abs() as u32;
+        let size = (pitch * height) as usize;
         let bitmap = unsafe { std::slice::from_raw_parts(glyph.bitmap.buffer, size) };
-        Self { font_face, metrics: Metrics { left, top, height, width }, bitmap }
+        Self { font_face, pixel_mode, pitch, metrics: Metrics { left, top, height, width }, bitmap }
     }
 
     pub const fn return_font_face(self) -> FontFace<'ft> {
@@ -53,7 +57,21 @@ impl<'ft> Bitmap<'ft> {
         &self.metrics
     }
 
-    pub const fn get_buffer(&self) -> &[u8] {
-        self.bitmap
+    pub fn get_pixel(&self, row: u32, col: u32) -> u8 {
+        if u32::from(self.pixel_mode) == ft::FT_Pixel_Mode::FT_PIXEL_MODE_MONO as u32 {
+            let index = (row * self.pitch + col / 8) as usize;
+            #[allow(clippy::cast_possible_truncation)] // because we mod with 8 so result us 0 - 7
+            let bit_pos = (col % 8) as u8;
+            let gray = self.bitmap[index];
+            let mask = 0b_1000_0000 >> (bit_pos);
+            if gray & mask == 0 {
+                u8::min_value()
+            } else {
+                u8::max_value()
+            }
+        } else {
+            let index = (row * self.pitch + col) as usize;
+            self.bitmap[index]
+        }
     }
 }

@@ -28,7 +28,7 @@ impl Default for MonoRender {
 
 impl Render for MonoRender {
     fn gray_to_char(&self, _up: u8, _left: u8, gray: u8, _right: u8, _down: u8) -> char {
-        if gray >= 128 {
+        if gray == u8::max_value() {
             '#'
         } else {
             ' '

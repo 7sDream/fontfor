@@ -140,7 +140,7 @@ impl<'fc, 'ft> State<'fc, 'ft> {
     fn real_render(&self) -> Result<RenderResult, &'static str> {
         let font_face = self.get_font_face()?;
 
-        match font_face.load_char(self.c) {
+        match font_face.load_char(self.c, self.rt == RenderType::Mono) {
             Ok(bitmap) => {
                 let render = RENDERS.get(&self.rt).unwrap();
                 let result = render.render(&bitmap);

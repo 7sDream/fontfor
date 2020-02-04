@@ -275,9 +275,9 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
             TerminalEvent::Tick => {
                 self.idle_redraw += 1;
                 Ok(if self.idle_redraw == 10 {
-                    OnEventResult::Continue
-                } else {
                     OnEventResult::ReDraw
+                } else {
+                    OnEventResult::Continue
                 })
             }
             TerminalEvent::Key(key) => {
@@ -288,22 +288,18 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
                         CtKeyCode::Char('q') => Ok(OnEventResult::Exit),
                         CtKeyCode::Up | CtKeyCode::Char('k') => {
                             self.state.move_up();
-                            self.idle_redraw = 0;
                             Ok(OnEventResult::ReDraw)
                         }
                         CtKeyCode::Down | CtKeyCode::Char('j') => {
                             self.state.move_down();
-                            self.idle_redraw = 0;
                             Ok(OnEventResult::ReDraw)
                         }
                         CtKeyCode::Left | CtKeyCode::Char('h') => {
                             self.state.prev_render_type();
-                            self.idle_redraw = 0;
                             Ok(OnEventResult::ReDraw)
                         }
                         CtKeyCode::Right | CtKeyCode::Char('l') => {
                             self.state.next_render_type();
-                            self.idle_redraw = 0;
                             Ok(OnEventResult::ReDraw)
                         }
                         _ => Ok(OnEventResult::Continue),
@@ -332,6 +328,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         Ok(())
     }
 
+    #[allow(clippy::match_same_arms)]
     pub fn show(mut self) -> CTResult<()> {
         let mut terminal = Self::setup()?;
 
@@ -348,6 +345,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
                 Ok(result) => match result {
                     OnEventResult::ReDraw => {
                         terminal.draw(|mut f| self.draw(&mut f))?;
+                        self.idle_redraw = 0;
                     }
                     OnEventResult::Continue => (),
                     OnEventResult::Exit => {
