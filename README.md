@@ -7,8 +7,8 @@ Find fonts which can show a specified character and preview them in browser.
 This is port from my early python script called [which_fonts_support][which_fonts_support-github], but with some improvements:
 
 - Write in Rust, safe and faster
-- Use `fontconfig` library instead of depends on `fc-list` command installed
-- Support preview in shell, no GUI or browser needed (in plan)
+- Use [`Fontconfig`][fontconfig-home] library instead of depends on `fc-list` command installed
+- Support preview in shell (powered by [`FreeType`][free-type-home]), no browser needed
 
 ## Install or Update
 
@@ -71,6 +71,24 @@ Add `-p` flag to enable browser preview:
 
 ![browser-preview-screenshot]
 
+### Preview in Shell
+
+Add `-t` flag to enter tui mode for preview in shell:
+
+![tui-mono-mode]
+
+And you can change render mode to ASCII(10 Level):
+
+![tui-ascii-10-mode]
+
+ASCII(70 Level):
+
+![tui-ascii-70-mode]
+
+Or [`moon-render`][moon-render-github] mode:
+
+![tui-moon-mode]
+
 ## LICENSE
 
 GPLv3 or later.
@@ -79,7 +97,14 @@ See [COPYING][COPYING-file].
 
 [license-badge]: https://img.shields.io/crates/l/fontfor?style=flat-square
 [version-badge]: https://img.shields.io/crates/v/fontfor?style=flat-square
+[fontconfig-home]: https://www.freedesktop.org/wiki/Software/fontconfig/
+[free-type-home]: https://www.freetype.org/
 [which_fonts_support-github]: https://github.com/7sDream/which_fonts_support
 [verbose-mode-screenshot]: https://rikka.7sdre.am/files/22ea7500-525b-47ba-9c4e-6ef963999983.png
 [browser-preview-screenshot]: https://rikka.7sdre.am/files/81994541-9e44-4e96-827f-ddc960c03b26.png
+[tui-mono-mode]: https://rikka.7sdre.am/files/c7a7a685-3966-4fb4-8e9e-0cc53636e406.png
+[tui-ascii-10-mode]: https://rikka.7sdre.am/files/77d4b267-00e4-4ab2-abe3-dc0569769566.png
+[tui-ascii-70-mode]: https://rikka.7sdre.am/files/59262531-7d4c-4228-be2f-3149c14c86d2.png
+[tui-moon-mode]: https://rikka.7sdre.am/files/8128a291-27a7-42bd-813e-1136f971cdb3.png
+[moon-render-github]: https://github.com/7sDream/moon-render
 [COPYING-file]: https://github.com/7sDream/fontfor/blob/master/COPYING
