@@ -1,6 +1,6 @@
 # Changelog
 
-## WIP
+## 0.2.0
 
 - Add TUI Mode for preview font directly in Terminal
 
