@@ -173,7 +173,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
             .render(f, mode);
     }
 
-    fn draw_status_bar_help<B>(&self, area: Rect, f: &mut Frame<B>)
+    fn draw_status_bar_help<B>(area: Rect, f: &mut Frame<B>)
     where
         B: tui::backend::Backend,
     {
@@ -189,7 +189,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         list_help.append(&mut Self::generate_help_text("[Down]", "Next Font"));
 
         let mut mode_help = Self::generate_help_text("[Left]", "Prev Mode ");
-        mode_help.append(&mut Self::generate_help_text("[Right]", "Next Font"));
+        mode_help.append(&mut Self::generate_help_text("[Right]", "Next Mode"));
 
         let quit_help = Self::generate_help_text("[Q]", "Quit");
 
@@ -225,7 +225,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         let help = rows[1];
 
         self.draw_status_bar_info(info, f);
-        self.draw_status_bar_help(help, f);
+        Self::draw_status_bar_help(help, f);
     }
 
     fn draw<B>(&self, f: &mut Frame<B>)

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+- Fix tui help text typo
+
 ## 0.2.0
 
 - Add TUI Mode for preview font directly in Terminal
