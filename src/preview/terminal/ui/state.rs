@@ -89,7 +89,7 @@ impl<'fc, 'ft> State<'fc, 'ft> {
             index: 0,
             height: Cell::new(0),
             width: Cell::new(0),
-            rt: RenderType::AsciiLevel10,
+            rt: RenderType::Mono,
             cache,
             font_faces,
             ft,
