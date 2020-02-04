@@ -180,7 +180,7 @@ impl SingleThread {
         }
     }
 
-    #[allow(clippy::needless_pass_by_value)]
+    #[allow(clippy::needless_pass_by_value)] // channel is designed to be used like this
     fn server(
         addr_tx: Sender<SocketAddr>, exit_rx: Receiver<()>, content: String,
     ) -> Result<(), IOError> {

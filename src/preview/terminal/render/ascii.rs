@@ -24,9 +24,7 @@ static LEVEL70RAMP: &str =
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub enum AsciiRenders {
-    #[allow(dead_code)] // TODO: delete this
     Level10,
-    #[allow(dead_code)] // TODO: delete this
     Level70,
 }
 
@@ -43,7 +41,7 @@ impl AsciiRender {
         };
         let ramp: Vec<_> = s.chars().collect();
         let level = ramp.len();
-        #[allow(clippy::cast_precision_loss)]
+        #[allow(clippy::cast_precision_loss)] // max level is 70, small enough
         let multiplier = (level as f64) / (f64::from(u8::max_value()) + 1.0);
         Self { ramp, multiplier }
     }
@@ -51,7 +49,8 @@ impl AsciiRender {
 
 impl Render for AsciiRender {
     fn gray_to_char(&self, _up: u8, _left: u8, gray: u8, _right: u8, _down: u8) -> char {
-        #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+        #[allow(clippy::cast_sign_loss)] // gray and multiplier both positive
+        #[allow(clippy::cast_possible_truncation)] // result small then ramp's length(usize)
         let index = (f64::from(gray) * self.multiplier).floor() as usize;
         self.ramp[index]
     }

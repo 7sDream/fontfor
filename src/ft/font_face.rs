@@ -54,7 +54,7 @@ impl<'ft> FontFace<'ft> {
     ) -> Result<(), ft::FT_Error> {
         let mut request = ft::FT_Size_RequestRec {
             type_: ft::FT_Size_Request_Type::FT_SIZE_REQUEST_TYPE_CELL,
-            width: width << 6,
+            width: width << 6, // This FreeType API accept number in 26.6 fixed float format
             height: height << 6,
             horiResolution: 0,
             vertResolution: 0,
@@ -65,25 +65,31 @@ impl<'ft> FontFace<'ft> {
         ret.as_result(())
     }
 
+    #[allow(dead_code)]
     pub fn set_height_pixel(&mut self, height: ft::FT_UInt) -> Result<(), ft::FT_Error> {
         let ret = unsafe { ft::FT_Set_Pixel_Sizes(self.face, 0, height) };
         ret.as_result(())
     }
 
+    #[allow(dead_code)]
     pub fn set_width_pixel(&mut self, width: ft::FT_UInt) -> Result<(), ft::FT_Error> {
         let ret = unsafe { ft::FT_Set_Pixel_Sizes(self.face, width, 0) };
         ret.as_result(())
     }
 
+    // FreeType's Load_Char API with render mode will change the glyph slot in `Face`, the result
+    // `Bitmap` object can only be used before another call of load_char itself. So we consume self
+    // and move it into the result `Bitmap`, which has an `return_face` method will consume itself
+    // and return the `Face` to you.
     pub fn load_char(self, c: char, mono: bool) -> Result<Bitmap<'ft>, (Self, ft::FT_Error)> {
-        let mut flag = ft::FT_LOAD_RENDER as ft::FT_Int;
+        let mut flag = ft::FT_LOAD_RENDER;
         if mono {
-            flag |= ft::FT_LOAD_MONOCHROME as ft::FT_Int;
+            flag |= ft::FT_LOAD_MONOCHROME;
         }
         let c = ft::FT_ULong::from(u32::from(c));
         let ret = unsafe {
-            #[allow(clippy::cast_possible_wrap)]
-            ft::FT_Load_Char(self.face, c, flag)
+            #[allow(clippy::cast_possible_wrap)] // flag enum value is small enough
+            ft::FT_Load_Char(self.face, c, flag as ft::FT_Int)
         };
 
         if ret == 0 {

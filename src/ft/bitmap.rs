@@ -34,8 +34,7 @@ pub struct Bitmap<'ft> {
 }
 
 impl<'ft> Bitmap<'ft> {
-    #[allow(unused_mut)]
-    pub(super) fn new(mut font_face: FontFace<'ft>) -> Self {
+    pub(super) fn new(font_face: FontFace<'ft>) -> Self {
         let face_rec = unsafe { &*font_face.face };
         let glyph = unsafe { &*face_rec.glyph };
         let left = glyph.bitmap_left;

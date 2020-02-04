@@ -45,6 +45,7 @@ use {
     },
 };
 
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 enum OnEventResult {
     ReDraw,
     Continue,
@@ -56,7 +57,6 @@ pub struct UI<'fc, 'ft> {
     state: State<'fc, 'ft>,
 }
 
-#[allow(clippy::unused_self)] // TODO: use them
 impl<'fc, 'ft> UI<'fc, 'ft> {
     pub fn new(c: char, families: SortedFamilies<'fc>, ft: &'ft mut FtLibrary) -> Option<Self> {
         if families.len() > 0 {
@@ -124,7 +124,6 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         }
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn generate_help_text<'a>(key: &'a str, help: &'a str) -> Vec<Text<'a>> {
         vec![
             Text::styled(key, Style::default().fg(Color::Cyan).modifier(Modifier::BOLD)),
@@ -269,7 +268,6 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         self.draw_status_bar(status_bar, f);
     }
 
-    #[allow(clippy::unused_self)]
     fn on_event(&mut self, event: CTResult<TerminalEvent>) -> CTResult<OnEventResult> {
         match event? {
             TerminalEvent::Tick => {
@@ -328,7 +326,6 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         Ok(())
     }
 
-    #[allow(clippy::match_same_arms)]
     pub fn show(mut self) -> CTResult<()> {
         let mut terminal = Self::setup()?;
 

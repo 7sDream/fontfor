@@ -58,8 +58,8 @@ impl Pattern {
         }
     }
 
-    #[allow(unused_mut, clippy::needless_pass_by_value)]
-    pub fn add_charset(mut self, charset: Charset) -> Self {
+    #[allow(unused_mut)] // In deed, we changed the underlying pointer's target struct
+    pub fn add_charset(mut self, charset: &Charset) -> Self {
         let name = ffi::CString::new("charset").unwrap();
         unsafe {
             fc::FcPatternAddCharSet(self.ptr, name.as_ptr(), charset.ptr);

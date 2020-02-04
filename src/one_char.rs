@@ -38,7 +38,7 @@ impl OneChar {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum ParseError {
     EmptyInput,
     InvalidUnicodeScalarValue(u32),
@@ -111,8 +111,7 @@ impl OneChar {
                 let c1 = c1.unwrap(); // at least one char because of the `take_while`
                 let c2 = c2.ok_or(ParseError::UTF8BytesStrCantAlignToBytes)?;
                 if c1.is_ascii_hexdigit() && c2.is_ascii_hexdigit() {
-                    // because two digit hex meets u8 type
-                    #[allow(clippy::cast_possible_truncation)]
+                    #[allow(clippy::cast_possible_truncation)] // two hex digit is a 8-bit number
                     Ok((c1.to_digit(16).unwrap() << 4 | c2.to_digit(16).unwrap()) as u8)
                 } else {
                     Err(ParseError::InvalidDigitInRadix(16))

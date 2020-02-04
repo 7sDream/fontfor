@@ -47,7 +47,7 @@ impl Charset {
         Self { ptr }
     }
 
-    #[allow(unused_mut)]
+    #[allow(unused_mut)] // In deed, we changed the underlying pointer's target struct
     pub fn add_char(mut self, c: char) -> Self {
         unsafe {
             fc::FcCharSetAddChar(self.ptr, u32::from(c) as fc::FcChar32);

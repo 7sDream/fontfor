@@ -57,7 +57,6 @@ impl RenderResult {
 }
 
 pub trait Render: Send {
-    #[allow(clippy::too_many_arguments)]
     fn gray_to_char(&self, up: u8, left: u8, gray: u8, right: u8, down: u8) -> char;
 
     fn render(&self, bm: &Bitmap) -> RenderResult {

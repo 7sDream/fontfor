@@ -17,13 +17,12 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
-#![allow(clippy::module_name_repetitions, clippy::needless_pass_by_value)]
+#![allow(clippy::module_name_repetitions)]
 #![deny(warnings)]
 
 mod args;
 mod fc;
 mod font;
-#[allow(dead_code)]
 mod ft;
 mod one_char;
 mod preview;
@@ -36,7 +35,6 @@ use {
     std::{cmp::Reverse, io::Write, iter::FromIterator},
 };
 
-#[allow(clippy::too_many_lines)]
 fn main() {
     let argument = args::get();
 
@@ -46,7 +44,7 @@ fn main() {
     });
 
     let charset = fc::Charset::default().add_char(argument.char.0);
-    let pattern = fc::Pattern::default().add_charset(charset);
+    let pattern = fc::Pattern::default().add_charset(&charset);
     let font_set = fc::FontSet::match_pattern(&pattern);
 
     let families = font::SortedFamilies::from(&font_set);

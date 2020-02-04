@@ -29,7 +29,7 @@ pub struct MoonRender {
 impl MoonRender {
     pub fn new() -> Self {
         let pair_count = MOON_CHARS.len();
-        #[allow(clippy::cast_precision_loss)]
+        #[allow(clippy::cast_precision_loss)] // MOON_CHARS's length is small enough
         let multiplier = pair_count as f64 / 256.0;
         Self { pair_count, multiplier }
     }
@@ -41,8 +41,8 @@ impl Render for MoonRender {
             return MOON_CHARS[self.pair_count - 1][0];
         }
 
-        #[allow(clippy::cast_sign_loss)] // because `255 - gray` must be non-neg
-        #[allow(clippy::cast_possible_truncation)]
+        #[allow(clippy::cast_sign_loss)] // because `255 - u8` must be non-neg
+        #[allow(clippy::cast_possible_truncation)] // result small then MOON_CHARS's length
         let index = (f64::from(255 - gray) * self.multiplier).floor() as usize;
 
         if left < right {

@@ -47,7 +47,7 @@ impl ObjectSet {
         Self { ptr }
     }
 
-    #[allow(unused_mut)]
+    #[allow(unused_mut)] // In deed, we changed the underlying pointer's target struct
     pub fn add(mut self, object: &str) -> Self {
         let obj = CString::new(object).unwrap();
         unsafe {

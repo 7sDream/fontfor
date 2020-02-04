@@ -45,7 +45,7 @@ struct RenderResultPoints {
 }
 
 impl RenderResultPoints {
-    #[allow(clippy::cast_precision_loss)]
+    #[allow(clippy::cast_precision_loss)] // render result size is small enough to cast to f64
     fn new(chars: &RenderResult, width: f64, height: f64) -> Self {
         let h_pad = ((width - chars.width() as f64) / 2.0).floor();
         let v_pad = ((height - chars.height() as f64) / 2.0).floor();
@@ -77,7 +77,7 @@ impl Iterator for RenderResultPoints {
             if self.chars.0[self.y][self.x] != ' ' {
                 // tui canvas origin point at left bottom but chars' at left top
                 // so we need do some math to flip it and add padding
-                #[allow(clippy::cast_precision_loss)]
+                #[allow(clippy::cast_precision_loss)] // render result size is small enough
                 let result = (self.x as f64 + self.h_pad, self.height - self.y as f64 - self.v_pad);
                 return Some(result);
             }

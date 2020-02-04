@@ -24,7 +24,7 @@ use {
     std::{ops::Deref, sync::mpsc, thread, time::Duration},
 };
 
-#[derive(Copy, Clone, Debug, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, PartialOrd, Eq, PartialEq, Hash)]
 pub enum TerminalEvent {
     Tick,
     Key(CTKeyEvent),

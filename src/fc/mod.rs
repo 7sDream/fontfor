@@ -31,7 +31,7 @@ pub use {
     pattern::Pattern,
 };
 
-use fontconfig::fontconfig as fc;
+use {consts::THE_OBJECT_SET, fontconfig::fontconfig as fc, once_cell::unsync::Lazy};
 
 pub fn init() -> Result<(), ()> {
     let config = unsafe { fc::FcInitLoadConfigAndFonts() };
@@ -39,6 +39,8 @@ pub fn init() -> Result<(), ()> {
         Err(())
     } else {
         unsafe { fc::FcConfigDestroy(config) };
+        #[allow(clippy::borrow_interior_mutable_const)] // we init it only once
+        Lazy::force(&THE_OBJECT_SET);
         Ok(())
     }
 }

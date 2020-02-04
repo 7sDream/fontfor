@@ -43,13 +43,11 @@ impl<'iter, 'a: 'iter> FromIterator<&'iter Family<'a>> for Builder<'a> {
 }
 
 impl<'a> Builder<'a> {
-    #[allow(dead_code)]
     pub fn add_family(&mut self, family: &Family<'a>) -> &mut Self {
         self.families.push(family.name.get_default());
         self
     }
 
-    #[allow(clippy::unused_self)]
     fn build_html(self, c: char) -> String {
         format!(
             include_str!("statics/template.html"),
