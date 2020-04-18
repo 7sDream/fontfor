@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::ft::bitmap::Bitmap;
 use {
     super::{FreeTypeError, Library},
+    crate::ft::bitmap::Bitmap,
     freetype::freetype as ft,
     std::{ffi::CString, marker::PhantomData, path::Path, ptr},
 };

@@ -21,12 +21,12 @@ use {
         font::{Font, GetValueByLang, SortedFamilies},
         ft::{FontFace as FtFontFace, Library as FtLibrary},
         preview::terminal::render::{
-            AsciiRender, AsciiRenders, MonoRender, MoonRender, Render, RenderResult,
+            AsciiRender, AsciiRenders, CharBitmapRender, MonoRender, MoonRender, RenderResult,
         },
     },
     once_cell::sync::Lazy,
     std::{
-        cell::{Cell, RefCell},
+        cell::{Cell, RefCell, RefMut},
         collections::hash_map::HashMap,
         rc::Rc,
     },
@@ -41,8 +41,8 @@ pub enum RenderType {
     Mono,
 }
 
-static RENDERS: Lazy<HashMap<RenderType, Box<dyn Render + Sync>>> = Lazy::new(|| {
-    let mut renders: HashMap<RenderType, Box<dyn Render + Sync>> = HashMap::new();
+static RENDERS: Lazy<HashMap<RenderType, Box<dyn CharBitmapRender + Sync>>> = Lazy::new(|| {
+    let mut renders: HashMap<RenderType, Box<dyn CharBitmapRender + Sync>> = HashMap::new();
     renders.insert(RenderType::AsciiLevel10, Box::new(AsciiRender::new(AsciiRenders::Level10)));
     renders.insert(RenderType::AsciiLevel70, Box::new(AsciiRender::new(AsciiRenders::Level70)));
     renders.insert(RenderType::Moon, Box::new(MoonRender::new()));
@@ -58,7 +58,7 @@ pub struct State<'fc, 'ft> {
     font_faces_info: Vec<Font<'fc>>,
     font_faces_name: Vec<&'fc str>,
     name_width_max: usize,
-    pub list_state: RefCell<ListState>,
+    list_state: RefCell<ListState>,
     height: Cell<u32>,
     width: Cell<u32>,
     rt: RenderType,
@@ -168,6 +168,10 @@ impl<'fc, 'ft> State<'fc, 'ft> {
 
     pub const fn family_names(&self) -> &Vec<&'fc str> {
         &self.font_faces_name
+    }
+
+    pub fn mut_list_state(&self) -> RefMut<ListState> {
+        self.list_state.borrow_mut()
     }
 
     pub fn index(&self) -> usize {

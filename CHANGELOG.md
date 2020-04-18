@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Thanks to tui's upgrade, mono render don't need do a huge bitmap copy to render char, this will improve some pref
+- Upgrade deps to latest version
+
 ## 0.2.1
 
 - Fix tui help text typo

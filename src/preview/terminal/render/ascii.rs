@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use super::Render;
+use super::CharBitmapRender;
 
 static LEVEL10RAMP: &str = " .:-=+*#%@";
 static LEVEL70RAMP: &str =
@@ -47,7 +47,7 @@ impl AsciiRender {
     }
 }
 
-impl Render for AsciiRender {
+impl CharBitmapRender for AsciiRender {
     fn gray_to_char(&self, _up: u8, _left: u8, gray: u8, _right: u8, _down: u8) -> char {
         #[allow(clippy::cast_sign_loss)] // gray and multiplier both positive
         #[allow(clippy::cast_possible_truncation)] // result small then ramp's length(usize)

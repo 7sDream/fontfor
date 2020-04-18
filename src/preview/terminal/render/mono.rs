@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use super::Render;
+use super::CharBitmapRender;
 
 pub struct MonoRender {}
 
@@ -26,7 +26,7 @@ impl Default for MonoRender {
     }
 }
 
-impl Render for MonoRender {
+impl CharBitmapRender for MonoRender {
     fn gray_to_char(&self, _up: u8, _left: u8, gray: u8, _right: u8, _down: u8) -> char {
         if gray == u8::max_value() {
             '#'

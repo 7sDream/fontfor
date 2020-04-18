@@ -56,7 +56,7 @@ impl RenderResult {
     }
 }
 
-pub trait Render: Send {
+pub trait CharBitmapRender: Send {
     #[allow(clippy::too_many_arguments)] // need them..., fine, I will try make them a struct
     fn gray_to_char(&self, up: u8, left: u8, gray: u8, right: u8, down: u8) -> char;
 

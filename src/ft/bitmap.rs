@@ -59,7 +59,7 @@ impl<'ft> Bitmap<'ft> {
     pub fn get_pixel(&self, row: u32, col: u32) -> u8 {
         if u32::from(self.pixel_mode) == ft::FT_Pixel_Mode::FT_PIXEL_MODE_MONO as u32 {
             let index = (row * self.pitch + col / 8) as usize;
-            #[allow(clippy::cast_possible_truncation)] // because we mod with 8 so result us 0 - 7
+            #[allow(clippy::cast_possible_truncation)] // because we mod with 8 so result is 0 - 7
             let bit_pos = (col % 8) as u8;
             let gray = self.bitmap[index];
             let mask = 0b_1000_0000 >> (bit_pos);

@@ -16,7 +16,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::time::Duration;
 use {
     httparse::Request as PartRequest,
     std::{
@@ -25,6 +24,7 @@ use {
         net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream},
         sync::mpsc::{channel, Receiver, Sender, TryRecvError},
         thread,
+        time::Duration,
     },
 };
 

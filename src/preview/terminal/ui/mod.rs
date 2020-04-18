@@ -20,7 +20,6 @@ mod canvas_render;
 mod event;
 mod state;
 
-use crate::preview::terminal::ui::state::RenderType;
 use {
     crate::{font::SortedFamilies, ft::Library as FtLibrary},
     canvas_render::CanvasRenderResult,
@@ -31,9 +30,10 @@ use {
         Result as CTResult,
     },
     event::{TerminalEvent, TerminalEventStream},
-    state::State,
+    state::{RenderType, State},
     std::{
         io::{Stdout, Write},
+        ops::DerefMut,
         time::Duration,
     },
     tui::{
@@ -78,7 +78,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
             .block(Block::default().title(&title).borders(Borders::ALL))
             .highlight_style(Style::default().fg(Color::LightBlue).modifier(Modifier::BOLD));
 
-        f.render_stateful_widget(list, area, &mut self.state.list_state.borrow_mut())
+        f.render_stateful_widget(list, area, self.state.mut_list_state().deref_mut())
     }
 
     fn draw_canvas<B>(&self, area: Rect, f: &mut Frame<B>)

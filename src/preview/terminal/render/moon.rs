@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use super::Render;
+use super::CharBitmapRender;
 
 static MOON_CHARS: [[char; 2]; 5] =
     [['🌕', '🌕'], ['🌖', '🌔'], ['🌗', '🌓'], ['🌘', '🌒'], ['🌑', '🌑']];
@@ -35,13 +35,13 @@ impl MoonRender {
     }
 }
 
-impl Render for MoonRender {
+impl CharBitmapRender for MoonRender {
     fn gray_to_char(&self, _up: u8, left: u8, gray: u8, right: u8, _down: u8) -> char {
         if gray == 0 {
             return MOON_CHARS[self.pair_count - 1][0];
         }
 
-        #[allow(clippy::cast_sign_loss)] // because `255 - u8` must be non-neg
+        #[allow(clippy::cast_sign_loss)] // because `255 - u8` must be non-negative
         #[allow(clippy::cast_possible_truncation)] // result small then MOON_CHARS's length
         let index = (f64::from(255 - gray) * self.multiplier).floor() as usize;
 
