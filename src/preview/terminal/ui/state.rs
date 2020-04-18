@@ -30,6 +30,7 @@ use {
         collections::hash_map::HashMap,
         rc::Rc,
     },
+    tui::widgets::ListState,
 };
 
 #[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash)]
@@ -57,7 +58,7 @@ pub struct State<'fc, 'ft> {
     font_faces_info: Vec<Font<'fc>>,
     font_faces_name: Vec<&'fc str>,
     name_width_max: usize,
-    index: usize,
+    pub list_state: RefCell<ListState>,
     height: Cell<u32>,
     width: Cell<u32>,
     rt: RenderType,
@@ -81,12 +82,15 @@ impl<'fc, 'ft> State<'fc, 'ft> {
 
         let cache = RefCell::default();
 
+        let mut list_state = ListState::default();
+        list_state.select(Some(0));
+
         Self {
             c,
             font_faces_info,
             font_faces_name,
             name_width_max,
-            index: 0,
+            list_state: RefCell::new(list_state),
             height: Cell::new(0),
             width: Cell::new(0),
             rt: RenderType::Mono,
@@ -97,7 +101,7 @@ impl<'fc, 'ft> State<'fc, 'ft> {
     }
 
     fn cache_key(&self) -> CacheKey {
-        CacheKey(self.index, self.rt, self.height.get(), self.width.get())
+        CacheKey(self.index(), self.rt, self.height.get(), self.width.get())
     }
 
     pub fn render(&self) -> Rc<Result<RenderResult, &'static str>> {
@@ -106,13 +110,13 @@ impl<'fc, 'ft> State<'fc, 'ft> {
     }
 
     fn get_font_face(&self) -> Result<FtFontFace<'ft>, &'static str> {
-        let font_face_slot = self.font_faces.get(self.index).unwrap();
+        let font_face_slot = self.font_faces.get(self.index()).unwrap();
 
         font_face_slot
             .take()
             .ok_or(())
             .or_else(|_| {
-                let font_info = &self.font_faces_info[self.index];
+                let font_info = &self.font_faces_info[self.index()];
                 self.ft
                     .load_font(font_info.path, font_info.index.into())
                     .map_err(|_| "Can't load current font")
@@ -121,7 +125,7 @@ impl<'fc, 'ft> State<'fc, 'ft> {
     }
 
     fn return_font_face(&self, font: FtFontFace<'ft>) {
-        let font_face_slot = self.font_faces.get(self.index).unwrap();
+        let font_face_slot = self.font_faces.get(self.index()).unwrap();
         font_face_slot.set(Some(font));
     }
 
@@ -155,7 +159,7 @@ impl<'fc, 'ft> State<'fc, 'ft> {
     }
 
     pub fn current_name(&self) -> &'fc str {
-        self.font_faces_name[self.index]
+        self.font_faces_name[self.index()]
     }
 
     pub const fn name_width_max(&self) -> usize {
@@ -166,16 +170,21 @@ impl<'fc, 'ft> State<'fc, 'ft> {
         &self.font_faces_name
     }
 
-    pub const fn index(&self) -> usize {
-        self.index
+    pub fn index(&self) -> usize {
+        self.list_state.borrow().selected().unwrap()
     }
 
     pub fn move_up(&mut self) {
-        self.index = self.index.saturating_sub(1);
+        let changed = self.list_state.borrow().selected().map(|index| index.saturating_sub(1));
+        self.list_state.borrow_mut().select(changed);
     }
 
     pub fn move_down(&mut self) {
-        self.index = self.index.saturating_add(1).min(self.font_faces_name.len().saturating_sub(1))
+        let changed =
+            self.list_state.borrow().selected().map(|index| {
+                index.saturating_add(1).min(self.font_faces_name.len().saturating_sub(1))
+            });
+        self.list_state.borrow_mut().select(changed);
     }
 
     pub const fn get_render_type(&self) -> &RenderType {

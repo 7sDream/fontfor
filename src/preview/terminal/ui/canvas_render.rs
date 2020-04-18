@@ -19,7 +19,10 @@
 use {
     super::super::render::RenderResult,
     std::iter::Iterator,
-    tui::{style::Color, widgets::canvas::Shape},
+    tui::{
+        style::Color,
+        widgets::canvas::{Painter, Shape},
+    },
 };
 
 pub struct CanvasRenderResult<'a> {
@@ -34,22 +37,22 @@ impl<'a> CanvasRenderResult<'a> {
     }
 }
 
-struct RenderResultPoints {
+struct RenderResultPoints<'a> {
     start: bool,
     x: usize,
     y: usize,
     height: f64,
     h_pad: f64,
     v_pad: f64,
-    chars: RenderResult,
+    chars: &'a RenderResult,
 }
 
-impl RenderResultPoints {
+impl<'a> RenderResultPoints<'a> {
     #[allow(clippy::cast_precision_loss)] // render result size is small enough to cast to f64
-    fn new(chars: &RenderResult, width: f64, height: f64) -> Self {
+    fn new(chars: &'a RenderResult, width: f64, height: f64) -> Self {
         let h_pad = ((width - chars.width() as f64) / 2.0).floor();
         let v_pad = ((height - chars.height() as f64) / 2.0).floor();
-        Self { start: false, x: 0, y: 0, height, h_pad, v_pad, chars: chars.clone() }
+        Self { start: false, x: 0, y: 0, height, h_pad, v_pad, chars }
     }
 
     fn next_x_y(&mut self) -> bool {
@@ -66,7 +69,7 @@ impl RenderResultPoints {
     }
 }
 
-impl Iterator for RenderResultPoints {
+impl<'a> Iterator for RenderResultPoints<'a> {
     type Item = (f64, f64);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -85,12 +88,13 @@ impl Iterator for RenderResultPoints {
     }
 }
 
-impl<'a> Shape<'a> for CanvasRenderResult<'a> {
-    fn color(&self) -> Color {
-        Color::Reset
-    }
-
-    fn points(&'a self) -> Box<dyn Iterator<Item = (f64, f64)>> {
-        Box::new(RenderResultPoints::new(self.chars, self.canvas_width, self.canvas_height))
+impl<'a> Shape for CanvasRenderResult<'a> {
+    fn draw(&self, painter: &mut Painter) {
+        let points = RenderResultPoints::new(self.chars, self.canvas_width, self.canvas_height);
+        for (x, y) in points {
+            if let Some((x, y)) = painter.get_point(x, y) {
+                painter.paint(x as usize, y as usize, Color::Reset);
+            }
+        }
     }
 }

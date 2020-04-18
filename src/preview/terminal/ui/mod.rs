@@ -41,7 +41,7 @@ use {
         layout::{Alignment, Constraint, Direction, Layout, Rect},
         style::{Color, Modifier, Style},
         terminal::{Frame, Terminal},
-        widgets::{canvas::Canvas, Block, Borders, Paragraph, SelectableList, Text, Widget},
+        widgets::{canvas::Canvas, Block, Borders, List, Paragraph, Text},
     },
 };
 
@@ -74,12 +74,11 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         let index = self.state.index();
         let title = format!("Fonts {}/{}", index + 1, families.len());
 
-        SelectableList::default()
+        let list = List::new(families.iter().copied().map(Text::raw))
             .block(Block::default().title(&title).borders(Borders::ALL))
-            .items(families)
-            .select(Some(index))
-            .highlight_style(Style::default().fg(Color::LightBlue).modifier(Modifier::BOLD))
-            .render(f, area);
+            .highlight_style(Style::default().fg(Color::LightBlue).modifier(Modifier::BOLD));
+
+        f.render_stateful_widget(list, area, &mut self.state.list_state.borrow_mut())
     }
 
     fn draw_canvas<B>(&self, area: Rect, f: &mut Frame<B>)
@@ -93,7 +92,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
             let (canvas_width, canvas_height) = self.state.get_char_pixel_cell();
             let canvas_width = f64::from(canvas_width);
             let canvas_height = f64::from(canvas_height);
-            Canvas::default()
+            let canvas = Canvas::default()
                 .block(Block::default().title("Preview").borders(Borders::ALL))
                 .x_bounds([0.0, canvas_width - 1.0])
                 .y_bounds([0.0, canvas_height - 1.0])
@@ -101,8 +100,8 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
                     let chars = result.as_ref().as_ref().unwrap();
                     let shape = CanvasRenderResult::new(chars, canvas_width, canvas_height);
                     ctx.draw(&shape);
-                })
-                .render(f, area);
+                });
+            f.render_widget(canvas, area);
         } else {
             // Others render to paragraph
             let (height, result) = match result.as_ref() {
@@ -115,12 +114,12 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
 
             let texts = [Text::raw(padding_lines), Text::raw(result)];
 
-            Paragraph::new(texts.iter())
+            let canvas = Paragraph::new(texts.iter())
                 .block(Block::default().title("Preview").borders(Borders::ALL))
                 .alignment(Alignment::Center)
                 .style(Style::default().fg(Color::Reset).modifier(Modifier::BOLD))
-                .wrap(false)
-                .render(f, area);
+                .wrap(false);
+            f.render_widget(canvas, area);
         }
     }
 
@@ -152,11 +151,13 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
                 Style::default().fg(Color::Blue).modifier(Modifier::BOLD),
             ),
         ];
-        Paragraph::new(texts.iter())
-            .block(Block::default().title("Info").borders(Borders::TOP | Borders::LEFT))
-            .alignment(Alignment::Left)
-            .wrap(false)
-            .render(f, name);
+        f.render_widget(
+            Paragraph::new(texts.iter())
+                .block(Block::default().title("Info").borders(Borders::TOP | Borders::LEFT))
+                .alignment(Alignment::Left)
+                .wrap(false),
+            name,
+        );
 
         let texts = vec![
             Text::styled("Render Mode", Style::default().fg(Color::Green)),
@@ -166,11 +167,13 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
                 Style::default().fg(Color::Blue).modifier(Modifier::BOLD),
             ),
         ];
-        Paragraph::new(texts.iter())
-            .block(Block::default().borders(Borders::TOP | Borders::RIGHT))
-            .alignment(Alignment::Right)
-            .wrap(false)
-            .render(f, mode);
+        f.render_widget(
+            Paragraph::new(texts.iter())
+                .block(Block::default().borders(Borders::TOP | Borders::RIGHT))
+                .alignment(Alignment::Right)
+                .wrap(false),
+            mode,
+        );
     }
 
     fn draw_status_bar_help<B>(area: Rect, f: &mut Frame<B>)
@@ -193,23 +196,29 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
 
         let quit_help = Self::generate_help_text("[Q]", "Quit");
 
-        Paragraph::new(list_help.iter())
-            .block(Block::default().borders(Borders::BOTTOM | Borders::LEFT))
-            .alignment(Alignment::Left)
-            .wrap(false)
-            .render(f, cols[0]);
+        f.render_widget(
+            Paragraph::new(list_help.iter())
+                .block(Block::default().borders(Borders::BOTTOM | Borders::LEFT))
+                .alignment(Alignment::Left)
+                .wrap(false),
+            cols[0],
+        );
 
-        Paragraph::new(mode_help.iter())
-            .block(Block::default().borders(Borders::BOTTOM))
-            .alignment(Alignment::Center)
-            .wrap(false)
-            .render(f, cols[1]);
+        f.render_widget(
+            Paragraph::new(mode_help.iter())
+                .block(Block::default().borders(Borders::BOTTOM))
+                .alignment(Alignment::Center)
+                .wrap(false),
+            cols[1],
+        );
 
-        Paragraph::new(quit_help.iter())
-            .block(Block::default().borders(Borders::BOTTOM | Borders::RIGHT))
-            .alignment(Alignment::Right)
-            .wrap(false)
-            .render(f, cols[2]);
+        f.render_widget(
+            Paragraph::new(quit_help.iter())
+                .block(Block::default().borders(Borders::BOTTOM | Borders::RIGHT))
+                .alignment(Alignment::Right)
+                .wrap(false),
+            cols[2],
+        );
     }
 
     fn draw_status_bar<B>(&self, area: Rect, f: &mut Frame<B>)

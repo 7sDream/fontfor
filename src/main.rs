@@ -27,12 +27,10 @@ mod ft;
 mod one_char;
 mod preview;
 
-use std::net::SocketAddr;
-use std::process::exit;
 use {
     font::{GetValueByLang, SortedFamilies},
     preview::{browser::ServerBuilder as PreviewServerBuilder, terminal::ui::UI},
-    std::{cmp::Reverse, io::Write, iter::FromIterator},
+    std::{cmp::Reverse, io::Write, iter::FromIterator, net::SocketAddr, process::exit},
 };
 
 fn main() {

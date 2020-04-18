@@ -18,7 +18,7 @@
 
 use std::{convert::TryFrom, hint::unreachable_unchecked, str::FromStr, string::ToString};
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct OneChar(pub char);
 
 impl OneChar {
