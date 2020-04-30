@@ -89,7 +89,7 @@ impl<'a> Iterator for RenderResultPoints<'a> {
 }
 
 impl<'a> Shape for CanvasRenderResult<'a> {
-    fn draw(&self, painter: &mut Painter) {
+    fn draw(&self, painter: &mut Painter<'_, '_>) {
         let points = RenderResultPoints::new(self.chars, self.canvas_width, self.canvas_height);
         for (x, y) in points {
             if let Some((x, y)) = painter.get_point(x, y) {

@@ -56,11 +56,11 @@ impl RenderResult {
     }
 }
 
-pub trait CharBitmapRender: Send {
+pub trait CharBitmapRender {
     #[allow(clippy::too_many_arguments)] // need them..., fine, I will try make them a struct
     fn gray_to_char(&self, up: u8, left: u8, gray: u8, right: u8, down: u8) -> char;
 
-    fn render(&self, bm: &Bitmap) -> RenderResult {
+    fn render(&self, bm: &Bitmap<'_>) -> RenderResult {
         let m = bm.get_metrics();
 
         RenderResult(

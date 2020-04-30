@@ -134,7 +134,7 @@ pub struct SortedFamilies<'fs>(Vec<Family<'fs>>);
 
 impl<'fs> From<&'fs FontSet> for SortedFamilies<'fs> {
     fn from(font_set: &'fs FontSet) -> Self {
-        let mut families: HashMap<&str, Family> = HashMap::new();
+        let mut families = HashMap::new();
 
         font_set.fonts().for_each(|fc_font| {
             if let Ok(font) = Font::try_from(fc_font) {

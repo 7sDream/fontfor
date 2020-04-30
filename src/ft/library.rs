@@ -33,7 +33,7 @@ impl Library {
         ret.map_result(|| Self { library })
     }
 
-    pub fn load_font<P>(&self, path: P, index: ft::FT_Long) -> Result<FontFace, ft::FT_Error>
+    pub fn load_font<P>(&self, path: P, index: ft::FT_Long) -> Result<FontFace<'_>, ft::FT_Error>
     where
         P: AsRef<Path>,
     {

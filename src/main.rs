@@ -16,9 +16,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
-#![allow(clippy::module_name_repetitions)]
 #![deny(warnings)]
+#![deny(clippy::all, clippy::pedantic, clippy::nursery)]
+#![deny(missing_debug_implementations, rust_2018_idioms)]
+#![allow(clippy::module_name_repetitions)]
 
 mod args;
 mod fc;
@@ -90,7 +91,7 @@ fn show_preview_addr_and_wait(addr: SocketAddr) {
     std::io::stdin().read_line(&mut line).unwrap();
 }
 
-fn show_font_list(families: SortedFamilies, verbose: bool) {
+fn show_font_list(families: SortedFamilies<'_>, verbose: bool) {
     let max_len = if verbose {
         0
     } else {

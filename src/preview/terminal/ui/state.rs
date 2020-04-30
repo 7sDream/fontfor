@@ -24,7 +24,7 @@ use {
             AsciiRender, AsciiRenders, CharBitmapRender, MonoRender, MoonRender, RenderResult,
         },
     },
-    once_cell::sync::Lazy,
+    once_cell::unsync::Lazy,
     std::{
         cell::{Cell, RefCell, RefMut},
         collections::hash_map::HashMap,
@@ -41,8 +41,8 @@ pub enum RenderType {
     Mono,
 }
 
-static RENDERS: Lazy<HashMap<RenderType, Box<dyn CharBitmapRender + Sync>>> = Lazy::new(|| {
-    let mut renders: HashMap<RenderType, Box<dyn CharBitmapRender + Sync>> = HashMap::new();
+const RENDERS: Lazy<HashMap<RenderType, Box<dyn CharBitmapRender>>> = Lazy::new(|| {
+    let mut renders: HashMap<RenderType, Box<dyn CharBitmapRender>> = HashMap::new();
     renders.insert(RenderType::AsciiLevel10, Box::new(AsciiRender::new(AsciiRenders::Level10)));
     renders.insert(RenderType::AsciiLevel70, Box::new(AsciiRender::new(AsciiRenders::Level70)));
     renders.insert(RenderType::Moon, Box::new(MoonRender::new()));
@@ -146,7 +146,8 @@ impl<'fc, 'ft> State<'fc, 'ft> {
 
         match font_face.load_char(self.c, self.rt == RenderType::Mono) {
             Ok(bitmap) => {
-                let render = RENDERS.get(&self.rt).unwrap();
+                let renders: &HashMap<_, _> = &RENDERS;
+                let render = renders.get(&self.rt).unwrap();
                 let result = render.render(&bitmap);
                 self.return_font_face(bitmap.return_font_face());
                 Ok(result)
@@ -170,7 +171,7 @@ impl<'fc, 'ft> State<'fc, 'ft> {
         &self.font_faces_name
     }
 
-    pub fn mut_list_state(&self) -> RefMut<ListState> {
+    pub fn mut_list_state(&self) -> RefMut<'_, ListState> {
         self.list_state.borrow_mut()
     }
 

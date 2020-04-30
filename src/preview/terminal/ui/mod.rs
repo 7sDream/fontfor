@@ -66,7 +66,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         }
     }
 
-    fn draw_list<B>(&self, area: Rect, f: &mut Frame<B>)
+    fn draw_list<B>(&self, area: Rect, f: &mut Frame<'_, B>)
     where
         B: tui::backend::Backend,
     {
@@ -81,7 +81,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         f.render_stateful_widget(list, area, self.state.mut_list_state().deref_mut())
     }
 
-    fn draw_canvas<B>(&self, area: Rect, f: &mut Frame<B>)
+    fn draw_canvas<B>(&self, area: Rect, f: &mut Frame<'_, B>)
     where
         B: tui::backend::Backend,
     {
@@ -131,7 +131,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         ]
     }
 
-    fn draw_status_bar_info<B>(&self, area: Rect, f: &mut Frame<B>)
+    fn draw_status_bar_info<B>(&self, area: Rect, f: &mut Frame<'_, B>)
     where
         B: tui::backend::Backend,
     {
@@ -176,7 +176,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         );
     }
 
-    fn draw_status_bar_help<B>(area: Rect, f: &mut Frame<B>)
+    fn draw_status_bar_help<B>(area: Rect, f: &mut Frame<'_, B>)
     where
         B: tui::backend::Backend,
     {
@@ -221,7 +221,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         );
     }
 
-    fn draw_status_bar<B>(&self, area: Rect, f: &mut Frame<B>)
+    fn draw_status_bar<B>(&self, area: Rect, f: &mut Frame<'_, B>)
     where
         B: tui::backend::Backend,
     {
@@ -237,7 +237,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         Self::draw_status_bar_help(help, f);
     }
 
-    fn draw<B>(&self, f: &mut Frame<B>)
+    fn draw<B>(&self, f: &mut Frame<'_, B>)
     where
         B: tui::backend::Backend,
     {
