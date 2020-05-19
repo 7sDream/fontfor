@@ -75,7 +75,9 @@ jobs:
 
     - name: Install freetype and fontconfig for macOS
       if: ${{ runner.os == 'macOS' }}
-      run: brew install fontconfig
+      run: |
+        brew install fontconfig --verbose
+        pkg-config --libs --static fontconfig
 
     - name: Build
       id: build
