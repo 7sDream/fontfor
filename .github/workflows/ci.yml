@@ -1,0 +1,148 @@
+name: CI
+
+on: 
+  push:
+    branches:
+      - master
+      - ci
+    tags: 'v[0-9]+.[0-9]+.[0-9]+'
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  ci:
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install Rust toolchains
+      id: toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+        components: rustfmt, clippy
+
+    - name: Cache cargo registry
+      uses: actions/cache@v1
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Cache cargo index
+      uses: actions/cache@v1
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Cache build result
+      uses: actions/cache@v1
+      with:
+        path: target
+        key: ${{ runner.os }}-build-${{ hashFiles('Cargo.lock') }}-${{ steps.toolchain.outputs.rustc_hash }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ hashFiles('Cargo.lock') }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
+    - name: Install cargo-outdated
+      uses: actions-rs/install@v0.1
+      with:
+        crate: cargo-outdated
+        use-tool-cache: true
+
+    - name: Check deps crates version
+      uses: actions-rs/cargo@v1
+      with:
+        command: outdated
+        args: --depth 1 --exit-code 1 --verbose
+
+    - name: Check code style
+      uses: actions-rs/cargo@v1
+      with:
+        command: fmt
+        args: --all -- --check
+
+    - name: Lint code by clippy
+      uses: actions-rs/clippy-check@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        args: --all-targets --all-features -- -D warnings
+
+    - name: Run tests
+      run: cargo test --verbose
+
+    # Only build use release profile if new tag pushed
+    - name: Build use release profile
+      if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+      run: cargo build --release
+    
+    - name: Upload release binary to artifact
+      if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+      uses: actions/upload-artifact@v2
+      with:
+        name: release-${{ runner.os }}
+        path: target/release/fontfor
+
+  create_release:
+    # Only create release if new tag pushed
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    needs: [ci]
+    run_on: ubuntu-latest
+    outputs:
+      release_upload_url: ${{ steps.release.outputs.upload_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Get Tag Name
+        id: tag
+        run: echo ::set-output name=name::$(echo $GITHUB_REF | cut -d/ -f3)
+
+      - name: Create release
+        id: release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ steps.tag.outputs.name }}
+          body: ${{ github.event.head_commit.message }}
+          draft: false
+          prerelease: false
+
+  upload_binary:
+    # Only upload binary when tag pushed
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    needs: [create_release]
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest]
+    run_on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: release-${{ runner.os }}
+          path: artifacts
+      
+      - name: Show artifacts content
+        run: tree artifacts
+
+      - name: Upload ${{ runner.os }} binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/release/${{ runner.os }}/fontfor
+          assert_name: fontfor-${{ runner.os }}
+          asset_content_type: application/octet-stream
