@@ -91,7 +91,7 @@ jobs:
     # Only build use release profile if new tag pushed
     - name: Build use release profile
       if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-      run: cargo build --release
+      run: cargo build --all-targets --all-features --release
     
     - name: Upload release binary to artifact
       if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
