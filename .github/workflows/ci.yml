@@ -76,12 +76,12 @@ jobs:
     - name: Install freetype and fontconfig for macOS
       if: ${{ runner.os == 'macOS' }}
       run: |
-        brew install pkg-config fontconfig --verbose
+        brew install pkg-config fontconfig --build-from-source --verbose
         pkg-config --libs --static fontconfig
 
     - name: Build
       id: build
-      run: cargo build --verbose --all-targets --all-features || echo "::set-output name=fail::1"
+      run: cargo build --all-targets --all-features -vv || echo "::set-output name=fail::1"
 
     - name: Upload build result to artifact
       if: steps.build.outputs.fail == '1'
@@ -97,7 +97,7 @@ jobs:
     # Only build use release profile if new tag pushed
     - name: Build use release profile
       if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-      run: cargo build --verbose --all-targets --all-features --release
+      run: cargo build --all-targets --all-features -vv --release
     
     - name: Upload release binary to artifact
       if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
