@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - ci
     tags: 'v[0-9]+.[0-9]+.[0-9]+'
   pull_request:
     branches:
@@ -74,8 +73,20 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         args: --all-targets --all-features -- -D warnings
 
-    - name: Run tests
-      run: cargo test --verbose
+    - name: Build
+      id: build
+      run: cargo build --all-targets --all-features || echo "::set-output name=fail::1"
+
+    - name: Upload build result
+      if: steps.test.output.fail == '1'
+      uses: actions/upload-artifact@v2
+      with:
+        name: target
+        path: target/
+    
+    - name: Fail after upload build result
+      if: steps.test.output.fail == '1'
+      run: false
 
     # Only build use release profile if new tag pushed
     - name: Build use release profile
