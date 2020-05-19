@@ -73,6 +73,10 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         args: --all-targets --all-features -- -D warnings
 
+    - name: Install freetype and fontconfig for macOS
+      if: ${{ runner.os == 'macOS' }}
+      run: brew install fontconfig
+
     - name: Build
       id: build
       run: cargo build --verbose --all-targets --all-features || echo "::set-output name=fail::1"
