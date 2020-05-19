@@ -1,6 +1,6 @@
 # FontFor
 
-![license-badge] ![version-badge]
+![license-badge] ![version-badge] ![ci-badge]
 
 Find fonts which can show a specified character and preview them in browser.
 
@@ -105,6 +105,7 @@ See [COPYING][COPYING-file].
 
 [license-badge]: https://img.shields.io/crates/l/fontfor?style=flat-square
 [version-badge]: https://img.shields.io/crates/v/fontfor?style=flat-square
+[ci-badge]: https://github.com/7sDream/fontfor/workflows/CI/badge.svg
 [fontconfig-home]: https://www.freedesktop.org/wiki/Software/fontconfig/
 [free-type-home]: https://www.freetype.org/
 [which_fonts_support-github]: https://github.com/7sDream/which_fonts_support
