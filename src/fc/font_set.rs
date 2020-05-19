@@ -17,7 +17,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use {
-    super::{consts::*, FontInfo, Pattern},
+    super::{consts::THE_OBJECT_SET, FontInfo, Pattern},
     fontconfig::fontconfig as fc,
     std::marker::PhantomData,
 };

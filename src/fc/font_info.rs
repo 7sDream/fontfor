@@ -17,7 +17,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use {
-    super::consts::*,
+    super::consts::{FC_FAMILY, FC_FAMILY_LANG, FC_FILE, FC_FULLNAME, FC_FULLNAME_LANG, FC_INDEX},
     fontconfig::fontconfig as fc,
     std::{
         collections::HashMap,
