@@ -81,7 +81,7 @@ jobs:
 
     - name: Build
       id: build
-      run: cargo build --all-targets --all-features -vv || echo "::set-output name=fail::1"
+      run: cargo build --all-targets --all-features --jobs 1 -vv || echo "::set-output name=fail::1"
 
     - name: Upload build result to artifact
       if: steps.build.outputs.fail == '1'
