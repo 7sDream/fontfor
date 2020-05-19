@@ -41,14 +41,16 @@ pub enum RenderType {
     Mono,
 }
 
-const RENDERS: Lazy<HashMap<RenderType, Box<dyn CharBitmapRender>>> = Lazy::new(|| {
-    let mut renders: HashMap<RenderType, Box<dyn CharBitmapRender>> = HashMap::new();
-    renders.insert(RenderType::AsciiLevel10, Box::new(AsciiRender::new(AsciiRenders::Level10)));
-    renders.insert(RenderType::AsciiLevel70, Box::new(AsciiRender::new(AsciiRenders::Level70)));
-    renders.insert(RenderType::Moon, Box::new(MoonRender::new()));
-    renders.insert(RenderType::Mono, Box::new(MonoRender::default()));
-    renders
-});
+thread_local!{
+    static RENDERS: Lazy<HashMap<RenderType, Box<dyn CharBitmapRender>>> = Lazy::new(|| {
+        let mut renders: HashMap<RenderType, Box<dyn CharBitmapRender>> = HashMap::new();
+        renders.insert(RenderType::AsciiLevel10, Box::new(AsciiRender::new(AsciiRenders::Level10)));
+        renders.insert(RenderType::AsciiLevel70, Box::new(AsciiRender::new(AsciiRenders::Level70)));
+        renders.insert(RenderType::Moon, Box::new(MoonRender::new()));
+        renders.insert(RenderType::Mono, Box::new(MonoRender::default()));
+        renders
+    });
+}
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 struct CacheKey(usize, RenderType, u32, u32);
@@ -146,9 +148,10 @@ impl<'fc, 'ft> State<'fc, 'ft> {
 
         match font_face.load_char(self.c, self.rt == RenderType::Mono) {
             Ok(bitmap) => {
-                let renders: &HashMap<_, _> = &RENDERS;
-                let render = renders.get(&self.rt).unwrap();
-                let result = render.render(&bitmap);
+                let result: RenderResult = RENDERS.with(|renders| {
+                    let render = renders.get(&self.rt).unwrap();
+                    render.render(&bitmap)
+                });
                 self.return_font_face(bitmap.return_font_face());
                 Ok(result)
             }
