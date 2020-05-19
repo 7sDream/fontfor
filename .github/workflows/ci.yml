@@ -78,14 +78,14 @@ jobs:
       run: cargo build --verbose --all-targets --all-features || echo "::set-output name=fail::1"
 
     - name: Upload build result to artifact
-      if: steps.build.output.fail == '1'
+      if: steps.build.outputs.fail == '1'
       uses: actions/upload-artifact@v2
       with:
         name: target-${{ runner.OS }}
         path: target/
 
     - name: Fail after upload build result
-      if: steps.build.output.fail == '1'
+      if: steps.build.outputs.fail == '1'
       run: false
 
     # Only build use release profile if new tag pushed
