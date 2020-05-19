@@ -75,23 +75,23 @@ jobs:
 
     - name: Build
       id: build
-      run: cargo build --all-targets --all-features || echo "::set-output name=fail::1"
+      run: cargo build --verbose --all-targets --all-features || echo "::set-output name=fail::1"
 
     - name: Upload build result
-      if: steps.test.output.fail == '1'
+      if: steps.build.output.fail == '1'
       uses: actions/upload-artifact@v2
       with:
         name: target
         path: target/
-    
+
     - name: Fail after upload build result
-      if: steps.test.output.fail == '1'
+      if: steps.build.output.fail == '1'
       run: false
 
     # Only build use release profile if new tag pushed
     - name: Build use release profile
       if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-      run: cargo build --all-targets --all-features --release
+      run: cargo build --verbose --all-targets --all-features --release
     
     - name: Upload release binary to artifact
       if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
@@ -139,16 +139,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Download all artifacts
+      - name: Download ${{ runner.os }} binary from artifact
         uses: actions/download-artifact@v2
         with:
           name: release-${{ runner.os }}
           path: artifacts
-      
+
       - name: Show artifacts content
         run: tree artifacts
 
-      - name: Upload ${{ runner.os }} binary
+      - name: Upload ${{ runner.os }} binary to release as asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
