@@ -76,7 +76,7 @@ jobs:
     - name: Install freetype and fontconfig for macOS
       if: ${{ runner.os == 'macOS' }}
       run: |
-        brew install pkg-config fontconfig --build-from-source --verbose
+        brew install pkg-config cmake freetype fontconfig
         pkg-config --libs --static fontconfig
 
     - name: Build
@@ -160,6 +160,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ./artifacts/release/${{ runner.os }}/fontfor
+          asset_path: ./artifacts/release-${{ runner.os }}/fontfor
           assert_name: fontfor-${{ runner.os }}
           asset_content_type: application/octet-stream
