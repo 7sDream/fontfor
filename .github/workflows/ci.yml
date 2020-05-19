@@ -27,39 +27,17 @@ jobs:
         override: true
         components: rustfmt, clippy
 
-    # - name: Cache cargo registry
-    #   uses: actions/cache@v1
-    #   with:
-    #     path: ~/.cargo/registry
-    #     key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+    - name: Cache cargo registry
+      uses: actions/cache@v1
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
-    # - name: Cache cargo index
-    #   uses: actions/cache@v1
-    #   with:
-    #     path: ~/.cargo/git
-    #     key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-
-    # - name: Cache build result
-    #   uses: actions/cache@v1
-    #   with:
-    #     path: target
-    #     key: ${{ runner.os }}-build-${{ hashFiles('Cargo.lock') }}-${{ steps.toolchain.outputs.rustc_hash }}
-    #     restore-keys: |
-    #       ${{ runner.os }}-build-${{ hashFiles('Cargo.lock') }}-
-    #       ${{ runner.os }}-build-
-    #       ${{ runner.os }}-
-
-    # - name: Install cargo-outdated
-    #   uses: actions-rs/install@v0.1
-    #   with:
-    #     crate: cargo-outdated
-    #     use-tool-cache: true
-
-    # - name: Check deps crates version
-    #   uses: actions-rs/cargo@v1
-    #   with:
-    #     command: outdated
-    #     args: --depth 1 --exit-code 1 --verbose
+    - name: Cache cargo index
+      uses: actions/cache@v1
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
 
     - name: Check code style
       uses: actions-rs/cargo@v1
