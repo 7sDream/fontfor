@@ -27,17 +27,17 @@ jobs:
         override: true
         components: rustfmt, clippy
 
-    - name: Cache cargo registry
-      uses: actions/cache@v1
-      with:
-        path: ~/.cargo/registry
-        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+    # - name: Cache cargo registry
+    #   uses: actions/cache@v1
+    #   with:
+    #     path: ~/.cargo/registry
+    #     key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Cache cargo index
-      uses: actions/cache@v1
-      with:
-        path: ~/.cargo/git
-        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+    # - name: Cache cargo index
+    #   uses: actions/cache@v1
+    #   with:
+    #     path: ~/.cargo/git
+    #     key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
 
     # - name: Cache build result
     #   uses: actions/cache@v1
@@ -49,17 +49,17 @@ jobs:
     #       ${{ runner.os }}-build-
     #       ${{ runner.os }}-
 
-    - name: Install cargo-outdated
-      uses: actions-rs/install@v0.1
-      with:
-        crate: cargo-outdated
-        use-tool-cache: true
+    # - name: Install cargo-outdated
+    #   uses: actions-rs/install@v0.1
+    #   with:
+    #     crate: cargo-outdated
+    #     use-tool-cache: true
 
-    - name: Check deps crates version
-      uses: actions-rs/cargo@v1
-      with:
-        command: outdated
-        args: --depth 1 --exit-code 1 --verbose
+    # - name: Check deps crates version
+    #   uses: actions-rs/cargo@v1
+    #   with:
+    #     command: outdated
+    #     args: --depth 1 --exit-code 1 --verbose
 
     - name: Check code style
       uses: actions-rs/cargo@v1
@@ -81,7 +81,9 @@ jobs:
 
     - name: Build
       id: build
-      run: cargo build --all-targets --all-features --jobs 1 -vv || echo "::set-output name=fail::1"
+      run: |
+        cargo clean
+        cargo build --all-targets --all-features --jobs 1 -vv || echo "::set-output name=fail::1"
 
     - name: Upload build result to artifact
       if: steps.build.outputs.fail == '1'
@@ -98,7 +100,7 @@ jobs:
     - name: Build use release profile
       if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
       run: cargo build --all-targets --all-features -vv --release
-    
+
     - name: Upload release binary to artifact
       if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
       uses: actions/upload-artifact@v2
