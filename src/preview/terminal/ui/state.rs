@@ -41,7 +41,7 @@ pub enum RenderType {
     Mono,
 }
 
-thread_local!{
+thread_local! {
     static RENDERS: Lazy<HashMap<RenderType, Box<dyn CharBitmapRender>>> = Lazy::new(|| {
         let mut renders: HashMap<RenderType, Box<dyn CharBitmapRender>> = HashMap::new();
         renders.insert(RenderType::AsciiLevel10, Box::new(AsciiRender::new(AsciiRenders::Level10)));
