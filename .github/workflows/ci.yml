@@ -77,11 +77,11 @@ jobs:
       id: build
       run: cargo build --verbose --all-targets --all-features || echo "::set-output name=fail::1"
 
-    - name: Upload build result
+    - name: Upload build result to artifact
       if: steps.build.output.fail == '1'
       uses: actions/upload-artifact@v2
       with:
-        name: target
+        name: target-${{ runner.OS }}
         path: target/
 
     - name: Fail after upload build result
