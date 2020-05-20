@@ -103,7 +103,7 @@ jobs:
         id: tag
         run: |
           echo "::set-output name=name::$(echo $GITHUB_REF | cut -d/ -f3)"
-          message=$(echo ${{ github.event.head_commit.message }}" | tail -n +3)
+          message=$(echo "${{ github.event.head_commit.message }}" | tail -n +3)
           message="${message//'%'/'%25'}"
           message="${message//$'\n'/'%0A'}"
           message="${message//$'\r'/'%0D'}"
