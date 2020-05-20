@@ -147,7 +147,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          upload_url: ${{ needs.create_release.outputs.release_upload_url }}
           asset_path: ./artifacts/fontfor
           asset_name: fontfor-${{ runner.os }}
           asset_content_type: application/octet-stream
