@@ -97,9 +97,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Get Tag Name
+      # Multi line outputs needs escaped before echo, ref: 
+      # https://github.community/t5/GitHub-Actions/set-output-Truncates-Multiline-Strings/td-p/37870
+      - name: Get Tag Name and message
         id: tag
-        run: echo ::set-output name=name::$(echo $GITHUB_REF | cut -d/ -f3)
+        run: |
+          echo "::set-output name=name::$(echo $GITHUB_REF | cut -d/ -f3)"
+          message=$(echo ${{ github.event.head_commit.message }}" | tail -n +3)
+          message="${message//'%'/'%25'}"
+          message="${message//$'\n'/'%0A'}"
+          message="${message//$'\r'/'%0D'}"
+          echo "::set-output name=message::$message"
 
       - name: Create release
         id: release
@@ -109,7 +117,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: ${{ steps.tag.outputs.name }}
-          body: ${{ github.event.head_commit.message }}
+          body: ${{ steps.tag.outputs.message }}
           draft: false
           prerelease: false
 
@@ -132,7 +140,7 @@ jobs:
           path: artifacts
 
       - name: Show artifacts content
-        run: tree artifacts
+        run: ls -a -l -R artifacts
 
       - name: Upload ${{ runner.os }} binary to release as asset
         uses: actions/upload-release-asset@v1
