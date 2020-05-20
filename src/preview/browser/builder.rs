@@ -52,6 +52,7 @@ impl<'a> Builder<'a> {
         format!(
             include_str!("statics/template.html"),
             style = include_str!("statics/style.css"),
+            script = include_str!("statics/script.js"),
             font_previews = self
                 .families
                 .into_iter()

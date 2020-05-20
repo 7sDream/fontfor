@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Update browser preview
+
 ## 0.2.2
 
 - Thanks to tui's upgrade, mono render don't need do a huge bitmap copy to render char, this will improve some pref
