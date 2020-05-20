@@ -16,10 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use {super::one_char::OneChar, structopt::StructOpt};
+use {
+    super::one_char::OneChar,
+    structopt::{clap, StructOpt},
+};
 
 #[derive(StructOpt, Debug)]
-#[structopt(author, about)]
+#[structopt(author, about, setting=clap::AppSettings::ArgRequiredElseHelp)]
 pub struct Args {
     /// Verbose mode, show all font styles
     #[structopt(short, long)]
