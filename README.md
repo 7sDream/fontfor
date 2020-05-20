@@ -110,7 +110,7 @@ See [COPYING][COPYING-file].
 [free-type-home]: https://www.freetype.org/
 [which_fonts_support-github]: https://github.com/7sDream/which_fonts_support
 [verbose-mode-screenshot]: https://rikka.7sdre.am/files/22ea7500-525b-47ba-9c4e-6ef963999983.png
-[browser-preview-screenshot]: https://rikka.7sdre.am/files/8f27f97b-a9b5-4fac-b922-594d188f648c.png
+[browser-preview-screenshot]: https://rikka.7sdre.am/files/81994541-9e44-4e96-827f-ddc960c03b26.png
 [tui-mono-mode]: https://rikka.7sdre.am/files/c7a7a685-3966-4fb4-8e9e-0cc53636e406.png
 [tui-ascii-10-mode]: https://rikka.7sdre.am/files/77d4b267-00e4-4ab2-abe3-dc0569769566.png
 [tui-ascii-70-mode]: https://rikka.7sdre.am/files/59262531-7d4c-4228-be2f-3149c14c86d2.png

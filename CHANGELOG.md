@@ -2,9 +2,7 @@
 
 ## Unreleased
 
-## 0.3.0
-
-- Browser preview page gets a new wonderful UI (Thanks [@Tiierr](https://github.com/Tiierr), PR #5)
+- Update browser preview
 
 ## 0.2.2
 
