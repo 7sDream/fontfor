@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Display help message directly when `char` arg are missing
+
 ## 0.3.0
 
 - Browser preview page gets a new wonderful UI (Thanks [@Tiierr](https://github.com/Tiierr), PR #5)
