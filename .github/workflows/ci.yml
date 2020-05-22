@@ -17,7 +17,13 @@ jobs:
         platform: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.platform }}
     steps:
-      - name: Checkout
+      - name: Install freetype and fontconfig for macOS
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          brew install pkg-config cmake freetype fontconfig
+          pkg-config --libs --static fontconfig
+
+      - name: Checkout code
         uses: actions/checkout@v2
 
       - name: Install Rust toolchains
@@ -51,12 +57,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-targets --all-features -- -D warnings
 
-      - name: Install freetype and fontconfig for macOS
-        if: ${{ runner.os == 'macOS' }}
-        run: |
-          brew install pkg-config cmake freetype fontconfig
-          pkg-config --libs --static fontconfig
-
       - name: Build
         id: build
         run: |
@@ -74,7 +74,42 @@ jobs:
         if: steps.build.outputs.fail == '1'
         run: false
 
-      # Only build use release profile if new tag pushed
+  check_deps_version_and_build_release_binary:
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    needs: [ci]
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install cargo-outdated
+        uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-outdated
+          version: latest
+          use-tool-cache: true
+
+      - name: Check deps crates version
+        uses: actions-rs/cargo@v1
+        with:
+          command: outdated
+          args: -R --exit-code 1 --verbose
+
+      - name: Check Lock file updated
+        uses: actions-rs/cargo@v1
+        with:
+          command: generate-lockfile
+          args: --locked
+
       - name: Build use release profile
         if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
         run: cargo build --all-targets --all-features -vv --release
@@ -89,7 +124,7 @@ jobs:
   create_release:
     # Only create release if new tag pushed
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-    needs: [ci]
+    needs: [check_deps_version_and_build_release_binary]
     runs-on: ubuntu-latest
     outputs:
       release_upload_url: ${{ steps.release.outputs.upload_url }}

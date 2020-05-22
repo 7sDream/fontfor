@@ -10,17 +10,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
+
       - name: Install cargo-outdated
         uses: actions-rs/install@v0.1
         with:
           crate: cargo-outdated
           version: latest
           use-tool-cache: true
+
       - name: Check deps crates version
         uses: actions-rs/cargo@v1
         with:
