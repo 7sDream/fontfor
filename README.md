@@ -1,6 +1,6 @@
 # FontFor
 
-![license-badge] ![version-badge] ![ci-badge]
+[![license-badge]][license-file] [![version-badge]][crates-io-page] [![ci-badge]][github-actions-page]
 
 Find fonts which can show a specified character and preview them in browser.
 
@@ -104,8 +104,11 @@ GPLv3 or later.
 See [COPYING][COPYING-file].
 
 [license-badge]: https://img.shields.io/crates/l/fontfor?style=flat-square
+[license-file]: https://github.com/7sDream/fontfor/blob/master/COPYING
 [version-badge]: https://img.shields.io/crates/v/fontfor?style=flat-square
+[crates-io-page]: https://crates.io/crates/fontfor
 [ci-badge]: https://github.com/7sDream/fontfor/workflows/CI/badge.svg
+[github-actions-page]: https://github.com/7sDream/fontfor/actions
 [fontconfig-home]: https://www.freedesktop.org/wiki/Software/fontconfig/
 [free-type-home]: https://www.freetype.org/
 [which_fonts_support-github]: https://github.com/7sDream/which_fonts_support
