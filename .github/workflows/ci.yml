@@ -1,10 +1,11 @@
 name: CI
 
-on: 
+on:
   push:
     branches:
       - master
-    tags: 'v[0-9]+.[0-9]+.[0-9]+'
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
   pull_request:
     branches:
       - master
@@ -16,75 +17,74 @@ jobs:
         platform: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.platform }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
-    - name: Install Rust toolchains
-      id: toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
-        components: rustfmt, clippy
+      - name: Install Rust toolchains
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
 
-    - name: Cache cargo registry
-      uses: actions/cache@v1
-      with:
-        path: ~/.cargo/registry
-        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Cache cargo index
-      uses: actions/cache@v1
-      with:
-        path: ~/.cargo/git
-        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+      - name: Cache cargo index
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Check code style
-      uses: actions-rs/cargo@v1
-      with:
-        command: fmt
-        args: --all -- --check
+      - name: Check code style
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
 
-    - name: Lint code by clippy
-      uses: actions-rs/clippy-check@v1
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        args: --all-targets --all-features -- -D warnings
+      - name: Lint code by clippy
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-targets --all-features -- -D warnings
 
-    - name: Install freetype and fontconfig for macOS
-      if: ${{ runner.os == 'macOS' }}
-      run: |
-        brew install pkg-config cmake freetype fontconfig
-        pkg-config --libs --static fontconfig
+      - name: Install freetype and fontconfig for macOS
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          brew install pkg-config cmake freetype fontconfig
+          pkg-config --libs --static fontconfig
 
-    - name: Build
-      id: build
-      run: |
-        cargo clean
-        cargo build --all-targets --all-features --jobs 1 -vv || echo "::set-output name=fail::1"
+      - name: Build
+        id: build
+        run: |
+          cargo clean
+          cargo build --all-targets --all-features --jobs 1 -vv || echo "::set-output name=fail::1"
 
-    - name: Upload build result to artifact
-      if: steps.build.outputs.fail == '1'
-      uses: actions/upload-artifact@v2
-      with:
-        name: target-${{ runner.OS }}
-        path: target/
+      - name: Upload build result to artifact
+        if: steps.build.outputs.fail == '1'
+        uses: actions/upload-artifact@v2
+        with:
+          name: target-${{ runner.OS }}
+          path: target/
 
-    - name: Fail after upload build result
-      if: steps.build.outputs.fail == '1'
-      run: false
+      - name: Fail after upload build result
+        if: steps.build.outputs.fail == '1'
+        run: false
 
-    # Only build use release profile if new tag pushed
-    - name: Build use release profile
-      if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-      run: cargo build --all-targets --all-features -vv --release
+      # Only build use release profile if new tag pushed
+      - name: Build use release profile
+        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+        run: cargo build --all-targets --all-features -vv --release
 
-    - name: Upload release binary to artifact
-      if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-      uses: actions/upload-artifact@v2
-      with:
-        name: release-${{ runner.os }}
-        path: target/release/fontfor
+      - name: Upload release binary to artifact
+        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v2
+        with:
+          name: release-${{ runner.os }}
+          path: target/release/fontfor
 
   create_release:
     # Only create release if new tag pushed
@@ -97,7 +97,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      # Multi line outputs needs escaped before echo, ref: 
+      # Multi line outputs needs escaped before echo, ref:
       # https://github.community/t5/GitHub-Actions/set-output-Truncates-Multiline-Strings/td-p/37870
       - name: Get Tag Name and message
         id: tag
