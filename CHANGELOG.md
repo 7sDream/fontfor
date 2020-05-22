@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- Display help message directly when `char` arg are missing
+## 0.3.1
+
+- Display help message directly when `char` arg are missing (Issue #11, Pr #12)
 
 ## 0.3.0
 
