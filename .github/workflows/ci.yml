@@ -11,10 +11,36 @@ on:
       - master
 
 jobs:
-  ci:
+  lint_and_format_check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchains
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+
+      - name: Check code style
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+      - name: Lint code by clippy
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-targets --all-features -- -D warnings
+
+  build:
     strategy:
       matrix:
         platform: [ubuntu-latest, macos-latest]
+    needs: [lint_and_format_check]
     runs-on: ${{ matrix.platform }}
     steps:
       - name: Install freetype and fontconfig for macOS
@@ -31,7 +57,6 @@ jobs:
         with:
           toolchain: stable
           override: true
-          components: rustfmt, clippy
 
       - name: Cache cargo registry
         uses: actions/cache@v1
@@ -44,18 +69,6 @@ jobs:
         with:
           path: ~/.cargo/git
           key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Check code style
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
-
-      - name: Lint code by clippy
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-targets --all-features -- -D warnings
 
       - name: Build
         id: build
@@ -72,22 +85,13 @@ jobs:
 
       - name: Fail after upload build result
         if: steps.build.outputs.fail == '1'
-        run: false
+        run: "false"
 
-  check_deps_version_and_build_release_binary:
+  check_deps_version:
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-    needs: [ci]
-    strategy:
-      matrix:
-        platform: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.platform }}
+    needs: [build]
+    runs-on: ubuntu-latest
     steps:
-      - name: Install freetype and fontconfig for macOS
-        if: ${{ runner.os == 'macOS' }}
-        run: |
-          brew install pkg-config cmake freetype fontconfig
-          pkg-config --libs --static fontconfig
-
       - name: Checkout code
         uses: actions/checkout@v2
 
@@ -116,6 +120,29 @@ jobs:
           command: generate-lockfile
           args: --locked
 
+  release_build:
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest]
+    needs: [check_deps_version]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Install freetype and fontconfig for macOS
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          brew install pkg-config cmake freetype fontconfig
+          pkg-config --libs --static fontconfig
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
       - name: Build use release profile
         if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
         run: cargo build --all-targets --all-features -vv --release
@@ -128,9 +155,8 @@ jobs:
           path: target/release/fontfor
 
   create_release:
-    # Only create release if new tag pushed
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-    needs: [check_deps_version_and_build_release_binary]
+    needs: [release_build]
     runs-on: ubuntu-latest
     outputs:
       release_upload_url: ${{ steps.release.outputs.upload_url }}
@@ -154,7 +180,7 @@ jobs:
         id: release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.release_token }}
         with:
           tag_name: ${{ github.ref }}
           release_name: ${{ steps.tag.outputs.name }}
@@ -166,29 +192,42 @@ jobs:
     # Only upload binary when tag pushed
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
     needs: [create_release]
-    strategy:
-      matrix:
-        platform: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.platform }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Download ${{ runner.os }} binary from artifact
+      - name: Download Linux binary from artifact
         uses: actions/download-artifact@v2
         with:
-          name: release-${{ runner.os }}
-          path: artifacts
+          name: release-Linux
+          path: artifacts/release-Linux
+
+      - name: Download macOS binary from artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: release-macOS
+          path: artifacts/release-macOS
 
       - name: Show artifacts content
         run: ls -a -l -R artifacts
 
-      - name: Upload ${{ runner.os }} binary to release as asset
+      - name: Upload Linux binary asset to release
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create_release.outputs.release_upload_url }}
-          asset_path: ./artifacts/fontfor
-          asset_name: fontfor-${{ runner.os }}
+          asset_path: ./artifacts/release-Linux/fontfor
+          asset_name: fontfor-Linux
+          asset_content_type: application/octet-stream
+
+      - name: Upload macOS binary asset to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.release_upload_url }}
+          asset_path: ./artifacts/release-macOS/fontfor
+          asset_name: fontfor-macOS
           asset_content_type: application/octet-stream
