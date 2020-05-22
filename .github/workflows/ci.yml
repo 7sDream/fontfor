@@ -82,6 +82,12 @@ jobs:
         platform: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.platform }}
     steps:
+      - name: Install freetype and fontconfig for macOS
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          brew install pkg-config cmake freetype fontconfig
+          pkg-config --libs --static fontconfig
+
       - name: Checkout code
         uses: actions/checkout@v2
 
