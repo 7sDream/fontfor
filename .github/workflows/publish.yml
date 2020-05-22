@@ -2,11 +2,12 @@ name: Publish
 
 on:
   release:
-    types: [released]
+    types: [published]
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    if: "!github.event.release.draft && !github.event.release.prerelease"
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
