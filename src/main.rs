@@ -24,14 +24,15 @@
 
 mod args;
 mod font;
-mod font_matcher;
 mod ft;
 mod one_char;
 mod preview;
 
 use {
-    font::{GetValueByLang, SortedFamilies},
-    font_matcher::{FontMatcherLibrary, FontSet},
+    font::{
+        matcher::{FontMatcher, FontSet},
+        GetValueByLang, SortedFamilies,
+    },
     preview::{browser::ServerBuilder as PreviewServerBuilder, terminal::ui::UI},
     std::{cmp::Reverse, io::Write, iter::FromIterator, net::SocketAddr, process::exit},
 };

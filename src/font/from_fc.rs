@@ -1,6 +1,8 @@
 use {
-    super::{Family, Font, GetValueByLang, SortedFamilies},
-    crate::font_matcher::fc::{FontInfo, FontSet},
+    super::{
+        matcher::fc::{FontInfo, FontSet},
+        Family, Font, GetValueByLang, SortedFamilies,
+    },
     std::{collections::HashMap, convert::TryFrom},
 };
 

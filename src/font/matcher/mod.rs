@@ -26,7 +26,7 @@ pub mod ct; // means Core Text api
 #[cfg(target_os = "macos")]
 pub use ct::FontSet;
 
-pub trait FontMatcherLibrary {
+pub trait FontMatcher {
     type Output;
 
     fn init() -> Result<(), ()>;
@@ -36,7 +36,7 @@ pub trait FontMatcherLibrary {
 }
 
 #[cfg(target_os = "linux")]
-impl FontMatcherLibrary for FontSet {
+impl FontMatcher for FontSet {
     type Output = Self;
 
     fn init() -> Result<(), ()> {
@@ -55,7 +55,7 @@ impl FontMatcherLibrary for FontSet {
 }
 
 #[cfg(target_os = "macos")]
-impl FontMatcherLibrary for FontSet {
+impl FontMatcher for FontSet {
     type Output = Self;
 
     fn init() -> Result<(), ()> {

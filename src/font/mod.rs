@@ -22,6 +22,8 @@ mod from_fc;
 #[cfg(target_os = "macos")]
 mod from_ct;
 
+pub mod matcher;
+
 use std::{
     cmp::{Ordering, Reverse},
     collections::{BinaryHeap, HashMap},
