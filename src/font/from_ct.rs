@@ -1,4 +1,4 @@
-use {super::SortedFamilies, crate::font_matcher::ct::FontSet};
+use super::{matcher::ct::FontSet, SortedFamilies};
 
 impl<'fs> From<&'fs FontSet> for SortedFamilies<'fs> {
     fn from(_: &'fs FontSet) -> Self {
