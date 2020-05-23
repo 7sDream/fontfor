@@ -20,16 +20,18 @@
 #![deny(clippy::all, clippy::pedantic, clippy::nursery)]
 #![deny(missing_debug_implementations, rust_2018_idioms)]
 #![allow(clippy::module_name_repetitions)]
+#![allow(dead_code)] // TODO: Delete me after core-text feature finish
 
 mod args;
-mod fc;
 mod font;
+mod font_matcher;
 mod ft;
 mod one_char;
 mod preview;
 
 use {
     font::{GetValueByLang, SortedFamilies},
+    font_matcher::{FontMatcherLibrary, FontSet},
     preview::{browser::ServerBuilder as PreviewServerBuilder, terminal::ui::UI},
     std::{cmp::Reverse, io::Write, iter::FromIterator, net::SocketAddr, process::exit},
 };
@@ -37,14 +39,12 @@ use {
 fn main() {
     let argument = args::get();
 
-    fc::init().unwrap_or_else(|_| {
+    FontSet::init().unwrap_or_else(|_| {
         eprintln!("init FontConfig failed");
         exit(1);
     });
 
-    let charset = fc::Charset::default().add_char(argument.char.0);
-    let pattern = fc::Pattern::default().add_charset(&charset);
-    let font_set = fc::FontSet::match_pattern(&pattern);
+    let font_set = FontSet::fonts_contains(argument.char.0);
 
     let families = font::SortedFamilies::from(&font_set);
 
@@ -77,7 +77,7 @@ fn main() {
         }
     }
 
-    fc::finalize();
+    FontSet::finalize();
 }
 
 fn show_preview_addr_and_wait(addr: SocketAddr) {

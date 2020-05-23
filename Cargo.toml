@@ -13,11 +13,20 @@ categories = ["command-line-utilities", "text-processing", "visualization"]
 
 [dependencies]
 structopt = "0.3"
-servo-fontconfig = "0.5"
 once_cell = "1.3"
 httparse = "1.3"
-freetype = "0.5"
+# freetype crate needs a patch https://github.com/servo/rust-freetype/pull/60
+# due to the latest published version do not link to C library
+# TODO: use prod version after freetype 0.5.3 or above is published
+freetype = { git = "https://github.com/servo/rust-freetype", rev = "44aaca76a02ac6913ec75a10c7fcdbe6733d0428" }
 crossterm = "0.17"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+servo-fontconfig = "0.5"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+core-foundation = "0.7"
+core-text = "15.0"
 
 [dependencies.tui]
 version = "0.9"

@@ -16,37 +16,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod charset;
-mod consts;
-mod font_info;
-mod font_set;
-mod object_set;
-mod pattern;
-
-pub use {
-    charset::Charset,
-    font_info::{FontInfo, StrValuesByLang, ValuesByLang},
-    font_set::{FontSet, Fonts},
-    object_set::ObjectSet,
-    pattern::Pattern,
+use {
+    super::descriptor::Descriptor,
+    core_foundation::{array::CFArray, base::TCFType},
+    core_text::font_descriptor::{
+        CTFontDescriptorCreateMatchingFontDescriptors, CTFontDescriptorRef,
+    },
 };
 
-use {consts::THE_OBJECT_SET, fontconfig::fontconfig as fc, once_cell::unsync::Lazy};
-
-pub fn init() -> Result<(), ()> {
-    let config = unsafe { fc::FcInitLoadConfigAndFonts() };
-    if config.is_null() {
-        Err(())
-    } else {
-        unsafe { fc::FcConfigDestroy(config) };
-        #[allow(clippy::borrow_interior_mutable_const)] // we init it only once
-        Lazy::force(&THE_OBJECT_SET);
-        Ok(())
-    }
+struct FontSet {
+    ptr: CFArray<CTFontDescriptorRef>,
 }
 
-pub fn finalize() {
-    unsafe {
-        fc::FcFini();
+impl FontSet {
+    pub fn match_description(desc: &Descriptor) -> Self {
+        let ptr = unsafe {
+            CFArray::<CTFontDescriptorRef>::wrap_under_create_rule(
+                CTFontDescriptorCreateMatchingFontDescriptors(
+                    desc.ptr.as_concrete_TypeRef(),
+                    std::ptr::null(),
+                ),
+            )
+        };
+        Self { ptr }
     }
 }

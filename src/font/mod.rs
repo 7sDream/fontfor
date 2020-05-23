@@ -16,15 +16,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use {
-    super::fc::{FontInfo, FontSet, StrValuesByLang, ValuesByLang},
-    std::{
-        cmp::{Ordering, Reverse},
-        collections::{BinaryHeap, HashMap},
-        convert::TryFrom,
-        ops::Deref,
-        os::raw::c_int,
-    },
+#[cfg(target_os = "linux")]
+mod from_fc;
+
+#[cfg(target_os = "macos")]
+mod from_ct;
+
+use std::{
+    cmp::{Ordering, Reverse},
+    collections::{BinaryHeap, HashMap},
+    ops::Deref,
 };
 
 const DEFAULT_LANG: &str = "en";
@@ -45,6 +46,9 @@ pub trait GetValueByLang {
         }
     }
 }
+
+pub type ValuesByLang<'a, T> = HashMap<&'a str, Vec<T>>;
+pub type StrValuesByLang<'a> = ValuesByLang<'a, &'a str>;
 
 impl<'a, T> GetValueByLang for ValuesByLang<'a, T> {
     type Item = T;
@@ -86,7 +90,7 @@ pub struct Font<'fi> {
     pub family_names: StrValuesByLang<'fi>,
     pub fullnames: StrValuesByLang<'fi>,
     pub path: &'fi str,
-    pub index: c_int,
+    pub index: usize,
 }
 
 impl<'fi> PartialEq for Font<'fi> {
@@ -112,48 +116,7 @@ impl<'fi> PartialOrd for Font<'fi> {
     }
 }
 
-impl<'fi> TryFrom<FontInfo<'fi>> for Font<'fi> {
-    type Error = ();
-
-    fn try_from(font_info: FontInfo<'fi>) -> Result<Self, Self::Error> {
-        let f = Self {
-            family_names: font_info.family_names()?,
-            fullnames: font_info.fullnames()?,
-            path: font_info.path()?,
-            index: font_info.index()?,
-        };
-        if f.family_names.is_empty() || f.fullnames.is_empty() {
-            Err(())
-        } else {
-            Ok(f)
-        }
-    }
-}
-
 pub struct SortedFamilies<'fs>(Vec<Family<'fs>>);
-
-impl<'fs> From<&'fs FontSet> for SortedFamilies<'fs> {
-    fn from(font_set: &'fs FontSet) -> Self {
-        let mut families = HashMap::new();
-
-        font_set.fonts().for_each(|fc_font| {
-            if let Ok(font) = Font::try_from(fc_font) {
-                let family = font.family_names.get_default();
-                families
-                    .entry(*family)
-                    .or_insert_with(|| Family::new(font.family_names.clone()))
-                    .add_font(font);
-            }
-        });
-
-        let mut families: Vec<Family<'fs>> =
-            families.into_iter().map(|(_, family)| family).collect();
-
-        families.sort_by_key(|f| -> &'fs str { f.name.get_default() });
-
-        Self(families)
-    }
-}
 
 impl<'fs> IntoIterator for SortedFamilies<'fs> {
     type Item = <Vec<Family<'fs>> as IntoIterator>::Item;
