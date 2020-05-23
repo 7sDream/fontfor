@@ -120,7 +120,7 @@ impl<'fc, 'ft> State<'fc, 'ft> {
             .or_else(|_| {
                 let font_info = &self.font_faces_info[self.index()];
                 self.ft
-                    .load_font(font_info.path, font_info.index.into())
+                    .load_font(font_info.path, font_info.index)
                     .map_err(|_| "Can't load current font")
             })
             .and_then(|font_face| self.set_font_face_size(font_face))

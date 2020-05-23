@@ -18,17 +18,14 @@
 
 use {
     super::consts::{FC_FAMILY, FC_FAMILY_LANG, FC_FILE, FC_FULLNAME, FC_FULLNAME_LANG, FC_INDEX},
+    crate::font::StrValuesByLang,
     fontconfig::fontconfig as fc,
     std::{
-        collections::HashMap,
         ffi::{CStr, CString},
         marker::PhantomData,
         os::raw::{c_char, c_int},
     },
 };
-
-pub type ValuesByLang<'a, T> = HashMap<&'a str, Vec<T>>;
-pub type StrValuesByLang<'a> = ValuesByLang<'a, &'a str>;
 
 /// This struct is a convenient type to represent fonts in `FontSet`'s font array.
 ///

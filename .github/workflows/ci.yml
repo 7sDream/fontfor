@@ -12,7 +12,10 @@ on:
 
 jobs:
   lint_and_format_check:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -42,11 +45,11 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Install freetype and fontconfig for macOS
+      - name: Install freetype for macOS
         if: ${{ runner.os == 'macOS' }}
         run: |
-          brew install pkg-config cmake freetype fontconfig
-          pkg-config --libs --static fontconfig
+          brew install pkg-config cmake freetype
+          pkg-config --libs freetype2
 
       - name: Checkout code
         uses: actions/checkout@v2
@@ -73,7 +76,8 @@ jobs:
         id: build
         run: |
           cargo clean
-          cargo build --all-targets --all-features --jobs 1 -vv || echo "::set-output name=fail::1"
+          mkdir target
+          cargo build --all-targets --all-features --jobs 1 -vv 2>&1 | tee target/build.log || echo "::set-output name=fail::1"
 
       - name: Upload build result to artifact
         if: steps.build.outputs.fail == '1'
@@ -130,11 +134,11 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Install freetype and fontconfig for macOS
+      - name: Install freetype for macOS
         if: ${{ runner.os == 'macOS' }}
         run: |
-          brew install pkg-config cmake freetype fontconfig
-          pkg-config --libs --static fontconfig
+          brew install pkg-config cmake freetype
+          pkg-config --libs freetype2
 
       - name: Checkout code
         uses: actions/checkout@v2

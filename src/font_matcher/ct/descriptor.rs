@@ -17,35 +17,23 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use {
-    super::{FontFace, FreeTypeError},
-    freetype::freetype as ft,
-    std::{path::Path, ptr},
+    super::charset::Charset,
+    core_foundation::{base::TCFType, dictionary::CFDictionary, string::CFString},
+    core_text::font_descriptor::{
+        kCTFontCharacterSetAttribute, new_from_attributes, CTFontDescriptor,
+    },
 };
 
-pub struct Library {
-    pub(super) library: ft::FT_Library,
+pub struct Descriptor {
+    pub(super) ptr: CTFontDescriptor,
 }
 
-impl Library {
-    pub fn new() -> Result<Self, i32> {
-        let mut library = ptr::null_mut();
-        let ret = unsafe { ft::FT_Init_FreeType(&mut library as *mut ft::FT_Library) };
-        ret.map_result(|| Self { library })
-    }
-
-    pub fn load_font<P>(&self, path: P, index: usize) -> Result<FontFace<'_>, ft::FT_Error>
-    where
-        P: AsRef<Path>,
-    {
-        let path = path.as_ref();
-        FontFace::new(self, path, index as ft::FT_Long)
-    }
-}
-
-impl Drop for Library {
-    fn drop(&mut self) {
-        unsafe {
-            ft::FT_Done_Library(self.library);
-        }
+impl Descriptor {
+    pub fn new_with_charset(charset: &Charset) -> Self {
+        let charset_key = unsafe { CFString::wrap_under_get_rule(kCTFontCharacterSetAttribute) };
+        let charset_value = charset.ptr.as_CFType();
+        let attritubes = CFDictionary::from_CFType_pairs(&[(charset_key, charset_value)]);
+        let ptr = new_from_attributes(&attritubes);
+        Self { ptr }
     }
 }

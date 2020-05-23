@@ -16,36 +16,37 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use {
-    super::{FontFace, FreeTypeError},
-    freetype::freetype as ft,
-    std::{path::Path, ptr},
+mod charset;
+mod consts;
+mod font_info;
+mod font_set;
+mod object_set;
+mod pattern;
+
+pub use {
+    charset::Charset,
+    font_info::FontInfo,
+    font_set::{FontSet, Fonts},
+    object_set::ObjectSet,
+    pattern::Pattern,
 };
 
-pub struct Library {
-    pub(super) library: ft::FT_Library,
-}
+use {consts::THE_OBJECT_SET, fontconfig::fontconfig as fc, once_cell::unsync::Lazy};
 
-impl Library {
-    pub fn new() -> Result<Self, i32> {
-        let mut library = ptr::null_mut();
-        let ret = unsafe { ft::FT_Init_FreeType(&mut library as *mut ft::FT_Library) };
-        ret.map_result(|| Self { library })
-    }
-
-    pub fn load_font<P>(&self, path: P, index: usize) -> Result<FontFace<'_>, ft::FT_Error>
-    where
-        P: AsRef<Path>,
-    {
-        let path = path.as_ref();
-        FontFace::new(self, path, index as ft::FT_Long)
+pub fn init() -> Result<(), ()> {
+    let config = unsafe { fc::FcInitLoadConfigAndFonts() };
+    if config.is_null() {
+        Err(())
+    } else {
+        unsafe { fc::FcConfigDestroy(config) };
+        #[allow(clippy::borrow_interior_mutable_const)] // we init it only once
+        Lazy::force(&THE_OBJECT_SET);
+        Ok(())
     }
 }
 
-impl Drop for Library {
-    fn drop(&mut self) {
-        unsafe {
-            ft::FT_Done_Library(self.library);
-        }
+pub fn finalize() {
+    unsafe {
+        fc::FcFini();
     }
 }
