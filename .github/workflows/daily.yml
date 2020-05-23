@@ -2,7 +2,7 @@ name: Daily check
 
 on:
   schedule:
-    - cron: "0 23 * * *" # CST 7:00 = UTC prev day 23:00
+    - cron: '0 23 * * *' # CST 7:00 = UTC prev day 23:00
 
 jobs:
   deps_version_check:
@@ -29,3 +29,8 @@ jobs:
         with:
           command: outdated
           args: -R --exit-code 1 --verbose
+
+      - name: Security audit
+        uses: actions-rs/audit-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}

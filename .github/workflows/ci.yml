@@ -118,6 +118,11 @@ jobs:
           command: generate-lockfile
           args: --locked
 
+      - name: Security audit
+        uses: actions-rs/audit-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
   release_build:
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
     strategy:
