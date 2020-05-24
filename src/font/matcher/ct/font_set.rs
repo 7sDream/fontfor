@@ -17,21 +17,20 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use {
-    super::descriptor::Descriptor,
+    super::{Charset, FontDescriptor, FontInfo},
+    crate::font::matcher::FontMatcher,
     core_foundation::{array::CFArray, base::TCFType},
-    core_text::font_descriptor::{
-        CTFontDescriptorCreateMatchingFontDescriptors, CTFontDescriptorRef,
-    },
+    core_text::font_descriptor::{CTFontDescriptor, CTFontDescriptorCreateMatchingFontDescriptors},
 };
 
-struct FontSet {
-    ptr: CFArray<CTFontDescriptorRef>,
+pub struct FontSet {
+    ptr: CFArray<CTFontDescriptor>,
 }
 
 impl FontSet {
-    pub fn match_description(desc: &Descriptor) -> Self {
+    pub fn match_descriptor(desc: &FontDescriptor) -> Self {
         let ptr = unsafe {
-            CFArray::<CTFontDescriptorRef>::wrap_under_create_rule(
+            CFArray::<CTFontDescriptor>::wrap_under_create_rule(
                 CTFontDescriptorCreateMatchingFontDescriptors(
                     desc.ptr.as_concrete_TypeRef(),
                     std::ptr::null(),
@@ -39,5 +38,43 @@ impl FontSet {
             )
         };
         Self { ptr }
+    }
+}
+
+pub struct Fonts<'fs> {
+    current: isize,
+    array: &'fs CFArray<CTFontDescriptor>,
+}
+
+impl<'fs> Iterator for Fonts<'fs> {
+    type Item = FontInfo<'fs>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current < self.array.len() {
+            self.current += 1;
+            Some(FontInfo { desc: self.array.get(self.current - 1).unwrap() })
+        } else {
+            None
+        }
+    }
+}
+
+impl<'fs> FontMatcher<'fs, FontInfo<'fs>> for FontSet {
+    type Output = Fonts<'fs>;
+
+    fn init() -> Result<(), ()> {
+        Ok(())
+    }
+
+    fn finalize() {}
+
+    fn fonts_contains(c: char) -> Self {
+        let charset = Charset::default().add_char(c);
+        let descriptor = FontDescriptor::new_with_charset(&charset);
+        Self::match_descriptor(&descriptor)
+    }
+
+    fn fonts(&'fs self) -> Self::Output {
+        Fonts { current: 0, array: &self.ptr }
     }
 }

@@ -17,14 +17,13 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 mod charset;
-mod descriptor;
+mod font_descriptor;
 mod font_info;
 mod font_set;
 
-pub struct FontSet {}
-
-impl FontSet {
-    pub const fn matchs_char(_c: char) -> Self {
-        Self {}
-    }
-}
+pub use {
+    charset::Charset,
+    font_descriptor::FontDescriptor,
+    font_info::FontInfo,
+    font_set::{FontSet, Fonts},
+};

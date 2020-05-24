@@ -24,11 +24,11 @@ use {
     },
 };
 
-pub struct Descriptor {
+pub struct FontDescriptor {
     pub(super) ptr: CTFontDescriptor,
 }
 
-impl Descriptor {
+impl FontDescriptor {
     pub fn new_with_charset(charset: &Charset) -> Self {
         let charset_key = unsafe { CFString::wrap_under_get_rule(kCTFontCharacterSetAttribute) };
         let charset_value = charset.ptr.as_CFType();
