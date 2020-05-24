@@ -70,11 +70,11 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
     where
         B: tui::backend::Backend,
     {
-        let families = self.state.family_names();
+        let families = self.state.font_face_names();
         let index = self.state.index();
         let title = format!("Fonts {}/{}", index + 1, families.len());
 
-        let list = List::new(families.iter().copied().map(Text::raw))
+        let list = List::new(families.map(Text::raw))
             .block(Block::default().title(&title).borders(Borders::ALL))
             .highlight_style(Style::default().fg(Color::LightBlue).modifier(Modifier::BOLD));
 

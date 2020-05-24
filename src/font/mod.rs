@@ -20,58 +20,27 @@ pub mod matcher;
 use {
     matcher::{FontMatcher, FontSet},
     std::{
-        cmp::{Ordering, Reverse},
+        borrow::Cow,
+        cmp::Reverse,
         collections::{BinaryHeap, HashMap},
         convert::TryFrom,
         ops::Deref,
     },
 };
 
+#[cfg_attr(target_os = "macos", allow(dead_code))]
 const DEFAULT_LANG: &str = "en";
 
-/// Convenient trait for quickly get property value in default language
-pub trait GetValueByLang {
-    type Item;
-
-    fn get_by_lang(&self, lang: &str) -> Option<&Self::Item>;
-
-    fn when_missing(&self) -> &Self::Item;
-
-    fn get_default(&self) -> &Self::Item {
-        if let Some(value) = self.get_by_lang(DEFAULT_LANG) {
-            value
-        } else {
-            self.when_missing()
-        }
-    }
-}
-
-pub type ValuesByLang<'a, T> = HashMap<&'a str, Vec<T>>;
-pub type StrValuesByLang<'a> = ValuesByLang<'a, &'a str>;
-
-impl<'a, T> GetValueByLang for ValuesByLang<'a, T> {
-    type Item = T;
-
-    fn get_by_lang(&self, lang: &str) -> Option<&Self::Item> {
-        self.get(lang).and_then(|values| values.first())
-    }
-
-    fn when_missing(&self) -> &Self::Item {
-        self.values().next().unwrap().first().unwrap()
-    }
-}
-
 pub struct Family<'fs> {
-    pub name: StrValuesByLang<'fs>,
+    pub name: Cow<'fs, str>,
     pub fonts: BinaryHeap<Reverse<Font<'fs>>>,
-    pub default_name_width: usize,
+    pub name_width: usize,
 }
 
 impl<'fs> Family<'fs> {
-    pub fn new(name: StrValuesByLang<'fs>) -> Self {
-        let default_name = *name.get_default();
-        let default_name_width = default_name.len();
-        Self { name, fonts: BinaryHeap::new(), default_name_width }
+    pub fn new(name: Cow<'fs, str>) -> Self {
+        let name_width = name.len();
+        Self { name, fonts: BinaryHeap::new(), name_width }
     }
 
     pub fn styles_count(&self) -> usize {
@@ -84,35 +53,12 @@ impl<'fs> Family<'fs> {
     }
 }
 
-#[derive(Eq)]
+#[derive(Eq, PartialEq, Ord, PartialOrd)]
 pub struct Font<'fi> {
-    pub family_names: StrValuesByLang<'fi>,
-    pub fullnames: StrValuesByLang<'fi>,
-    pub path: &'fi str,
+    pub family_name: Cow<'fi, str>,
+    pub fullname: Cow<'fi, str>,
+    pub path: Cow<'fi, str>,
     pub index: usize,
-}
-
-impl<'fi> PartialEq for Font<'fi> {
-    fn eq(&self, other: &Self) -> bool {
-        self.fullnames.get_default() == other.fullnames.get_default()
-    }
-}
-
-/// Implement `Ord` trait for store `FontInfo` in `BinaryHeap` struct
-///
-/// We sort font by it's fullname of default language(en).
-impl<'fi> Ord for Font<'fi> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        let self_name = *self.fullnames.get_default();
-        let other_name = *other.fullnames.get_default();
-        self_name.cmp(other_name)
-    }
-}
-
-impl<'fi> PartialOrd for Font<'fi> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
 }
 
 pub struct SortedFamilies<'fs>(Vec<Family<'fs>>);
@@ -136,22 +82,25 @@ impl<'fs> Deref for SortedFamilies<'fs> {
 
 impl<'fs> From<&'fs FontSet> for SortedFamilies<'fs> {
     fn from(font_set: &'fs FontSet) -> Self {
-        let mut families = HashMap::new();
+        let mut families: HashMap<Cow<'fs, str>, Family<'fs>> = HashMap::new();
 
         font_set.fonts().for_each(|fc_font| {
             if let Ok(font) = Font::try_from(fc_font) {
-                let family = font.family_names.get_default();
-                families
-                    .entry(*family)
-                    .or_insert_with(|| Family::new(font.family_names.clone()))
-                    .add_font(font);
+                if let Some(slot) = families.get_mut(&font.family_name) {
+                    slot.add_font(font);
+                } else {
+                    let mut family = Family::new(font.family_name.clone());
+                    let key = font.family_name.clone();
+                    family.add_font(font);
+                    families.insert(key, family);
+                }
             }
         });
 
         let mut families: Vec<Family<'fs>> =
             families.into_iter().map(|(_, family)| family).collect();
 
-        families.sort_by_key(|f| -> &'fs str { f.name.get_default() });
+        families.sort_by(|a, b| a.name.cmp(&b.name));
 
         Self(families)
     }

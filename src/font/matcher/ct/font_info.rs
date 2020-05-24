@@ -18,7 +18,7 @@
 
 use {
     crate::font::Font, core_foundation::base::ItemRef,
-    core_text::font_descriptor::CTFontDescriptor, std::convert::TryFrom,
+    core_text::font_descriptor::CTFontDescriptor, std::borrow::Cow, std::convert::TryFrom,
 };
 
 pub struct FontInfo<'fs> {
@@ -28,7 +28,13 @@ pub struct FontInfo<'fs> {
 impl<'fi> TryFrom<FontInfo<'fi>> for Font<'fi> {
     type Error = ();
 
-    fn try_from(_font_info: FontInfo<'fi>) -> Result<Self, Self::Error> {
-        Err(())
+    fn try_from(font_info: FontInfo<'fi>) -> Result<Self, Self::Error> {
+        let family_name = Cow::from(font_info.desc.family_name());
+        let fullname = Cow::from(font_info.desc.font_name());
+        let path = Cow::from(
+            font_info.desc.font_path().ok_or(())?.into_os_string().into_string().map_err(|_| ())?,
+        );
+        let index = 0;
+        Ok(Font { family_name, fullname, path, index })
     }
 }

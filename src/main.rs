@@ -20,7 +20,6 @@
 #![deny(clippy::all, clippy::pedantic, clippy::nursery)]
 #![deny(missing_debug_implementations, rust_2018_idioms)]
 #![allow(clippy::module_name_repetitions)]
-#![allow(dead_code)] // TODO: Delete me after core-text feature finish
 
 mod args;
 mod font;
@@ -31,7 +30,7 @@ mod preview;
 use {
     font::{
         matcher::{FontMatcher, FontSet},
-        GetValueByLang, SortedFamilies,
+        SortedFamilies,
     },
     preview::{browser::ServerBuilder as PreviewServerBuilder, terminal::ui::UI},
     std::{cmp::Reverse, io::Write, iter::FromIterator, net::SocketAddr, process::exit},
@@ -64,8 +63,8 @@ fn main() {
             eprintln!("{:?}", err);
         });
     } else {
-        let builder = if argument.preview {
-            Some(PreviewServerBuilder::from_iter(families.iter()))
+        let server = if argument.preview {
+            Some(PreviewServerBuilder::from_iter(families.iter()).build_for(argument.char.0))
         } else {
             None
         };
@@ -73,8 +72,8 @@ fn main() {
         println!("Font(s) support the character {}:", argument.char.description());
         show_font_list(families, argument.verbose);
 
-        if let Some(builder) = builder {
-            builder.build_for(argument.char.0).run_until(show_preview_addr_and_wait);
+        if let Some(server) = server {
+            server.run_until(show_preview_addr_and_wait);
         }
     }
 
@@ -93,22 +92,19 @@ fn show_preview_addr_and_wait(addr: SocketAddr) {
 }
 
 fn show_font_list(families: SortedFamilies<'_>, verbose: bool) {
-    let max_len = if verbose {
-        0
-    } else {
-        families.iter().map(|f| f.default_name_width).max().unwrap_or_default()
-    };
+    let max_len =
+        if verbose { 0 } else { families.iter().map(|f| f.name_width).max().unwrap_or_default() };
 
     families.into_iter().for_each(|mut family| {
         if verbose {
-            println!("{}", family.name.get_default());
+            println!("{}", family.name);
             while let Some(Reverse(face)) = family.fonts.pop() {
-                println!("    {}", face.fullnames.get_default());
+                println!("    {}", face.fullname);
             }
         } else {
             println!(
                 "{:<family_name_length$} with {} style{}",
-                family.name.get_default(),
+                family.name,
                 family.styles_count(),
                 if family.styles_count() > 1 { "s" } else { "" },
                 family_name_length = max_len,
