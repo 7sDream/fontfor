@@ -15,19 +15,16 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-#[cfg(target_os = "linux")]
-mod from_fc;
-
-#[cfg(target_os = "macos")]
-mod from_ct;
-
 pub mod matcher;
 
-use std::{
-    cmp::{Ordering, Reverse},
-    collections::{BinaryHeap, HashMap},
-    ops::Deref,
+use {
+    matcher::{FontMatcher, FontSet},
+    std::{
+        cmp::{Ordering, Reverse},
+        collections::{BinaryHeap, HashMap},
+        convert::TryFrom,
+        ops::Deref,
+    },
 };
 
 const DEFAULT_LANG: &str = "en";
@@ -134,5 +131,28 @@ impl<'fs> Deref for SortedFamilies<'fs> {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl<'fs> From<&'fs FontSet> for SortedFamilies<'fs> {
+    fn from(font_set: &'fs FontSet) -> Self {
+        let mut families = HashMap::new();
+
+        font_set.fonts().for_each(|fc_font| {
+            if let Ok(font) = Font::try_from(fc_font) {
+                let family = font.family_names.get_default();
+                families
+                    .entry(*family)
+                    .or_insert_with(|| Family::new(font.family_names.clone()))
+                    .add_font(font);
+            }
+        });
+
+        let mut families: Vec<Family<'fs>> =
+            families.into_iter().map(|(_, family)| family).collect();
+
+        families.sort_by_key(|f| -> &'fs str { f.name.get_default() });
+
+        Self(families)
     }
 }

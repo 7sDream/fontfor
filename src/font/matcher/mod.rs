@@ -17,54 +17,25 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #[cfg(target_os = "linux")]
-pub mod fc; // means FontConfig
+mod fc; // means FontConfig
 #[cfg(target_os = "linux")]
 pub use fc::FontSet;
 
 #[cfg(target_os = "macos")]
-pub mod ct; // means Core Text api
+mod ct; // means Core Text api
 #[cfg(target_os = "macos")]
 pub use ct::FontSet;
 
-pub trait FontMatcher {
-    type Output;
+use {super::Font, std::convert::TryInto};
+
+pub trait FontMatcher<'fs, T>
+where
+    T: TryInto<Font<'fs>>,
+{
+    type Output: Iterator<Item = T>;
 
     fn init() -> Result<(), ()>;
     fn finalize();
-
-    fn fonts_contains(c: char) -> Self::Output;
-}
-
-#[cfg(target_os = "linux")]
-impl FontMatcher for FontSet {
-    type Output = Self;
-
-    fn init() -> Result<(), ()> {
-        fc::init()
-    }
-
-    fn finalize() {
-        fc::finalize();
-    }
-
-    fn fonts_contains(c: char) -> Self::Output {
-        let charset = fc::Charset::default().add_char(c);
-        let pattern = fc::Pattern::default().add_charset(&charset);
-        Self::match_pattern(&pattern)
-    }
-}
-
-#[cfg(target_os = "macos")]
-impl FontMatcher for FontSet {
-    type Output = Self;
-
-    fn init() -> Result<(), ()> {
-        Ok(())
-    }
-
-    fn finalize() {}
-
-    fn fonts_contains(_: char) -> Self::Output {
-        Self {}
-    }
+    fn fonts_contains(c: char) -> Self;
+    fn fonts(&'fs self) -> Self::Output;
 }

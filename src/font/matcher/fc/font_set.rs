@@ -17,7 +17,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use {
-    super::{consts::THE_OBJECT_SET, FontInfo, Pattern},
+    super::{consts::THE_OBJECT_SET, finalize, init, Charset, FontInfo, Pattern},
+    crate::font::matcher::FontMatcher,
     fontconfig::fontconfig as fc,
     std::marker::PhantomData,
 };
@@ -50,18 +51,6 @@ impl FontSet {
             Self::from_ptr(fc::FcFontList(std::ptr::null_mut(), pattern.ptr, THE_OBJECT_SET.ptr))
         }
     }
-
-    pub fn fonts<'fs>(&'fs self) -> Fonts<'fs> {
-        let fs = unsafe { self.ptr.as_ref() }.unwrap();
-
-        assert!(fs.nfont >= 0);
-        #[allow(clippy::cast_sign_loss)]
-        let fonts_count = fs.nfont as usize;
-
-        let fonts_array = unsafe { std::slice::from_raw_parts::<'fs>(fs.fonts, fonts_count) };
-
-        Fonts { current: 0, fonts_array }
-    }
 }
 
 pub struct Fonts<'fs> {
@@ -79,5 +68,35 @@ impl<'fs> Iterator for Fonts<'fs> {
         } else {
             None
         }
+    }
+}
+
+impl<'fs> FontMatcher<'fs, FontInfo<'fs>> for FontSet {
+    type Output = Fonts<'fs>;
+
+    fn init() -> Result<(), ()> {
+        init()
+    }
+
+    fn finalize() {
+        finalize();
+    }
+
+    fn fonts_contains(c: char) -> Self {
+        let charset = Charset::default().add_char(c);
+        let pattern = Pattern::default().add_charset(&charset);
+        Self::match_pattern(&pattern)
+    }
+
+    fn fonts(&'fs self) -> Self::Output {
+        let fs = unsafe { self.ptr.as_ref() }.unwrap();
+
+        assert!(fs.nfont >= 0);
+        #[allow(clippy::cast_sign_loss)]
+        let fonts_count = fs.nfont as usize;
+
+        let fonts_array = unsafe { std::slice::from_raw_parts::<'fs>(fs.fonts, fonts_count) };
+
+        Fonts { current: 0, fonts_array }
     }
 }

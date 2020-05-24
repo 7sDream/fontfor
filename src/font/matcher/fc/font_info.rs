@@ -18,9 +18,10 @@
 
 use {
     super::consts::{FC_FAMILY, FC_FAMILY_LANG, FC_FILE, FC_FULLNAME, FC_FULLNAME_LANG, FC_INDEX},
-    crate::font::StrValuesByLang,
+    crate::font::{Font, StrValuesByLang},
     fontconfig::fontconfig as fc,
     std::{
+        convert::TryFrom,
         ffi::{CStr, CString},
         marker::PhantomData,
         os::raw::{c_char, c_int},
@@ -124,5 +125,24 @@ impl<'font> FontInfo<'font> {
 
     pub fn index(&self) -> Result<c_int, ()> {
         self.get_int_property(FC_INDEX).pop().ok_or(())
+    }
+}
+
+impl<'fi> TryFrom<FontInfo<'fi>> for Font<'fi> {
+    type Error = ();
+
+    fn try_from(font_info: FontInfo<'fi>) -> Result<Self, Self::Error> {
+        #[allow(clippy::cast_sign_loss)] // Because it is index
+        let f = Self {
+            family_names: font_info.family_names()?,
+            fullnames: font_info.fullnames()?,
+            path: font_info.path()?,
+            index: font_info.index()? as usize,
+        };
+        if f.family_names.is_empty() || f.fullnames.is_empty() {
+            Err(())
+        } else {
+            Ok(f)
+        }
     }
 }
