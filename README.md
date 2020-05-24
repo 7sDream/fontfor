@@ -10,13 +10,17 @@ This is port from my early python script called [which_fonts_support][which_font
 - Use [`Fontconfig`][fontconfig-home] library instead of depends on `fc-list` command installed
 - Support preview in shell (powered by [`FreeType`][free-type-home]), no browser needed
 
-## Dependencies
+## Dependencies for Development or Build
 
-This program needs `Fontconfig` and `FreeType` library to run, and some of their deps needs `cmake` to compile, so we need to install them before compile:
+This program will build `Fontconfig`(on Linux only) and `FreeType`(on Linux and macOS) from source automatically if you haven't installed them to system.
 
-- macOS: `brew install cmake freetype fontconfig`
+So this program needs `pkg-config`, `CMake` and `make` as **dev only** dependencies.
+
+- macOS: `brew install pkg-config cmake` (macOS has built-in `make` tools already)
 - Linux: Please refer to the docs of your Linux distribution to figure out how to install them
 - Win: Do not support Windows for now
+
+If you just want to use it, please download prebuild binary from release page, no runtime dependencies needed.
 
 ## Install or Update
 

@@ -29,3 +29,7 @@ core-text = "15.0"
 version = "0.10"
 default-features = false
 features = ["crossterm"]
+
+# TODO: Delete me if servo-fontconfig-sys's new version will use static lib built by dep -sys crates
+[patch.crates-io]
+servo-fontconfig-sys = { git = "https://github.com/7sDream/libfontconfig", branch = "build/use-dep-built-static-lib-when-possible" }

@@ -45,11 +45,14 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Install freetype for macOS
+      - name: Install build tools for macOS
         if: ${{ runner.os == 'macOS' }}
         run: |
-          brew install pkg-config cmake freetype
-          pkg-config --libs freetype2
+          brew install pkg-config cmake
+
+      - name: Remove system libraries in Ubuntu for static build
+        if: runner.os == "Linux"
+        run: sudo apt-get remove --purge libfontconfig1-dev libfreetype6-dev libexpat1-dev
 
       - name: Checkout code
         uses: actions/checkout@v2
@@ -77,7 +80,7 @@ jobs:
         run: |
           cargo clean
           mkdir target
-          cargo build --all-targets --all-features --jobs 1 -vv 2>&1 | tee target/build.log || echo "::set-output name=fail::1"
+          cargo build --jobs 1 -vv 2>&1 | tee target/build.log || echo "::set-output name=fail::1"
 
       - name: Upload build result to artifact
         if: steps.build.outputs.fail == '1'
@@ -134,11 +137,14 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Install freetype for macOS
+      - name: Install build tools for macOS
         if: ${{ runner.os == 'macOS' }}
         run: |
-          brew install pkg-config cmake freetype
-          pkg-config --libs freetype2
+          brew install pkg-config cmake
+
+      - name: Remove system libraries in Ubuntu for static build
+        if: runner.os == "Linux"
+        run: sudo apt-get remove --purge libfontconfig1-dev libfreetype6-dev libexpat1-dev
 
       - name: Checkout code
         uses: actions/checkout@v2
@@ -151,7 +157,7 @@ jobs:
 
       - name: Build use release profile
         if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-        run: cargo build --all-targets --all-features -vv --release
+        run: cargo build -vv --release
 
       - name: Upload release binary to artifact
         if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
