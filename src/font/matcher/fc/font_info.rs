@@ -138,6 +138,8 @@ impl<'font> FontInfo<'font> {
 
     fn remove_prefix_dot(name: &str) -> &str {
         // TODO: figure out what's the meaning of prefix dot then decide remove it or not.
+        // Only seen this prefix dot on macOs, as we will change to use Core Text on macOS,
+        // maybe this can be removed someday.
         name.trim_start_matches('.')
     }
 
