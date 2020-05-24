@@ -30,7 +30,7 @@ impl<'fi> TryFrom<FontInfo<'fi>> for Font<'fi> {
 
     fn try_from(font_info: FontInfo<'fi>) -> Result<Self, Self::Error> {
         let family_name = Cow::from(font_info.desc.family_name());
-        let fullname = Cow::from(font_info.desc.font_name());
+        let fullname = Cow::from(font_info.desc.display_name());
         let path = Cow::from(
             font_info.desc.font_path().ok_or(())?.into_os_string().into_string().map_err(|_| ())?,
         );

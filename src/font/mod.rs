@@ -28,6 +28,7 @@ use {
     },
 };
 
+// TODO: Delete me if we change to use localized attribute when use Core Text API
 #[cfg_attr(target_os = "macos", allow(dead_code))]
 const DEFAULT_LANG: &str = "en";
 
