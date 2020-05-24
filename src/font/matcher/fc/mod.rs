@@ -34,12 +34,10 @@ pub use {
 use {consts::THE_OBJECT_SET, fontconfig::fontconfig as fc, once_cell::unsync::Lazy};
 
 pub fn init() -> Result<(), ()> {
-    let config = unsafe { fc::FcInitLoadConfigAndFonts() };
-    if config.is_null() {
+    let succ = unsafe { fc::FcInit() };
+    if succ != 1 {
         Err(())
     } else {
-        unsafe { fc::FcConfigDestroy(config) };
-        #[allow(clippy::borrow_interior_mutable_const)] // we init it only once
         Lazy::force(&THE_OBJECT_SET);
         Ok(())
     }
