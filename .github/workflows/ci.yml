@@ -46,12 +46,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install build tools for macOS
-        if: ${{ runner.os == 'macOS' }}
+        if: runner.os == 'macOS'
         run: |
           brew install pkg-config cmake
 
       - name: Remove system libraries in Ubuntu for static build
-        if: runner.os == "Linux"
+        if: runner.os == 'Linux'
         run: sudo apt-get remove --purge libfontconfig1-dev libfreetype6-dev libexpat1-dev
 
       - name: Checkout code
@@ -138,7 +138,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install build tools for macOS
-        if: ${{ runner.os == 'macOS' }}
+        if: runner.os == 'macOS'
         run: |
           brew install pkg-config cmake
 
