@@ -71,7 +71,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
     where
         B: tui::backend::Backend,
     {
-        let families = self.state.family_names();
+        let families = self.state.font_face_names();
         let index = self.state.index();
         let title = format!("Fonts {}/{}", index + 1, families.len());
 

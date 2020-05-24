@@ -16,11 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use {
-    super::SingleThreadServer,
-    crate::font::{Family, GetValueByLang},
-    std::iter::FromIterator,
-};
+use {super::SingleThreadServer, crate::font::Family, std::iter::FromIterator};
 
 pub struct Builder<'a> {
     families: Vec<&'a str>,
@@ -32,8 +28,8 @@ impl<'a> Default for Builder<'a> {
     }
 }
 
-impl<'iter, 'a: 'iter> FromIterator<&'iter Family<'a>> for Builder<'a> {
-    fn from_iter<T: IntoIterator<Item = &'iter Family<'a>>>(iter: T) -> Self {
+impl<'a> FromIterator<&'a Family<'a>> for Builder<'a> {
+    fn from_iter<T: IntoIterator<Item = &'a Family<'a>>>(iter: T) -> Self {
         let mut builder = Self::default();
         iter.into_iter().for_each(|f| {
             builder.add_family(f);
@@ -43,8 +39,8 @@ impl<'iter, 'a: 'iter> FromIterator<&'iter Family<'a>> for Builder<'a> {
 }
 
 impl<'a> Builder<'a> {
-    pub fn add_family(&mut self, family: &Family<'a>) -> &mut Self {
-        self.families.push(family.name.get_default());
+    pub fn add_family(&mut self, family: &'a Family<'a>) -> &mut Self {
+        self.families.push(&family.name);
         self
     }
 

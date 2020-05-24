@@ -18,7 +18,7 @@
 
 use {
     crate::{
-        font::{Font, GetValueByLang, SortedFamilies},
+        font::{Font, SortedFamilies},
         ft::{FontFace as FtFontFace, Library as FtLibrary},
         preview::terminal::render::{
             AsciiRender, AsciiRenders, CharBitmapRender, MonoRender, MoonRender, RenderResult,
@@ -58,7 +58,6 @@ struct CacheKey(usize, RenderType, u32, u32);
 pub struct State<'fc, 'ft> {
     c: char,
     font_faces_info: Vec<Font<'fc>>,
-    font_faces_name: Vec<&'fc str>,
     name_width_max: usize,
     list_state: RefCell<ListState>,
     height: Cell<u32>,
@@ -73,9 +72,8 @@ impl<'fc, 'ft> State<'fc, 'ft> {
     pub fn new(c: char, families: SortedFamilies<'fc>, ft: &'ft FtLibrary) -> Self {
         let font_faces_info: Vec<_> =
             families.into_iter().flat_map(|f| f.fonts.into_iter().map(|r| r.0)).collect();
-        let font_faces_name: Vec<_> =
-            font_faces_info.iter().map(|f| *f.fullnames.get_default()).collect();
-        let name_width_max = font_faces_name.iter().map(|f| f.len()).max().unwrap_or_default();
+        let name_width_max =
+            font_faces_info.iter().map(|f| f.fullname.len()).max().unwrap_or_default();
 
         let mut font_faces = Vec::new();
         for _ in 0..font_faces_info.len() {
@@ -90,7 +88,6 @@ impl<'fc, 'ft> State<'fc, 'ft> {
         Self {
             c,
             font_faces_info,
-            font_faces_name,
             name_width_max,
             list_state: RefCell::new(list_state),
             height: Cell::new(0),
@@ -119,9 +116,8 @@ impl<'fc, 'ft> State<'fc, 'ft> {
             .ok_or(())
             .or_else(|_| {
                 let font_info = &self.font_faces_info[self.index()];
-                self.ft
-                    .load_font(font_info.path, font_info.index)
-                    .map_err(|_| "Can't load current font")
+                let path: &str = &font_info.path;
+                self.ft.load_font(&path, font_info.index).map_err(|_| "Can't load current font")
             })
             .and_then(|font_face| self.set_font_face_size(font_face))
     }
@@ -162,16 +158,16 @@ impl<'fc, 'ft> State<'fc, 'ft> {
         }
     }
 
-    pub fn current_name(&self) -> &'fc str {
-        self.font_faces_name[self.index()]
+    pub fn current_name(&self) -> &str {
+        &self.font_faces_info[self.index()].fullname
     }
 
     pub const fn name_width_max(&self) -> usize {
         self.name_width_max
     }
 
-    pub const fn family_names(&self) -> &Vec<&'fc str> {
-        &self.font_faces_name
+    pub fn font_face_names(&self) -> impl ExactSizeIterator<Item = &str> {
+        self.font_faces_info.iter().map(|f| -> &str { &f.fullname })
     }
 
     pub fn mut_list_state(&self) -> RefMut<'_, ListState> {
@@ -190,7 +186,7 @@ impl<'fc, 'ft> State<'fc, 'ft> {
     pub fn move_down(&mut self) {
         let changed =
             self.list_state.borrow().selected().map(|index| {
-                index.saturating_add(1).min(self.font_faces_name.len().saturating_sub(1))
+                index.saturating_add(1).min(self.font_faces_info.len().saturating_sub(1))
             });
         self.list_state.borrow_mut().select(changed);
     }

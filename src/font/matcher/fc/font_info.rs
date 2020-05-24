@@ -18,15 +18,49 @@
 
 use {
     super::consts::{FC_FAMILY, FC_FAMILY_LANG, FC_FILE, FC_FULLNAME, FC_FULLNAME_LANG, FC_INDEX},
-    crate::font::{Font, StrValuesByLang},
+    crate::font::{Font, DEFAULT_LANG},
     fontconfig::fontconfig as fc,
     std::{
+        borrow::Cow,
+        collections::HashMap,
         convert::TryFrom,
         ffi::{CStr, CString},
         marker::PhantomData,
         os::raw::{c_char, c_int},
     },
 };
+
+/// Convenient trait for quickly get property value in default language
+pub trait GetValueByLang {
+    type Item;
+
+    fn get_by_lang(&self, lang: &str) -> Option<&Self::Item>;
+
+    fn when_missing(&self) -> &Self::Item;
+
+    fn get_default(&self) -> &Self::Item {
+        if let Some(value) = self.get_by_lang(DEFAULT_LANG) {
+            value
+        } else {
+            self.when_missing()
+        }
+    }
+}
+
+pub type ValuesByLang<'a, T> = HashMap<&'a str, Vec<T>>;
+pub type StrValuesByLang<'a> = ValuesByLang<'a, &'a str>;
+
+impl<'a, T> GetValueByLang for ValuesByLang<'a, T> {
+    type Item = T;
+
+    fn get_by_lang(&self, lang: &str) -> Option<&Self::Item> {
+        self.get(lang).and_then(|values| values.first())
+    }
+
+    fn when_missing(&self) -> &Self::Item {
+        self.values().next().unwrap().first().unwrap()
+    }
+}
 
 /// This struct is a convenient type to represent fonts in `FontSet`'s font array.
 ///
@@ -134,12 +168,12 @@ impl<'fi> TryFrom<FontInfo<'fi>> for Font<'fi> {
     fn try_from(font_info: FontInfo<'fi>) -> Result<Self, Self::Error> {
         #[allow(clippy::cast_sign_loss)] // Because it is index
         let f = Self {
-            family_names: font_info.family_names()?,
-            fullnames: font_info.fullnames()?,
-            path: font_info.path()?,
+            family_name: Cow::from(*font_info.family_names()?.get_default()),
+            fullname: Cow::from(*font_info.fullnames()?.get_default()),
+            path: Cow::from(font_info.path()?),
             index: font_info.index()? as usize,
         };
-        if f.family_names.is_empty() || f.fullnames.is_empty() {
+        if f.family_name.is_empty() || f.fullname.is_empty() {
             Err(())
         } else {
             Ok(f)
