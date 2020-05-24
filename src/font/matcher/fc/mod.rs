@@ -31,15 +31,14 @@ pub use {
     pattern::Pattern,
 };
 
-use {consts::THE_OBJECT_SET, fontconfig::fontconfig as fc, once_cell::unsync::Lazy};
+use fontconfig::fontconfig as fc;
 
 pub fn init() -> Result<(), ()> {
     let succ = unsafe { fc::FcInit() };
-    if succ != 1 {
-        Err(())
-    } else {
-        Lazy::force(&THE_OBJECT_SET);
+    if succ == 1 {
         Ok(())
+    } else {
+        Err(())
     }
 }
 
