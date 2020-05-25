@@ -25,6 +25,14 @@ pub struct FontInfo<'fs> {
     pub(super) desc: ItemRef<'fs, CTFontDescriptor>,
 }
 
+impl<'fs> FontInfo<'fs> {
+    // TODO: Figure out how to get font face index in file from FontDescriptor
+    #[allow(clippy::unused_self)]
+    fn font_face_index(&self) -> Option<usize> {
+        Some(0)
+    }
+}
+
 impl<'fi> TryFrom<FontInfo<'fi>> for Font<'fi> {
     type Error = ();
 
@@ -34,7 +42,7 @@ impl<'fi> TryFrom<FontInfo<'fi>> for Font<'fi> {
         let path = Cow::from(
             font_info.desc.font_path().ok_or(())?.into_os_string().into_string().map_err(|_| ())?,
         );
-        let index = 0;
+        let index = font_info.font_face_index().ok_or(())?;
         Ok(Font { family_name, fullname, path, index })
     }
 }
