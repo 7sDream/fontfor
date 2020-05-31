@@ -20,9 +20,9 @@ mod ascii;
 mod mono;
 mod moon;
 
-use {
-    crate::ft::Bitmap,
-    std::fmt::{Display, Error, Formatter, Write},
+use std::{
+    borrow::Cow,
+    fmt::{Display, Error, Formatter, Write},
 };
 
 pub use {
@@ -60,20 +60,20 @@ pub trait CharBitmapRender {
     #[allow(clippy::too_many_arguments)] // need them..., fine, I will try make them a struct
     fn gray_to_char(&self, up: u8, left: u8, gray: u8, right: u8, down: u8) -> char;
 
-    fn render(&self, bm: &Bitmap<'_>) -> RenderResult {
-        let m = bm.get_metrics();
-
+    fn render(&self, bitmap: &[Cow<'_, [u8]>]) -> RenderResult {
+        let height = bitmap.len();
+        let width = bitmap.get(0).map(|row| row.len()).unwrap_or_default();
         RenderResult(
-            (0..m.height)
+            (0..height)
                 .map(|row| {
-                    (0..m.width)
+                    (0..width)
                         .map(move |col| {
-                            let gray = bm.get_pixel(row, col);
+                            let gray = bitmap[row][col];
 
-                            let l = if col > 0 { bm.get_pixel(row, col - 1) } else { 0 };
-                            let r = if col < m.width - 1 { bm.get_pixel(row, col + 1) } else { 0 };
-                            let u = if row > 0 { bm.get_pixel(row - 1, col) } else { 0 };
-                            let d = if row < m.height - 1 { bm.get_pixel(row + 1, col) } else { 0 };
+                            let l = if col > 0 { bitmap[row][col - 1] } else { 0 };
+                            let r = if col < width - 1 { bitmap[row][col] } else { 0 };
+                            let u = if row > 0 { bitmap[row - 1][col] } else { 0 };
+                            let d = if row < height - 1 { bitmap[row + 1][col] } else { 0 };
 
                             self.gray_to_char(u, l, gray, r, d)
                         })

@@ -21,7 +21,7 @@ mod event;
 mod state;
 
 use {
-    crate::{font::SortedFamilies, ft::Library as FtLibrary},
+    crate::font::{render::CharRendererLoader, SortedFamilies},
     canvas_render::CanvasRenderResult,
     crossterm::{
         event::{KeyCode as CtKeyCode, KeyModifiers as CtKM},
@@ -53,13 +53,15 @@ enum OnEventResult {
     Exit,
 }
 
-pub struct UI<'fc, 'ft> {
+pub struct UI<'matcher, 'render, Library: CharRendererLoader<'render>> {
     idle_redraw: u8,
-    state: State<'fc, 'ft>,
+    state: State<'matcher, 'render, Library>,
 }
 
-impl<'fc, 'ft> UI<'fc, 'ft> {
-    pub fn new(c: char, families: SortedFamilies<'fc>, ft: &'ft mut FtLibrary) -> Option<Self> {
+impl<'matcher, 'render, Library: CharRendererLoader<'render>> UI<'matcher, 'render, Library> {
+    pub fn new(
+        c: char, families: SortedFamilies<'matcher>, ft: &'render mut Library,
+    ) -> Option<Self> {
         if families.len() > 0 {
             Some(Self { state: State::new(c, families, ft), idle_redraw: 0 })
         } else {
