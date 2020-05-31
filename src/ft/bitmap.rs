@@ -16,7 +16,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use {super::FontFace, freetype::freetype as ft, std::os::raw};
+use {
+    super::FontFace,
+    crate::font::render::CharRenderResult,
+    freetype::freetype as ft,
+    std::{borrow::Cow, iter::Iterator, os::raw},
+};
 
 pub struct Metrics {
     pub left: ft::FT_Int,
@@ -27,10 +32,35 @@ pub struct Metrics {
 
 pub struct Bitmap<'ft> {
     font_face: FontFace<'ft>,
-    pixel_mode: u8,
-    pitch: u32,
     metrics: Metrics,
-    bitmap: &'static [u8],
+    bitmap: Vec<Cow<'ft, [u8]>>,
+}
+
+struct U8Bits {
+    index: u8,
+    value: u8,
+}
+
+impl Iterator for U8Bits {
+    type Item = u8;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let index = self.index;
+        if index == 8 {
+            None
+        } else {
+            self.index += 1;
+            Some(if (self.value & (0b1000_0000 >> index)) == 0 {
+                u8::min_value()
+            } else {
+                u8::max_value()
+            })
+        }
+    }
+}
+
+const fn bits(value: u8) -> U8Bits {
+    U8Bits { index: 0, value }
 }
 
 impl<'ft> Bitmap<'ft> {
@@ -42,35 +72,49 @@ impl<'ft> Bitmap<'ft> {
         let width = glyph.bitmap.width;
         let height = glyph.bitmap.rows;
         let pixel_mode = glyph.bitmap.pixel_mode;
-        let pitch = glyph.bitmap.pitch.abs() as u32;
-        let size = (pitch * height) as usize;
+        let pitch = glyph.bitmap.pitch.abs() as usize;
+        let size = pitch * height as usize;
         let bitmap = unsafe { std::slice::from_raw_parts(glyph.bitmap.buffer, size) };
-        Self { font_face, pixel_mode, pitch, metrics: Metrics { left, top, height, width }, bitmap }
-    }
 
-    pub const fn return_font_face(self) -> FontFace<'ft> {
-        self.font_face
+        let bitmap = if u32::from(pixel_mode) == ft::FT_Pixel_Mode::FT_PIXEL_MODE_MONO as u32 {
+            bitmap
+                .chunks(pitch)
+                .map(|row| {
+                    row.iter()
+                        .flat_map(|value| bits(*value))
+                        .take(width as usize)
+                        .collect::<Vec<_>>()
+                })
+                .map(Cow::Owned)
+                .collect::<Vec<_>>()
+        } else {
+            bitmap.chunks(pitch).map(|row| Cow::from(&row[0..width as usize])).collect()
+        };
+
+        Self { font_face, metrics: Metrics { left, top, height, width }, bitmap }
     }
 
     pub const fn get_metrics(&self) -> &Metrics {
         &self.metrics
     }
+}
 
-    pub fn get_pixel(&self, row: u32, col: u32) -> u8 {
-        if u32::from(self.pixel_mode) == ft::FT_Pixel_Mode::FT_PIXEL_MODE_MONO as u32 {
-            let index = (row * self.pitch + col / 8) as usize;
-            #[allow(clippy::cast_possible_truncation)] // because we mod with 8 so result is 0 - 7
-            let bit_pos = (col % 8) as u8;
-            let gray = self.bitmap[index];
-            let mask = 0b_1000_0000 >> (bit_pos);
-            if gray & mask == 0 {
-                u8::min_value()
-            } else {
-                u8::max_value()
-            }
-        } else {
-            let index = (row * self.pitch + col) as usize;
-            self.bitmap[index]
-        }
+impl<'ft> CharRenderResult for Bitmap<'ft> {
+    type Render = FontFace<'ft>;
+
+    fn return_render(self) -> Self::Render {
+        self.font_face
+    }
+
+    fn get_height(&self) -> usize {
+        self.get_metrics().height as usize
+    }
+
+    fn get_width(&self) -> usize {
+        self.get_metrics().width as usize
+    }
+
+    fn get_buffer(&self) -> &[Cow<'_, [u8]>] {
+        &self.bitmap
     }
 }

@@ -21,7 +21,7 @@ mod event;
 mod state;
 
 use {
-    crate::{font::SortedFamilies, ft::Library as FtLibrary},
+    crate::font::{render::CharRendererLoader, SortedFamilies},
     canvas_render::CanvasRenderResult,
     crossterm::{
         event::{KeyCode as CtKeyCode, KeyModifiers as CtKM},
@@ -52,13 +52,23 @@ enum OnEventResult {
     Exit,
 }
 
-pub struct UI<'fc, 'ft> {
+pub struct UI<'matcher, 'render, Library: CharRendererLoader<'render>> {
     idle_redraw: u8,
-    state: State<'fc, 'ft>,
+    state: State<'matcher, 'render, Library>,
 }
 
-impl<'fc, 'ft> UI<'fc, 'ft> {
-    pub fn new(c: char, families: SortedFamilies<'fc>, ft: &'ft mut FtLibrary) -> Option<Self> {
+fn generate_help_text(key: &'static str, help: &'static str) -> Vec<Text<'static>> {
+    vec![
+        Text::styled(key, Style::default().fg(Color::Cyan).modifier(Modifier::BOLD)),
+        Text::raw(": "),
+        Text::styled(help, Style::default().fg(Color::Blue).modifier(Modifier::BOLD)),
+    ]
+}
+
+impl<'matcher, 'render, Library: CharRendererLoader<'render>> UI<'matcher, 'render, Library> {
+    pub fn new(
+        c: char, families: SortedFamilies<'matcher>, ft: &'render mut Library,
+    ) -> Option<Self> {
         if families.len() > 0 {
             Some(Self { state: State::new(c, families, ft), idle_redraw: 0 })
         } else {
@@ -123,14 +133,6 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         }
     }
 
-    fn generate_help_text<'a>(key: &'a str, help: &'a str) -> Vec<Text<'a>> {
-        vec![
-            Text::styled(key, Style::default().fg(Color::Cyan).modifier(Modifier::BOLD)),
-            Text::raw(": "),
-            Text::styled(help, Style::default().fg(Color::Blue).modifier(Modifier::BOLD)),
-        ]
-    }
-
     fn draw_status_bar_info<B>(&self, area: Rect, f: &mut Frame<'_, B>)
     where
         B: tui::backend::Backend,
@@ -188,13 +190,13 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
             )
             .split(area);
 
-        let mut list_help = Self::generate_help_text("[Up]", "Prev Font ");
-        list_help.append(&mut Self::generate_help_text("[Down]", "Next Font"));
+        let mut list_help = generate_help_text("[Up]", "Prev Font ");
+        list_help.append(&mut generate_help_text("[Down]", "Next Font"));
 
-        let mut mode_help = Self::generate_help_text("[Left]", "Prev Mode ");
-        mode_help.append(&mut Self::generate_help_text("[Right]", "Next Mode"));
+        let mut mode_help = generate_help_text("[Left]", "Prev Mode ");
+        mode_help.append(&mut generate_help_text("[Right]", "Next Mode"));
 
-        let quit_help = Self::generate_help_text("[Q]", "Quit");
+        let quit_help = generate_help_text("[Q]", "Quit");
 
         f.render_widget(
             Paragraph::new(list_help.iter())

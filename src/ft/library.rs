@@ -18,8 +18,9 @@
 
 use {
     super::{FontFace, FreeTypeError},
+    crate::font::render::{CharRendererLoader, LoaderInput},
     freetype::freetype as ft,
-    std::{path::Path, ptr},
+    std::{hint::unreachable_unchecked, ptr},
 };
 
 pub struct Library {
@@ -32,13 +33,20 @@ impl Library {
         let ret = unsafe { ft::FT_Init_FreeType(&mut library as *mut ft::FT_Library) };
         ret.map_result(|| Self { library })
     }
+}
 
-    pub fn load_font<P>(&self, path: &P, index: usize) -> Result<FontFace<'_>, ft::FT_Error>
-    where
-        P: AsRef<Path>,
-    {
-        let path = path.as_ref();
-        FontFace::new(self, path, index as ft::FT_Long)
+impl<'i> CharRendererLoader<'i> for Library {
+    type Render = FontFace<'i>;
+    type Error = ft::FT_Error;
+
+    fn load_render(&'i self, input: &LoaderInput<'_>) -> Result<Self::Render, Self::Error> {
+        match input {
+            LoaderInput::FreeType(path, index) => {
+                let path = path.as_ref();
+                FontFace::new(self, path, *index as ft::FT_Long)
+            }
+            _ => unsafe { unreachable_unchecked() },
+        }
     }
 }
 

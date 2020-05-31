@@ -16,10 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use crate::font::render::{CharRenderResult, CharRenderer};
 use {
     crate::{
-        font::{Font, SortedFamilies},
-        ft::{FontFace as FtFontFace, Library as FtLibrary},
+        font::{
+            render::{CharRendererLoader, LoaderInput},
+            Font, SortedFamilies,
+        },
         preview::terminal::render::{
             AsciiRender, AsciiRenders, CharBitmapRender, MonoRender, MoonRender, RenderResult,
         },
@@ -55,21 +58,23 @@ thread_local! {
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 struct CacheKey(usize, RenderType, u32, u32);
 
-pub struct State<'fc, 'ft> {
+pub struct State<'matcher, 'render, Library: CharRendererLoader<'render>> {
     c: char,
-    font_faces_info: Vec<Font<'fc>>,
+    font_faces_info: Vec<Font<'matcher>>,
     name_width_max: usize,
     list_state: RefCell<ListState>,
     height: Cell<u32>,
     width: Cell<u32>,
     rt: RenderType,
     cache: RefCell<HashMap<CacheKey, Rc<Result<RenderResult, &'static str>>>>,
-    font_faces: Vec<Cell<Option<FtFontFace<'ft>>>>,
-    ft: &'ft FtLibrary,
+    font_faces: Vec<Cell<Option<Library::Render>>>,
+    render_library: &'render Library,
 }
 
-impl<'fc, 'ft> State<'fc, 'ft> {
-    pub fn new(c: char, families: SortedFamilies<'fc>, ft: &'ft FtLibrary) -> Self {
+impl<'matcher, 'render, Library: CharRendererLoader<'render>> State<'matcher, 'render, Library> {
+    pub fn new(
+        c: char, families: SortedFamilies<'matcher>, render_library: &'render Library,
+    ) -> Self {
         let font_faces_info: Vec<_> =
             families.into_iter().flat_map(|f| f.fonts.into_iter().map(|r| r.0)).collect();
         let name_width_max =
@@ -95,7 +100,7 @@ impl<'fc, 'ft> State<'fc, 'ft> {
             rt: RenderType::Mono,
             cache,
             font_faces,
-            ft,
+            render_library,
         }
     }
 
@@ -108,33 +113,35 @@ impl<'fc, 'ft> State<'fc, 'ft> {
         self.cache.borrow_mut().entry(key).or_insert_with(|| Rc::new(self.real_render())).clone()
     }
 
-    fn get_font_face(&self) -> Result<FtFontFace<'ft>, &'static str> {
+    fn get_font_face(&self) -> Result<Library::Render, &'static str> {
         let font_face_slot = self.font_faces.get(self.index()).unwrap();
 
         font_face_slot
             .take()
             .ok_or(())
             .or_else(|_| {
-                let font_info = &self.font_faces_info[self.index()];
+                let font_info = self.font_faces_info.get(self.index()).unwrap();
                 let path: &str = &font_info.path;
-                self.ft.load_font(&path, font_info.index).map_err(|_| "Can't load current font")
+                self.render_library
+                    .load_render(&LoaderInput::FreeType(path, font_info.index))
+                    .map_err(|_| "Can't load current font")
             })
             .and_then(|font_face| self.set_font_face_size(font_face))
     }
 
-    fn return_font_face(&self, font: FtFontFace<'ft>) {
+    fn return_font_face(&self, font: Library::Render) {
         let font_face_slot = self.font_faces.get(self.index()).unwrap();
         font_face_slot.set(Some(font));
     }
 
     fn set_font_face_size(
-        &self, mut font_face: FtFontFace<'ft>,
-    ) -> Result<FtFontFace<'ft>, &'static str> {
-        let height = self.height.get();
-        let width = self.width.get();
+        &self, mut font_face: Library::Render,
+    ) -> Result<Library::Render, &'static str> {
+        let height = self.height.get() as usize;
+        let width = self.width.get() as usize;
 
         font_face
-            .set_cell_pixel(height.into(), width.into())
+            .set_cell_pixel(height, width)
             .map(|_| font_face)
             .map_err(|_| "Current font don't support this size")
     }
@@ -142,13 +149,13 @@ impl<'fc, 'ft> State<'fc, 'ft> {
     fn real_render(&self) -> Result<RenderResult, &'static str> {
         let font_face = self.get_font_face()?;
 
-        match font_face.load_char(self.c, self.rt == RenderType::Mono) {
+        match font_face.render_char(self.c, self.rt == RenderType::Mono) {
             Ok(bitmap) => {
                 let result: RenderResult = RENDERS.with(|renders| {
                     let render = renders.get(&self.rt).unwrap();
-                    render.render(&bitmap)
+                    render.render(bitmap.get_buffer())
                 });
-                self.return_font_face(bitmap.return_font_face());
+                self.return_font_face(bitmap.return_render());
                 Ok(result)
             }
             Err((font, _)) => {
@@ -162,7 +169,7 @@ impl<'fc, 'ft> State<'fc, 'ft> {
         &self.font_faces_info[self.index()].fullname
     }
 
-    pub const fn name_width_max(&self) -> usize {
+    pub fn name_width_max(&self) -> usize {
         self.name_width_max
     }
 
@@ -191,7 +198,7 @@ impl<'fc, 'ft> State<'fc, 'ft> {
         self.list_state.borrow_mut().select(changed);
     }
 
-    pub const fn get_render_type(&self) -> &RenderType {
+    pub fn get_render_type(&self) -> &RenderType {
         &self.rt
     }
 
