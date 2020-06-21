@@ -76,7 +76,7 @@ impl<'font> FontInfo<'font> {
             let mut ret = StrValuesByLang::new();
             languages.into_iter().zip(values.into_iter()).for_each(|(lang, value)| {
                 ret.entry(lang)
-                    .or_insert_with(|| vec![])
+                    .or_insert_with(Vec::new)
                     .push(value_map.map_or(value, |f| f(value)));
             });
             Ok(ret)
