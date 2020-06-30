@@ -1,6 +1,7 @@
 # FontFor
 
 [![license-badge]][license-file] [![version-badge]][crates-io-page] [![ci-badge]][github-actions-page]
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2F7sDream%2Ffontfor.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2F7sDream%2Ffontfor?ref=badge_shield)
 
 Find fonts which can show a specified character and preview them in browser.
 
@@ -120,3 +121,6 @@ See [COPYING][COPYING-file].
 [tui-moon-mode]: https://rikka.7sdre.am/files/8128a291-27a7-42bd-813e-1136f971cdb3.png
 [moon-render-github]: https://github.com/7sDream/moon-render
 [COPYING-file]: https://github.com/7sDream/fontfor/blob/master/COPYING
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2F7sDream%2Ffontfor.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2F7sDream%2Ffontfor?ref=badge_large)
