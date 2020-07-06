@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- On macOS, use (and dynamic link to) Core Text API to find fonts and render glyph
+- On Linux, static link to Fontconfig and FreeType, do not need then installed in system anymore
+
 ## 0.3.1
 
 - Display help message directly when `char` arg are missing (Issue #11, Pr #12)
