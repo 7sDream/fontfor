@@ -48,7 +48,7 @@ enum CheckRequestResult {
 }
 
 impl SingleThread {
-    pub fn new(html: String) -> Self {
+    pub const fn new(html: String) -> Self {
         Self { html: Some(html) }
     }
 
@@ -203,7 +203,7 @@ impl SingleThread {
                     Err(err) => {
                         eprintln!("Error when process request: {:?}", err);
                     }
-                    _ => (),
+                    Ok(..) => (),
                 },
                 Err(err) if err.kind() == IOErrorKind::WouldBlock => {
                     thread::sleep(Duration::from_millis(100));

@@ -41,7 +41,8 @@ use {
         layout::{Alignment, Constraint, Direction, Layout, Rect},
         style::{Color, Modifier, Style},
         terminal::{Frame, Terminal},
-        widgets::{canvas::Canvas, Block, Borders, List, Paragraph, Text},
+        text::{Span, Spans, Text},
+        widgets::{canvas::Canvas, Block, Borders, List, ListItem, Paragraph},
     },
 };
 
@@ -74,9 +75,9 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         let index = self.state.index();
         let title = format!("Fonts {}/{}", index + 1, families.len());
 
-        let list = List::new(families.iter().copied().map(Text::raw))
-            .block(Block::default().title(&title).borders(Borders::ALL))
-            .highlight_style(Style::default().fg(Color::LightBlue).modifier(Modifier::BOLD));
+        let list = List::new(families.iter().copied().map(ListItem::new).collect::<Vec<_>>())
+            .block(Block::default().title(Span::raw(title)).borders(Borders::ALL))
+            .highlight_style(Style::default().fg(Color::LightBlue).add_modifier(Modifier::BOLD));
 
         f.render_stateful_widget(list, area, self.state.mut_list_state().deref_mut())
     }
@@ -110,24 +111,25 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
             };
 
             let padding = (area.height as usize).saturating_sub(2).saturating_sub(height);
-            let padding_lines = "\n".repeat(padding / 2);
+            let mut lines = vec![Spans::from(""); padding / 2];
 
-            let texts = [Text::raw(padding_lines), Text::raw(result)];
+            for line in result.lines() {
+                lines.push(Spans::from(line));
+            }
 
-            let canvas = Paragraph::new(texts.iter())
+            let canvas = Paragraph::new(Text::from(lines))
                 .block(Block::default().title("Preview").borders(Borders::ALL))
                 .alignment(Alignment::Center)
-                .style(Style::default().fg(Color::Reset).modifier(Modifier::BOLD))
-                .wrap(false);
+                .style(Style::default().fg(Color::Reset).add_modifier(Modifier::BOLD));
             f.render_widget(canvas, area);
         }
     }
 
-    fn generate_help_text<'a>(key: &'a str, help: &'a str) -> Vec<Text<'a>> {
+    fn generate_help_text<'a>(key: &'a str, help: &'a str) -> Vec<Span<'a>> {
         vec![
-            Text::styled(key, Style::default().fg(Color::Cyan).modifier(Modifier::BOLD)),
-            Text::raw(": "),
-            Text::styled(help, Style::default().fg(Color::Blue).modifier(Modifier::BOLD)),
+            Span::styled(key, Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::raw(": "),
+            Span::styled(help, Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD)),
         ]
     }
 
@@ -144,34 +146,32 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         let mode = cols[1];
 
         let texts = vec![
-            Text::styled("Font Face", Style::default().fg(Color::Green)),
-            Text::raw(": "),
-            Text::styled(
+            Span::styled("Font Face", Style::default().fg(Color::Green)),
+            Span::raw(": "),
+            Span::styled(
                 self.state.current_name(),
-                Style::default().fg(Color::Blue).modifier(Modifier::BOLD),
+                Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD),
             ),
         ];
         f.render_widget(
-            Paragraph::new(texts.iter())
+            Paragraph::new(Spans::from(texts))
                 .block(Block::default().title("Info").borders(Borders::TOP | Borders::LEFT))
-                .alignment(Alignment::Left)
-                .wrap(false),
+                .alignment(Alignment::Left),
             name,
         );
 
         let texts = vec![
-            Text::styled("Render Mode", Style::default().fg(Color::Green)),
-            Text::raw(": "),
-            Text::styled(
+            Span::styled("Render Mode", Style::default().fg(Color::Green)),
+            Span::raw(": "),
+            Span::styled(
                 format!("{:?}", self.state.get_render_type()),
-                Style::default().fg(Color::Blue).modifier(Modifier::BOLD),
+                Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD),
             ),
         ];
         f.render_widget(
-            Paragraph::new(texts.iter())
+            Paragraph::new(Spans::from(texts))
                 .block(Block::default().borders(Borders::TOP | Borders::RIGHT))
-                .alignment(Alignment::Right)
-                .wrap(false),
+                .alignment(Alignment::Right),
             mode,
         );
     }
@@ -197,26 +197,23 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         let quit_help = Self::generate_help_text("[Q]", "Quit");
 
         f.render_widget(
-            Paragraph::new(list_help.iter())
+            Paragraph::new(Spans::from(list_help))
                 .block(Block::default().borders(Borders::BOTTOM | Borders::LEFT))
-                .alignment(Alignment::Left)
-                .wrap(false),
+                .alignment(Alignment::Left),
             cols[0],
         );
 
         f.render_widget(
-            Paragraph::new(mode_help.iter())
+            Paragraph::new(Spans::from(mode_help))
                 .block(Block::default().borders(Borders::BOTTOM))
-                .alignment(Alignment::Center)
-                .wrap(false),
+                .alignment(Alignment::Center),
             cols[1],
         );
 
         f.render_widget(
-            Paragraph::new(quit_help.iter())
+            Paragraph::new(Spans::from(quit_help))
                 .block(Block::default().borders(Borders::BOTTOM | Borders::RIGHT))
-                .alignment(Alignment::Right)
-                .wrap(false),
+                .alignment(Alignment::Right),
             cols[2],
         );
     }
