@@ -28,7 +28,7 @@ pub struct FontInfo<'fs> {
 impl<'fs> FontInfo<'fs> {
     // TODO: Figure out how to get font face index in file from FontDescriptor
     #[allow(clippy::unused_self)]
-    fn font_face_index(&self) -> Option<usize> {
+    const fn font_face_index(&self) -> Option<usize> {
         Some(0)
     }
 }

@@ -58,7 +58,9 @@ pub struct UI<'matcher, 'render, Library: CharRendererLoader<'render>> {
     state: State<'matcher, 'render, Library>,
 }
 
-impl<'matcher, 'render, Library: CharRendererLoader<'render>> UI<'matcher, 'render, Library> {
+impl<'matcher, 'render, Library: CharRendererLoader<'render> + 'render>
+    UI<'matcher, 'render, Library>
+{
     pub fn new(
         c: char, families: SortedFamilies<'matcher>, ft: &'render mut Library,
     ) -> Option<Self> {
@@ -77,7 +79,7 @@ impl<'matcher, 'render, Library: CharRendererLoader<'render>> UI<'matcher, 'rend
         let index = self.state.index();
         let title = format!("Fonts {}/{}", index + 1, families.len());
 
-        let list = List::new(families.iter().copied().map(ListItem::new).collect::<Vec<_>>())
+        let list = List::new(families.map(ListItem::new).collect::<Vec<_>>())
             .block(Block::default().title(Span::raw(title)).borders(Borders::ALL))
             .highlight_style(Style::default().fg(Color::LightBlue).add_modifier(Modifier::BOLD));
 
