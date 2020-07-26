@@ -16,7 +16,7 @@ structopt = "0.3"
 servo-fontconfig = "0.5"
 once_cell = "1.3"
 httparse = "1.3"
-freetype = "0.5"
+freetype = "0.7"
 crossterm = "0.17"
 
 [dependencies.tui]
