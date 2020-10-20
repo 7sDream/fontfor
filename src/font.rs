@@ -38,11 +38,7 @@ pub trait GetValueByLang {
     fn when_missing(&self) -> &Self::Item;
 
     fn get_default(&self) -> &Self::Item {
-        if let Some(value) = self.get_by_lang(DEFAULT_LANG) {
-            value
-        } else {
-            self.when_missing()
-        }
+        self.get_by_lang(DEFAULT_LANG).unwrap_or_else(|| self.when_missing())
     }
 }
 
