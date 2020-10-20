@@ -25,22 +25,14 @@ use freetype::freetype as ft;
 pub trait FreeTypeError<T> {
     fn get_err(&self) -> Option<ft::FT_Error>;
     fn as_result(&self, result: T) -> Result<T, ft::FT_Error> {
-        if let Some(err) = self.get_err() {
-            Err(err)
-        } else {
-            Ok(result)
-        }
+        self.get_err().map_or_else(|| Ok(result), Err)
     }
     fn map_result<F>(&self, f: F) -> Result<T, ft::FT_Error>
     where
         Self: Sized,
         F: FnOnce() -> T,
     {
-        if let Some(err) = self.get_err() {
-            Err(err)
-        } else {
-            Ok(f())
-        }
+        self.get_err().map_or_else(|| Ok(f()), Err)
     }
 }
 
