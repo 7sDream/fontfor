@@ -1,6 +1,6 @@
 status = [
   "lint_and_format_check",
-  "build"
+  "build (%)" # builds for different OS
 ]
 use_squash_merge = true
 timeout_sec = 1800 # 30min

@@ -6,6 +6,9 @@ on:
       - master
       - staging
       - trying
+  pull_request:
+    branches:
+      - master
 
 jobs:
   lint_and_format_check:
