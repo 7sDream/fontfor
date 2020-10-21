@@ -1,0 +1,7 @@
+status = [
+  "lint_and_format_check",
+  "build",
+  "security_audit"
+]
+
+use_squash_merge = true

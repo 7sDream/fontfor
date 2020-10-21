@@ -4,12 +4,8 @@ on:
   push:
     branches:
       - master
-    paths:
-      - '**/Cargo.toml'
-      - '**/Cargo.lock'
-  pull_request:
-    branches:
-      - master
+      - staging
+      - trying
     paths:
       - '**/Cargo.toml'
       - '**/Cargo.lock'
@@ -20,7 +16,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
       - name: Security audit
         uses: actions-rs/audit-check@v1
         with:

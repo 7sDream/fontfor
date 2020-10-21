@@ -5,7 +5,7 @@ on:
     - cron: '0 23 * * *' # CST 7:00 = UTC prev day 23:00
 
 jobs:
-  deps_version_check:
+  daily_deps_version_check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
