@@ -39,8 +39,9 @@ pub fn init() -> Result<(), ()> {
         Err(())
     } else {
         unsafe { fc::FcConfigDestroy(config) };
-        #[allow(clippy::borrow_interior_mutable_const)] // we init it only once
-        Lazy::force(&THE_OBJECT_SET);
+        THE_OBJECT_SET.with(|this| {
+            Lazy::force(this);
+        });
         Ok(())
     }
 }

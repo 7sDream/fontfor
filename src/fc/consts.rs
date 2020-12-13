@@ -26,13 +26,14 @@ pub const FC_FULLNAME_LANG: &str = "fullnamelang";
 pub const FC_FILE: &str = "file";
 pub const FC_INDEX: &str = "index";
 
-#[allow(clippy::declare_interior_mutable_const)] // We init it only once (when `Fontconfig` library init), then read-only
-pub const THE_OBJECT_SET: Lazy<ObjectSet> = Lazy::new(|| {
-    ObjectSet::default()
-        .add(FC_FAMILY)
-        .add(FC_FULLNAME)
-        .add(FC_FAMILY_LANG)
-        .add(FC_FULLNAME_LANG)
-        .add(FC_FILE)
-        .add(FC_INDEX)
-});
+thread_local! {
+    pub static THE_OBJECT_SET: Lazy<ObjectSet> = Lazy::new(|| {
+        ObjectSet::default()
+            .add(FC_FAMILY)
+            .add(FC_FULLNAME)
+            .add(FC_FAMILY_LANG)
+            .add(FC_FULLNAME_LANG)
+            .add(FC_FILE)
+            .add(FC_INDEX)
+    });
+}

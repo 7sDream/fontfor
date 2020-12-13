@@ -47,7 +47,11 @@ impl FontSet {
 
     pub fn match_pattern(pattern: &Pattern) -> Self {
         unsafe {
-            Self::from_ptr(fc::FcFontList(std::ptr::null_mut(), pattern.ptr, THE_OBJECT_SET.ptr))
+            Self::from_ptr(fc::FcFontList(
+                std::ptr::null_mut(),
+                pattern.ptr,
+                THE_OBJECT_SET.with(|x| x.ptr),
+            ))
         }
     }
 

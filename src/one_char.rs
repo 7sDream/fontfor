@@ -71,6 +71,7 @@ impl ToString for ParseError {
 
 impl OneChar {
     pub fn from_scalar_value(scalar_value: u32) -> Result<Self, ParseError> {
+        #[allow(clippy::map_err_ignore)]
         char::try_from(scalar_value)
             .map(Self)
             .map_err(|_| ParseError::InvalidUnicodeScalarValue(scalar_value))
@@ -78,6 +79,7 @@ impl OneChar {
 
     pub fn from_scalar_value_str_radix(s: &str, radix: u32) -> Result<Self, ParseError> {
         Self::from_scalar_value(
+            #[allow(clippy::map_err_ignore)]
             u32::from_str_radix(s, radix).map_err(|_| ParseError::InvalidDigitInRadix(radix))?,
         )
     }
@@ -119,6 +121,7 @@ impl OneChar {
             })
             .collect::<Result<Vec<_>, _>>()?;
 
+        #[allow(clippy::map_err_ignore)]
         let utf8 = String::from_utf8(bytes).map_err(|_| ParseError::UTF8BytesInvalid)?;
 
         let mut iter = utf8.chars();

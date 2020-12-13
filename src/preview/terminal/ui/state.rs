@@ -119,6 +119,7 @@ impl<'fc, 'ft> State<'fc, 'ft> {
             .ok_or(())
             .or_else(|_| {
                 let font_info = &self.font_faces_info[self.index()];
+                #[allow(clippy::map_err_ignore)]
                 self.ft
                     .load_font(font_info.path, font_info.index.into())
                     .map_err(|_| "Can't load current font")
@@ -137,6 +138,7 @@ impl<'fc, 'ft> State<'fc, 'ft> {
         let height = self.height.get();
         let width = self.width.get();
 
+        #[allow(clippy::map_err_ignore)]
         font_face
             .set_cell_pixel(height.into(), width.into())
             .map(|_| font_face)
