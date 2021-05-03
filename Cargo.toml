@@ -20,6 +20,6 @@ freetype = "0.7"
 crossterm = "0.18"
 
 [dependencies.tui]
-version = "0.13"
+version = "0.15"
 default-features = false
 features = ["crossterm"]
