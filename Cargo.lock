@@ -10,12 +10,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "arc-swap"
-version = "0.4.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d25d88fd6b8041580a654f9d0c581a047baee2b3efee13275f2fc392fc75034"
-
-[[package]]
 name = "atty"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -90,12 +84,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4e86d73f2a0b407b5768d10a8c720cf5d2df49a9efc10ca09176d201ead4b7fb"
 dependencies = [
  "bitflags",
- "crossterm_winapi",
+ "crossterm_winapi 0.6.2",
  "lazy_static",
  "libc",
  "mio",
  "parking_lot",
- "signal-hook",
+ "signal-hook 0.1.17",
+ "winapi",
+]
+
+[[package]]
+name = "crossterm"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c0ebde6a9dd5e331cd6c6f48253254d117642c31653baa475e394657c59c1f7d"
+dependencies = [
+ "bitflags",
+ "crossterm_winapi 0.8.0",
+ "libc",
+ "mio",
+ "parking_lot",
+ "signal-hook 0.3.9",
+ "signal-hook-mio",
  "winapi",
 ]
 
@@ -104,6 +114,15 @@ name = "crossterm_winapi"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2265c3f8e080075d9b6417aa72293fc71662f34b4af2612d8d1b074d29510db"
+dependencies = [
+ "winapi",
+]
+
+[[package]]
+name = "crossterm_winapi"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a6966607622438301997d3dac0d2f6e9a90c68bb6bc1785ea98456ab93c0507"
 dependencies = [
  "winapi",
 ]
@@ -122,7 +141,7 @@ dependencies = [
 name = "fontfor"
 version = "0.3.1"
 dependencies = [
- "crossterm",
+ "crossterm 0.20.0",
  "freetype",
  "httparse",
  "once_cell",
@@ -362,9 +381,9 @@ dependencies = [
 
 [[package]]
 name = "signal-hook"
-version = "0.1.16"
+version = "0.1.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "604508c1418b99dfe1925ca9224829bb2a8a9a04dda655cc01fcad46f4ab05ed"
+checksum = "7e31d442c16f047a671b5a71e2161d6e68814012b7f5379d269ebd915fac2729"
 dependencies = [
  "libc",
  "mio",
@@ -372,12 +391,32 @@ dependencies = [
 ]
 
 [[package]]
-name = "signal-hook-registry"
-version = "1.2.1"
+name = "signal-hook"
+version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3e12110bc539e657a646068aaf5eb5b63af9d0c1f7b29c97113fad80e15f035"
+checksum = "470c5a6397076fae0094aaf06a08e6ba6f37acb77d3b1b91ea92b4d6c8650c39"
 dependencies = [
- "arc-swap",
+ "libc",
+ "signal-hook-registry",
+]
+
+[[package]]
+name = "signal-hook-mio"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "29fd5867f1c4f2c5be079aee7a2adf1152ebb04a4bc4d341f504b7dece607ed4"
+dependencies = [
+ "libc",
+ "mio",
+ "signal-hook 0.3.9",
+]
+
+[[package]]
+name = "signal-hook-registry"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e51e73328dc4ac0c7ccbda3a494dfa03df1de2f46018127f60c693f2648455b0"
+dependencies = [
  "libc",
 ]
 
@@ -457,7 +496,7 @@ checksum = "5d4e6c82bb967df89f20b875fa8835fab5d5622c6a5efa574a1f0b6d0aa6e8f6"
 dependencies = [
  "bitflags",
  "cassowary",
- "crossterm",
+ "crossterm 0.18.2",
  "unicode-segmentation",
  "unicode-width",
 ]
