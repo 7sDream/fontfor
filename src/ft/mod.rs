@@ -18,36 +18,6 @@
 
 mod bitmap;
 mod font_face;
-mod library;
 
-use freetype::freetype as ft;
-
-pub trait FreeTypeError<T> {
-    fn get_err(&self) -> Option<ft::FT_Error>;
-    fn as_result(&self, result: T) -> Result<T, ft::FT_Error> {
-        self.get_err().map_or_else(|| Ok(result), Err)
-    }
-    fn map_result<F>(&self, f: F) -> Result<T, ft::FT_Error>
-    where
-        Self: Sized,
-        F: FnOnce() -> T,
-    {
-        self.get_err().map_or_else(|| Ok(f()), Err)
-    }
-}
-
-impl<T> FreeTypeError<T> for ft::FT_Error {
-    fn get_err(&self) -> Option<i32> {
-        if *self == 0 {
-            None
-        } else {
-            Some(*self)
-        }
-    }
-}
-
-pub use {
-    bitmap::{Bitmap, Metrics},
-    font_face::FontFace,
-    library::Library,
-};
+pub use bitmap::{Bitmap, Metrics};
+pub use font_face::FontFace;

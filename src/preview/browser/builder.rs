@@ -16,39 +16,38 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use {
-    super::SingleThreadServer,
-    crate::font::{Family, GetValueByLang},
-    std::iter::FromIterator,
-};
+use std::iter::FromIterator;
 
-pub struct Builder<'a> {
-    families: Vec<&'a str>,
+use super::SingleThreadServer;
+use crate::font::Family;
+
+pub struct Builder<'a,> {
+    families: Vec<&'a str,>,
 }
 
-impl<'a> Default for Builder<'a> {
+impl<'a,> Default for Builder<'a,> {
     fn default() -> Self {
-        Self { families: vec![] }
+        Self { families: vec![], }
     }
 }
 
-impl<'iter, 'a: 'iter> FromIterator<&'iter Family<'a>> for Builder<'a> {
-    fn from_iter<T: IntoIterator<Item = &'iter Family<'a>>>(iter: T) -> Self {
+impl<'iter, 'a: 'iter, 'db: 'a,> FromIterator<&'iter Family<'a, 'db,>,> for Builder<'a,> {
+    fn from_iter<T: IntoIterator<Item = &'iter Family<'a, 'db,>,>,>(iter: T,) -> Self {
         let mut builder = Self::default();
         iter.into_iter().for_each(|f| {
-            builder.add_family(f);
-        });
+            builder.add_family(f,);
+        },);
         builder
     }
 }
 
-impl<'a> Builder<'a> {
-    pub fn add_family(&mut self, family: &Family<'a>) -> &mut Self {
-        self.families.push(family.name.get_default());
+impl<'a,> Builder<'a,> {
+    pub fn add_family(&mut self, family: &Family<'a, '_,>,) -> &mut Self {
+        self.families.push(family.name,);
         self
     }
 
-    fn build_html(self, c: char) -> String {
+    fn build_html(self, c: char,) -> String {
         format!(
             include_str!("statics/template.html"),
             style = include_str!("statics/style.css"),
@@ -67,7 +66,7 @@ impl<'a> Builder<'a> {
         )
     }
 
-    pub fn build_for(self, c: char) -> SingleThreadServer {
-        SingleThreadServer::new(self.build_html(c))
+    pub fn build_for(self, c: char,) -> SingleThreadServer {
+        SingleThreadServer::new(self.build_html(c,),)
     }
 }

@@ -16,72 +16,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use {
-    super::{consts::THE_OBJECT_SET, FontInfo, Pattern},
-    fontconfig::fontconfig as fc,
-    std::marker::PhantomData,
-};
+use std::path::PathBuf;
 
-pub struct FontSet {
-    ptr: *mut fc::FcFontSet,
+use super::{FontInfo, Pattern};
+use crate::fc::DATABASE;
+
+pub struct FontSet<'db,> {
+    fonts: Vec<FontInfo<'db,>,>,
 }
 
-impl Drop for FontSet {
-    fn drop(&mut self) {
-        unsafe {
-            fc::FcFontSetDestroy(self.ptr);
-        }
-    }
-}
-
-impl FontSet {
-    /// ## Safety
-    ///
-    /// the ptr must be
-    ///
-    /// - point to a valid `FcFontSet` struct
-    /// - create from functions of `fontconfig` lib which do the RC thing correctly
-    const unsafe fn from_ptr(ptr: *mut fc::FcFontSet) -> Self {
-        Self { ptr }
-    }
-
-    pub fn match_pattern(pattern: &Pattern) -> Self {
-        unsafe {
-            Self::from_ptr(fc::FcFontList(
-                std::ptr::null_mut(),
-                pattern.ptr,
-                THE_OBJECT_SET.with(|x| x.ptr),
-            ))
+impl<'db,> FontSet<'db,> {
+    pub fn match_pattern(pattern: &Pattern,) -> Self {
+        Self {
+            fonts: DATABASE
+                .faces()
+                .flat_map(|f| {
+                    Some(FontInfo {
+                        id: f.id,
+                        path: PathBuf::default(),
+                        index: f.index,
+                        family: f.families.get(0,).map(|(s, _,)| s.clone(),)?,
+                        name: f.post_script_name.clone(),
+                        cmap: vec![],
+                    },)
+                },)
+                .collect(),
         }
     }
 
-    pub fn fonts<'fs>(&'fs self) -> Fonts<'fs> {
-        let fs = unsafe { self.ptr.as_ref() }.unwrap();
-
-        assert!(fs.nfont >= 0);
-        #[allow(clippy::cast_sign_loss)]
-        let fonts_count = fs.nfont as usize;
-
-        let fonts_array = unsafe { std::slice::from_raw_parts::<'fs>(fs.fonts, fonts_count) };
-
-        Fonts { current: 0, fonts_array }
-    }
-}
-
-pub struct Fonts<'fs> {
-    current: usize,
-    fonts_array: &'fs [*mut fc::FcPattern],
-}
-
-impl<'fs> Iterator for Fonts<'fs> {
-    type Item = FontInfo<'fs>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.current < self.fonts_array.len() {
-            self.current += 1;
-            Some(FontInfo { ptr: self.fonts_array[self.current - 1], phantom: PhantomData })
-        } else {
-            None
-        }
+    pub fn fonts<'fs,>(&self,) -> &[FontInfo<'db,>] {
+        self.fonts.as_slice()
     }
 }

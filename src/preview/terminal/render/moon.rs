@@ -19,7 +19,7 @@
 use super::CharBitmapRender;
 
 static MOON_CHARS: [[char; 2]; 5] =
-    [['🌕', '🌕'], ['🌖', '🌔'], ['🌗', '🌓'], ['🌘', '🌒'], ['🌑', '🌑']];
+    [['🌕', '🌕',], ['🌖', '🌔',], ['🌗', '🌓',], ['🌘', '🌒',], ['🌑', '🌑',],];
 
 pub struct MoonRender {
     pair_count: usize,
@@ -31,24 +31,20 @@ impl MoonRender {
         let pair_count = MOON_CHARS.len();
         #[allow(clippy::cast_precision_loss)] // MOON_CHARS's length is small enough
         let multiplier = pair_count as f64 / 256.0;
-        Self { pair_count, multiplier }
+        Self { pair_count, multiplier, }
     }
 }
 
 impl CharBitmapRender for MoonRender {
-    fn gray_to_char(&self, _up: u8, left: u8, gray: u8, right: u8, _down: u8) -> char {
+    fn gray_to_char(&self, _up: u8, left: u8, gray: u8, right: u8, _down: u8,) -> char {
         if gray == 0 {
             return MOON_CHARS[self.pair_count - 1][0];
         }
 
         #[allow(clippy::cast_sign_loss)] // because `255 - u8` must be non-negative
         #[allow(clippy::cast_possible_truncation)] // result small then MOON_CHARS's length
-        let index = (f64::from(255 - gray) * self.multiplier).floor() as usize;
+        let index = (f64::from(255 - gray,) * self.multiplier).floor() as usize;
 
-        if left < right {
-            MOON_CHARS[index][1]
-        } else {
-            MOON_CHARS[index][0]
-        }
+        if left < right { MOON_CHARS[index][1] } else { MOON_CHARS[index][0] }
     }
 }

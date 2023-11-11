@@ -17,37 +17,20 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 mod charset;
-mod consts;
 mod font_info;
 mod font_set;
-mod object_set;
 mod pattern;
 
-pub use {
-    charset::Charset,
-    font_info::{FontInfo, StrValuesByLang, ValuesByLang},
-    font_set::{FontSet, Fonts},
-    object_set::ObjectSet,
-    pattern::Pattern,
-};
+pub use charset::Charset;
+pub use font_info::FontInfo;
+pub use font_set::FontSet;
+use once_cell::sync::Lazy;
+pub use pattern::Pattern;
 
-use {consts::THE_OBJECT_SET, fontconfig::fontconfig as fc, once_cell::unsync::Lazy};
+pub static DATABASE: Lazy<fontdb::Database,> = Lazy::new(|| {
+    let mut db = fontdb::Database::default();
+    db.load_system_fonts();
+    return db;
+},);
 
-pub fn init() -> Result<(), ()> {
-    let config = unsafe { fc::FcInitLoadConfigAndFonts() };
-    if config.is_null() {
-        Err(())
-    } else {
-        unsafe { fc::FcConfigDestroy(config) };
-        THE_OBJECT_SET.with(|this| {
-            Lazy::force(this);
-        });
-        Ok(())
-    }
-}
-
-pub fn finalize() {
-    unsafe {
-        fc::FcFini();
-    }
-}
+pub fn init() {}

@@ -16,61 +16,57 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use {
-    crossterm::{
-        event::{self, Event as CTEvent, KeyEvent as CTKeyEvent},
-        Result as CTResult,
-    },
-    std::{ops::Deref, sync::mpsc, thread, time::Duration},
-};
+use std::{io::Result as CTResult, ops::Deref, sync::mpsc, thread, time::Duration};
+
+use crossterm::event::{self, Event as CTEvent, KeyEvent as CTKeyEvent};
 
 #[derive(Debug, Copy, Clone, PartialOrd, Eq, PartialEq, Hash)]
 pub enum TerminalEvent {
     Tick,
-    Key(CTKeyEvent),
+    Key(CTKeyEvent,),
 }
 
 pub struct TerminalEventStream {
-    rx: mpsc::Receiver<CTResult<TerminalEvent>>,
+    rx: mpsc::Receiver<CTResult<TerminalEvent,>,>,
 }
 
 impl TerminalEventStream {
-    pub fn new(tick_interval: Duration) -> Self {
-        let (tx, rx) = mpsc::channel();
+    pub fn new(tick_interval: Duration,) -> Self {
+        let (tx, rx,) = mpsc::channel();
 
         let keyboard_tx = tx;
-        thread::spawn(move || keyboard_event_generator(tick_interval, keyboard_tx));
+        thread::spawn(move || keyboard_event_generator(tick_interval, keyboard_tx,),);
 
-        Self { rx }
+        Self { rx, }
     }
 }
 
 impl Deref for TerminalEventStream {
-    type Target = mpsc::Receiver<CTResult<TerminalEvent>>;
+    type Target = mpsc::Receiver<CTResult<TerminalEvent,>,>;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self,) -> &Self::Target {
         &self.rx
     }
 }
 
 #[allow(clippy::needless_pass_by_value)] // because it is run in other thread
-fn keyboard_event_generator(tick_interval: Duration, tx: mpsc::Sender<CTResult<TerminalEvent>>) {
+fn keyboard_event_generator(tick_interval: Duration, tx: mpsc::Sender<CTResult<TerminalEvent,>,>,) {
     loop {
-        match event::poll(tick_interval) {
-            Ok(true) => {
-                if let CTEvent::Key(key) = event::read().unwrap() {
-                    if tx.send(Ok(TerminalEvent::Key(key))).is_err() {
+        match event::poll(tick_interval,) {
+            Ok(true,) => {
+                if let CTEvent::Key(key,) = event::read().unwrap() {
+                    if tx.send(Ok(TerminalEvent::Key(key,),),).is_err() {
                         break;
                     }
                 }
             }
-            Ok(false) => {
-                if tx.send(Ok(TerminalEvent::Tick)).is_err() {
+            Ok(false,) => {
+                if tx.send(Ok(TerminalEvent::Tick,),).is_err() {
                     break;
                 }
             }
-            Err(kind) => {
-                if tx.send(Err(kind)).is_err() {
+            Err(kind,) => {
+                if tx.send(Err(kind,),).is_err() {
                     break;
                 }
             }

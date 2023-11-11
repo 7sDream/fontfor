@@ -16,32 +16,31 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use {
-    super::one_char::OneChar,
-    structopt::{clap, StructOpt},
-};
+use clap::Parser;
 
-#[derive(StructOpt, Debug)]
-#[structopt(author, about, setting=clap::AppSettings::ArgRequiredElseHelp)]
+use super::one_char::OneChar;
+
+#[derive(clap::Parser)]
+#[command(author, version, about, arg_required_else_help(true))]
 pub struct Args {
     /// Verbose mode, show all font styles
-    #[structopt(short, long)]
+    #[arg(short, long)]
     pub verbose: bool,
 
     /// Preview character use supported fonts in browser
-    #[structopt(short, long)]
+    #[arg(short, long)]
     pub preview: bool,
 
     /// Enable Terminal UI mode
     /// enable this mode will disable the --preview/-p and ignore --verbose/-v arg
-    #[structopt(short, long)]
+    #[arg(short, long)]
     pub tui: bool,
 
     /// The character
-    #[structopt(name = "CHAR")]
+    #[arg(name = "CHAR")]
     pub char: OneChar,
 }
 
 pub fn get() -> Args {
-    Args::from_args()
+    Args::parse()
 }
