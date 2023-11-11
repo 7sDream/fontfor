@@ -26,7 +26,7 @@ pub use ascii::{AsciiRender, AsciiRenders};
 pub use mono::MonoRender;
 pub use moon::MoonRender;
 
-use crate::ft::Bitmap;
+use crate::rasterizer::Bitmap;
 
 #[derive(Clone)]
 pub struct RenderResult(pub Vec<Vec<char,>,>,);

@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::ft::bitmap::Bitmap;
+use crate::rasterizer::bitmap::Bitmap;
 
 pub struct FontFace {
     face: owned_ttf_parser::OwnedFace,

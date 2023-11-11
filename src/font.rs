@@ -23,8 +23,8 @@ use std::{
     ops::Deref,
 };
 
-use super::fc::{FontInfo, FontSet};
-use crate::fc;
+use super::loader::{FontInfo, FontSet};
+use crate::loader;
 
 pub struct Family<'a, 'db,> {
     pub name: &'a str,
@@ -47,7 +47,7 @@ impl<'a, 'db: 'a,> Family<'a, 'db,> {
     }
 }
 
-pub struct Font<'a, 'db,>(pub &'a fc::FontInfo<'db,>,);
+pub struct Font<'a, 'db,>(pub &'a loader::FontInfo<'db,>,);
 
 impl<'a, 'db,> PartialEq for Font<'a, 'db,> {
     fn eq(&self, other: &Self,) -> bool {
@@ -80,7 +80,7 @@ impl<'a, 'db,> TryFrom<&'a FontInfo<'db,>,> for Font<'a, 'db,> {
 
 pub struct SortedFamilies<'a, 'db,>(Vec<Family<'a, 'db,>,>,);
 
-impl<'a, 'db: 'a,> From<&'a fc::FontSet<'db,>,> for SortedFamilies<'a, 'db,> {
+impl<'a, 'db: 'a,> From<&'a loader::FontSet<'db,>,> for SortedFamilies<'a, 'db,> {
     fn from(font_set: &'a FontSet<'db,>,) -> Self {
         let mut families = HashMap::new();
 

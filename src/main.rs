@@ -20,9 +20,9 @@
 #![deny(missing_debug_implementations, rust_2018_idioms)]
 
 mod args;
-mod fc;
+mod loader;
 mod font;
-mod ft;
+mod rasterizer;
 mod one_char;
 mod preview;
 
@@ -34,11 +34,11 @@ use preview::{browser::ServerBuilder as PreviewServerBuilder, terminal::ui::UI};
 fn main() {
     let argument = args::get();
 
-    fc::init();
+    loader::init();
 
-    let charset = fc::Charset::default().add_char(argument.char.0,);
-    let pattern = fc::Pattern::default().add_charset(charset,);
-    let font_set = fc::FontSet::match_pattern(&pattern,);
+    let charset = loader::Charset::default().add_char(argument.char.0,);
+    let pattern = loader::Pattern::default().add_charset(charset,);
+    let font_set = loader::FontSet::match_pattern(&pattern,);
 
     let families = font::SortedFamilies::from(&font_set,);
 

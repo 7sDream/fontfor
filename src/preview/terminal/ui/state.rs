@@ -26,9 +26,9 @@ use once_cell::unsync::Lazy;
 use tui::widgets::ListState;
 
 use crate::{
-    fc,
+    loader,
     font::{Font, SortedFamilies},
-    ft::FontFace as FtFontFace,
+    rasterizer::FontFace as FtFontFace,
     preview::terminal::render::{
         AsciiRender, AsciiRenders, CharBitmapRender, MonoRender, MoonRender, RenderResult,
     },
@@ -119,7 +119,7 @@ impl<'a, 'db: 'a,> State<'a, 'db,> {
                 let font_info = &self.font_faces_info[self.index()];
                 #[allow(clippy::map_err_ignore)]
                 FtFontFace::new(
-                    fc::DATABASE.with_face_data(font_info.0.id, |data, _| data.to_vec(),).unwrap(),
+                    loader::DATABASE.with_face_data(font_info.0.id, |data, _| data.to_vec(),).unwrap(),
                     font_info.0.index,
                 )
                 .map_err(|_| "Can't load current font",)

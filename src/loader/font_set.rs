@@ -19,7 +19,7 @@
 use std::path::PathBuf;
 
 use super::{FontInfo, Pattern};
-use crate::fc::DATABASE;
+use crate::loader::DATABASE;
 
 pub struct FontSet<'db,> {
     fonts: Vec<FontInfo<'db,>,>,
