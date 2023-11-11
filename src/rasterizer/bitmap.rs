@@ -29,11 +29,11 @@ pub struct Bitmap {
     pixel_mode: u8,
     pitch: u32,
     metrics: Metrics,
-    bitmap: Vec<u8,>,
+    bitmap: Vec<u8>,
 }
 
 impl Bitmap {
-    pub(super) fn new<'db,>(font_face: FontFace,) -> Self {
+    pub(super) fn new<'db>(_font_face: FontFace) -> Self {
         // let face_rec = unsafe { &*font_face.face };
         // let glyph = unsafe { &*face_rec.glyph };
         // let left = glyph.bitmap_left;
@@ -49,11 +49,11 @@ impl Bitmap {
         todo!()
     }
 
-    pub const fn get_metrics(&self,) -> &Metrics {
+    pub const fn get_metrics(&self) -> &Metrics {
         &self.metrics
     }
 
-    pub fn get_pixel(&self, row: usize, col: usize,) -> u8 {
+    pub fn get_pixel(&self, _row: usize, _col: usize) -> u8 {
         // if u32::from(self.pixel_mode) == ft::FT_Pixel_Mode::FT_PIXEL_MODE_MONO as u32 {
         //     let index = (row * self.pitch + col / 8) as usize;
         //     #[allow(clippy::cast_possible_truncation)] // because we mod with 8 so result is 0 -

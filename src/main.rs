@@ -36,11 +36,11 @@ fn main() {
 
     loader::init();
 
-    let charset = loader::Charset::default().add_char(argument.char.0,);
-    let pattern = loader::Pattern::default().add_charset(charset,);
-    let font_set = loader::FontSet::match_pattern(&pattern,);
+    let charset = loader::Charset::default().add_char(argument.char.0);
+    let pattern = loader::Pattern::default().add_charset(charset);
+    let font_set = loader::FontSet::match_pattern(&pattern);
 
-    let families = font::SortedFamilies::from(&font_set,);
+    let families = font::SortedFamilies::from(&font_set);
 
     if families.is_empty() {
         println!("No font support this character.");
@@ -48,27 +48,27 @@ fn main() {
     }
 
     if argument.tui {
-        let ui = UI::new(argument.char.0, families,).unwrap();
+        let ui = UI::new(argument.char.0, families).unwrap();
         ui.show().unwrap_or_else(|err| {
             eprintln!("{:?}", err);
-        },);
+        });
     } else {
         let builder = if argument.preview {
-            Some(PreviewServerBuilder::from_iter(families.iter(),),)
+            Some(PreviewServerBuilder::from_iter(families.iter()))
         } else {
             None
         };
 
         println!("Font(s) support the character {}:", argument.char.description());
-        show_font_list(families, argument.verbose,);
+        show_font_list(families, argument.verbose);
 
-        if let Some(builder,) = builder {
-            builder.build_for(argument.char.0,).run_until(show_preview_addr_and_wait,);
+        if let Some(builder) = builder {
+            builder.build_for(argument.char.0).run_until(show_preview_addr_and_wait);
         }
     }
 }
 
-fn show_preview_addr_and_wait(addr: SocketAddr,) {
+fn show_preview_addr_and_wait(addr: SocketAddr) {
     println!("{}", "-".repeat(40));
     println!("Please visit http://{}/ in your browser for preview", addr);
     print!("And press Enter after your finish...");
@@ -76,20 +76,20 @@ fn show_preview_addr_and_wait(addr: SocketAddr,) {
 
     // Wait until user input any character before stop the server
     let mut line = " ".to_string();
-    std::io::stdin().read_line(&mut line,).unwrap();
+    std::io::stdin().read_line(&mut line).unwrap();
 }
 
-fn show_font_list(families: SortedFamilies<'_, '_,>, verbose: bool,) {
+fn show_font_list(families: SortedFamilies<'_, '_>, verbose: bool) {
     let max_len = if verbose {
         0
     } else {
-        families.iter().map(|f| f.default_name_width,).max().unwrap_or_default()
+        families.iter().map(|f| f.default_name_width).max().unwrap_or_default()
     };
 
     families.into_iter().for_each(|mut family| {
         if verbose {
             println!("{}", family.name);
-            while let Some(Reverse(face,),) = family.fonts.pop() {
+            while let Some(Reverse(face)) = family.fonts.pop() {
                 println!("    {}", face.0.name);
             }
         } else {
@@ -101,5 +101,5 @@ fn show_font_list(families: SortedFamilies<'_, '_,>, verbose: bool,) {
                 family_name_length = max_len,
             );
         }
-    },);
+    });
 }

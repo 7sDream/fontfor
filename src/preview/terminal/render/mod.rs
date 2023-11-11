@@ -29,35 +29,35 @@ pub use moon::MoonRender;
 use crate::rasterizer::Bitmap;
 
 #[derive(Clone)]
-pub struct RenderResult(pub Vec<Vec<char,>,>,);
+pub struct RenderResult(pub Vec<Vec<char>>);
 
 impl Display for RenderResult {
-    fn fmt(&self, f: &mut Formatter<'_,>,) -> Result<(), Error,> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         for line in &self.0 {
             for c in line.iter() {
-                f.write_char(*c,)?;
+                f.write_char(*c)?;
             }
-            f.write_char('\n',)?;
+            f.write_char('\n')?;
         }
-        Ok((),)
+        Ok(())
     }
 }
 
 impl RenderResult {
-    pub fn height(&self,) -> usize {
+    pub fn height(&self) -> usize {
         self.0.len()
     }
 
-    pub fn width(&self,) -> usize {
-        self.0.first().map_or(0, Vec::len,)
+    pub fn width(&self) -> usize {
+        self.0.first().map_or(0, Vec::len)
     }
 }
 
 pub trait CharBitmapRender {
     #[allow(clippy::too_many_arguments)] // need them..., fine, I will try make them a struct
-    fn gray_to_char(&self, up: u8, left: u8, gray: u8, right: u8, down: u8,) -> char;
+    fn gray_to_char(&self, up: u8, left: u8, gray: u8, right: u8, down: u8) -> char;
 
-    fn render(&self, bm: &Bitmap,) -> RenderResult {
+    fn render(&self, bm: &Bitmap) -> RenderResult {
         let m = bm.get_metrics();
 
         RenderResult(
@@ -65,19 +65,18 @@ pub trait CharBitmapRender {
                 .map(|row| {
                     (0..m.width)
                         .map(move |col| {
-                            let gray = bm.get_pixel(row, col,);
+                            let gray = bm.get_pixel(row, col);
 
-                            let l = if col > 0 { bm.get_pixel(row, col - 1,) } else { 0 };
-                            let r = if col < m.width - 1 { bm.get_pixel(row, col + 1,) } else { 0 };
-                            let u = if row > 0 { bm.get_pixel(row - 1, col,) } else { 0 };
-                            let d =
-                                if row < m.height - 1 { bm.get_pixel(row + 1, col,) } else { 0 };
+                            let l = if col > 0 { bm.get_pixel(row, col - 1) } else { 0 };
+                            let r = if col < m.width - 1 { bm.get_pixel(row, col + 1) } else { 0 };
+                            let u = if row > 0 { bm.get_pixel(row - 1, col) } else { 0 };
+                            let d = if row < m.height - 1 { bm.get_pixel(row + 1, col) } else { 0 };
 
-                            self.gray_to_char(u, l, gray, r, d,)
-                        },)
-                        .collect::<Vec<_,>>()
-                },)
-                .collect::<Vec<_,>>(),
+                            self.gray_to_char(u, l, gray, r, d)
+                        })
+                        .collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>(),
         )
     }
 }

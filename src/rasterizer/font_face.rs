@@ -25,12 +25,12 @@ pub struct FontFace {
 }
 
 impl FontFace {
-    pub fn new(data: Vec<u8,>, index: u32,) -> Result<Self, owned_ttf_parser::FaceParsingError,> {
-        let face = owned_ttf_parser::OwnedFace::from_vec(data, index,)?;
-        Ok(Self { face, height: 0, width: 0, },)
+    pub fn new(data: Vec<u8>, index: u32) -> Result<Self, owned_ttf_parser::FaceParsingError> {
+        let face = owned_ttf_parser::OwnedFace::from_vec(data, index)?;
+        Ok(Self { face, height: 0, width: 0 })
     }
 
-    pub fn set_cell_pixel(&mut self, height: u32, width: u32,) {
+    pub fn set_cell_pixel(&mut self, height: u32, width: u32) {
         self.height = height;
         self.width = width;
     }
@@ -39,7 +39,7 @@ impl FontFace {
     // `Bitmap` object can only be used before another call of load_char itself. So we consume self
     // and move it into the result `Bitmap`, which has an `return_face` method will consume itself
     // and return the `Face` to you.
-    pub fn load_char(self, c: char, mono: bool,) -> Result<Bitmap, (),> {
+    pub fn load_char(self, _c: char, _mono: bool) -> Result<Bitmap, ()> {
         // let mut flag = ft::FT_LOAD_RENDER;
         // if mono {
         //     flag |= ft::FT_LOAD_MONOCHROME;

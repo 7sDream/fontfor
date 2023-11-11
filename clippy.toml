@@ -3,7 +3,6 @@ disallowed-names = []
 too-many-arguments-threshold = 5
 too-large-for-stack = 256
 enum-variant-name-threshold = 0
-struct-field-name-threshold = 0
 enum-variant-size-threshold = 256
 too-many-lines-threshold = 50
 array-size-threshold = 262144       # 256KB

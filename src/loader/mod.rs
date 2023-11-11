@@ -27,10 +27,10 @@ pub use font_set::FontSet;
 use once_cell::sync::Lazy;
 pub use pattern::Pattern;
 
-pub static DATABASE: Lazy<fontdb::Database,> = Lazy::new(|| {
+pub static DATABASE: Lazy<fontdb::Database> = Lazy::new(|| {
     let mut db = fontdb::Database::default();
     db.load_system_fonts();
-    return db;
-},);
+    db
+});
 
 pub fn init() {}

@@ -19,29 +19,29 @@
 use std::path::{Path, PathBuf};
 
 /// This struct is a convenient type to represent fonts in `FontSet`'s font array.
-pub struct FontInfo<'db,> {
+pub struct FontInfo<'db> {
     pub id: fontdb::ID,
     pub path: PathBuf,
     pub index: u32,
     pub family: String,
     pub name: String,
-    pub cmap: Vec<owned_ttf_parser::cmap::Subtable<'db,>,>,
+    pub cmap: Vec<owned_ttf_parser::cmap::Subtable<'db>>,
 }
 
-impl<'font,> FontInfo<'font,> {
-    pub fn family_name(&self,) -> &str {
+impl<'font> FontInfo<'font> {
+    pub fn family_name(&self) -> &str {
         &self.family
     }
 
-    pub fn fullname(&self,) -> &str {
+    pub fn fullname(&self) -> &str {
         &self.name
     }
 
-    pub fn path(&self,) -> &Path {
+    pub fn path(&self) -> &Path {
         self.path.as_path()
     }
 
-    pub fn index(&self,) -> u32 {
+    pub fn index(&self) -> u32 {
         self.index
     }
 }

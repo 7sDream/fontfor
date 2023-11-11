@@ -25,19 +25,19 @@ use tui::{
 
 use super::super::render::RenderResult;
 
-pub struct CanvasRenderResult<'a,> {
+pub struct CanvasRenderResult<'a> {
     chars: &'a RenderResult,
     canvas_width: f64,
     canvas_height: f64,
 }
 
-impl<'a,> CanvasRenderResult<'a,> {
-    pub const fn new(r: &'a RenderResult, canvas_width: f64, canvas_height: f64,) -> Self {
-        Self { chars: r, canvas_width, canvas_height, }
+impl<'a> CanvasRenderResult<'a> {
+    pub const fn new(r: &'a RenderResult, canvas_width: f64, canvas_height: f64) -> Self {
+        Self { chars: r, canvas_width, canvas_height }
     }
 }
 
-struct RenderResultPoints<'a,> {
+struct RenderResultPoints<'a> {
     start: bool,
     x: usize,
     y: usize,
@@ -47,15 +47,15 @@ struct RenderResultPoints<'a,> {
     chars: &'a RenderResult,
 }
 
-impl<'a,> RenderResultPoints<'a,> {
+impl<'a> RenderResultPoints<'a> {
     #[allow(clippy::cast_precision_loss)] // render result size is small enough to cast to f64
-    fn new(chars: &'a RenderResult, width: f64, height: f64,) -> Self {
+    fn new(chars: &'a RenderResult, width: f64, height: f64) -> Self {
         let h_pad = ((width - chars.width() as f64) / 2.0).floor();
         let v_pad = ((height - chars.height() as f64) / 2.0).floor();
-        Self { start: false, x: 0, y: 0, height, h_pad, v_pad, chars, }
+        Self { start: false, x: 0, y: 0, height, h_pad, v_pad, chars }
     }
 
-    fn next_x_y(&mut self,) -> bool {
+    fn next_x_y(&mut self) -> bool {
         if self.start {
             self.x += 1;
             if self.x >= self.chars.width() {
@@ -69,10 +69,10 @@ impl<'a,> RenderResultPoints<'a,> {
     }
 }
 
-impl<'a,> Iterator for RenderResultPoints<'a,> {
-    type Item = (f64, f64,);
+impl<'a> Iterator for RenderResultPoints<'a> {
+    type Item = (f64, f64);
 
-    fn next(&mut self,) -> Option<Self::Item,> {
+    fn next(&mut self) -> Option<Self::Item> {
         loop {
             if !self.next_x_y() {
                 return None;
@@ -81,20 +81,19 @@ impl<'a,> Iterator for RenderResultPoints<'a,> {
                 // tui canvas origin point at left bottom but chars' at left top
                 // so we need do some math to flip it and add padding
                 #[allow(clippy::cast_precision_loss)] // render result size is small enough
-                let result =
-                    (self.x as f64 + self.h_pad, self.height - self.y as f64 - self.v_pad,);
-                return Some(result,);
+                let result = (self.x as f64 + self.h_pad, self.height - self.y as f64 - self.v_pad);
+                return Some(result);
             }
         }
     }
 }
 
-impl<'a,> Shape for CanvasRenderResult<'a,> {
-    fn draw(&self, painter: &mut Painter<'_, '_,>,) {
-        let points = RenderResultPoints::new(self.chars, self.canvas_width, self.canvas_height,);
-        for (x, y,) in points {
-            if let Some((x, y,),) = painter.get_point(x, y,) {
-                painter.paint(x as usize, y as usize, Color::Reset,);
+impl<'a> Shape for CanvasRenderResult<'a> {
+    fn draw(&self, painter: &mut Painter<'_, '_>) {
+        let points = RenderResultPoints::new(self.chars, self.canvas_width, self.canvas_height);
+        for (x, y) in points {
+            if let Some((x, y)) = painter.get_point(x, y) {
+                painter.paint(x, y, Color::Reset);
             }
         }
     }

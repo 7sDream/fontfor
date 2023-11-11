@@ -19,11 +19,11 @@
 use std::collections::HashSet;
 
 #[derive(Default)]
-pub struct Charset(HashSet<char,>,);
+pub struct Charset(HashSet<char>);
 
 impl Charset {
-    pub fn add_char(mut self, c: char,) -> Self {
-        self.0.insert(c,);
+    pub fn add_char(mut self, c: char) -> Self {
+        self.0.insert(c);
         self
     }
 }

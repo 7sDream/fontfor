@@ -20,12 +20,12 @@ use super::Charset;
 
 #[derive(Default)]
 pub struct Pattern {
-    chars: Option<Charset,>,
+    chars: Option<Charset>,
 }
 
 impl Pattern {
-    pub fn add_charset(mut self, charset: Charset,) -> Self {
-        self.chars.replace(charset,);
+    pub fn add_charset(mut self, charset: Charset) -> Self {
+        self.chars.replace(charset);
         self
     }
 }

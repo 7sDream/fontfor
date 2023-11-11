@@ -21,12 +21,12 @@ use std::path::PathBuf;
 use super::{FontInfo, Pattern};
 use crate::loader::DATABASE;
 
-pub struct FontSet<'db,> {
-    fonts: Vec<FontInfo<'db,>,>,
+pub struct FontSet<'db> {
+    fonts: Vec<FontInfo<'db>>,
 }
 
-impl<'db,> FontSet<'db,> {
-    pub fn match_pattern(pattern: &Pattern,) -> Self {
+impl<'db> FontSet<'db> {
+    pub fn match_pattern(_pattern: &Pattern) -> Self {
         Self {
             fonts: DATABASE
                 .faces()
@@ -35,16 +35,16 @@ impl<'db,> FontSet<'db,> {
                         id: f.id,
                         path: PathBuf::default(),
                         index: f.index,
-                        family: f.families.get(0,).map(|(s, _,)| s.clone(),)?,
+                        family: f.families.get(0).map(|(s, _)| s.clone())?,
                         name: f.post_script_name.clone(),
                         cmap: vec![],
-                    },)
-                },)
+                    })
+                })
                 .collect(),
         }
     }
 
-    pub fn fonts<'fs,>(&self,) -> &[FontInfo<'db,>] {
+    pub fn fonts<'fs>(&self) -> &[FontInfo<'db>] {
         self.fonts.as_slice()
     }
 }

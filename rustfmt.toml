@@ -20,7 +20,6 @@ reorder_impl_items = true
 group_imports = "StdExternalCrate"
 reorder_modules = false
 # short_array_element_width_threshold = 20
-trailing_comma = "Always"
 use_field_init_shorthand = true
 use_small_heuristics = "Max"
 use_try_shorthand = true

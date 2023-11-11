@@ -29,29 +29,29 @@ pub enum AsciiRenders {
 }
 
 pub struct AsciiRender {
-    ramp: Vec<char,>,
+    ramp: Vec<char>,
     multiplier: f64,
 }
 
 impl AsciiRender {
-    pub fn new(render_type: AsciiRenders,) -> Self {
+    pub fn new(render_type: AsciiRenders) -> Self {
         let s = match render_type {
             AsciiRenders::Level10 => LEVEL10RAMP,
             AsciiRenders::Level70 => LEVEL70RAMP,
         };
-        let ramp: Vec<_,> = s.chars().collect();
+        let ramp: Vec<_> = s.chars().collect();
         let level = ramp.len();
         #[allow(clippy::cast_precision_loss)] // max level is 70, small enough
-        let multiplier = (level as f64) / (f64::from(u8::max_value(),) + 1.0);
-        Self { ramp, multiplier, }
+        let multiplier = (level as f64) / (f64::from(u8::max_value()) + 1.0);
+        Self { ramp, multiplier }
     }
 }
 
 impl CharBitmapRender for AsciiRender {
-    fn gray_to_char(&self, _up: u8, _left: u8, gray: u8, _right: u8, _down: u8,) -> char {
+    fn gray_to_char(&self, _up: u8, _left: u8, gray: u8, _right: u8, _down: u8) -> char {
         #[allow(clippy::cast_sign_loss)] // gray and multiplier both positive
         #[allow(clippy::cast_possible_truncation)] // result small then ramp's length(usize)
-        let index = (f64::from(gray,) * self.multiplier).floor() as usize;
+        let index = (f64::from(gray) * self.multiplier).floor() as usize;
         self.ramp[index]
     }
 }
