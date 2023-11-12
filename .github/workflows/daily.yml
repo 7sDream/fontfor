@@ -3,6 +3,7 @@ name: Daily check
 on:
   schedule:
     - cron: '0 23 * * *' # CST 7:00 = UTC prev day 23:00
+  workflow_dispatch:
   workflow_call:
 
 jobs:
