@@ -43,7 +43,7 @@ pub fn faces_contains(c: char) -> Vec<FaceInfo> {
                 }
             }
 
-            return face.transpose();
+            face.transpose()
         })
         .filter_map(|f| f.ok())
         .collect()

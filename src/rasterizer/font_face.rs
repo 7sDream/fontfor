@@ -19,6 +19,7 @@
 use crate::rasterizer::bitmap::Bitmap;
 
 pub struct FontFace {
+    #[allow(dead_code)] // TODO: remove this
     face: owned_ttf_parser::OwnedFace,
     height: u32,
     width: u32,

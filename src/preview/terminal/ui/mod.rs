@@ -59,7 +59,7 @@ pub struct UI<'a> {
 
 impl<'a: 'a> UI<'a> {
     pub fn new(c: char, families: Vec<Family<'a>>) -> Option<Self> {
-        if families.len() > 0 {
+        if !families.is_empty() {
             Some(Self { state: State::new(c, families), idle_redraw: 0 })
         } else {
             None

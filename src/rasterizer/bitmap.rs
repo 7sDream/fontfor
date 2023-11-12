@@ -25,6 +25,7 @@ pub struct Metrics {
     pub width: usize,
 }
 
+#[allow(dead_code)] // TODO: remove this
 pub struct Bitmap {
     pixel_mode: u8,
     pitch: u32,
@@ -33,7 +34,8 @@ pub struct Bitmap {
 }
 
 impl Bitmap {
-    pub(super) fn new(_font_face: FontFace) -> Self {
+    #[allow(dead_code)] // remove this
+    pub fn new(_font_face: FontFace) -> Self {
         // let face_rec = unsafe { &*font_face.face };
         // let glyph = unsafe { &*face_rec.glyph };
         // let left = glyph.bitmap_left;

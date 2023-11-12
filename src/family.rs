@@ -40,7 +40,7 @@ impl<'a> Family<'a> {
     }
 }
 
-pub fn group_by_family_sort_by_name(faces: &Vec<FaceInfo>) -> Vec<Family<'_>> {
+pub fn group_by_family_sort_by_name(faces: &[FaceInfo]) -> Vec<Family<'_>> {
     let mut families = HashMap::new();
 
     faces.iter().for_each(|face| {
@@ -56,5 +56,5 @@ pub fn group_by_family_sort_by_name(faces: &Vec<FaceInfo>) -> Vec<Family<'_>> {
         family.faces.sort_unstable_by(|a, b| a.name.cmp(&b.name))
     }
 
-    return families;
+    families
 }

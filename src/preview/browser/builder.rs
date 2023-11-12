@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::iter::FromIterator;
+use std::{fmt::Write, iter::FromIterator};
 
 use super::SingleThreadServer;
 use crate::family::Family;
@@ -43,21 +43,23 @@ impl<'a> Builder<'a> {
     }
 
     fn build_html(self, c: char) -> String {
+        let font_previews =
+            self.families.into_iter().fold(String::new(), |mut acc: String, family| {
+                write!(
+                    &mut acc,
+                    include_str!("statics/preview_block_template.html"),
+                    char = c,
+                    family = family,
+                )
+                .expect("write to string should always success");
+                acc
+            });
+
         format!(
             include_str!("statics/template.html"),
             style = include_str!("statics/style.css"),
             script = include_str!("statics/script.js"),
-            font_previews = self
-                .families
-                .into_iter()
-                .map(|family| {
-                    format!(
-                        include_str!("statics/preview_block_template.html"),
-                        char = c,
-                        family = family
-                    )
-                })
-                .collect::<String>()
+            font_previews = font_previews,
         )
     }
 
