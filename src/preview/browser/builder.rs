@@ -19,15 +19,15 @@
 use std::iter::FromIterator;
 
 use super::SingleThreadServer;
-use crate::font::Family;
+use crate::family::Family;
 
 #[derive(Default)]
 pub struct Builder<'a> {
     families: Vec<&'a str>,
 }
 
-impl<'iter, 'a: 'iter, 'db: 'a> FromIterator<&'iter Family<'a, 'db>> for Builder<'a> {
-    fn from_iter<T: IntoIterator<Item = &'iter Family<'a, 'db>>>(iter: T) -> Self {
+impl<'a, 'iter> FromIterator<&'iter Family<'a>> for Builder<'a> {
+    fn from_iter<T: IntoIterator<Item = &'iter Family<'a>>>(iter: T) -> Self {
         let mut builder = Self::default();
         iter.into_iter().for_each(|f| {
             builder.add_family(f);
@@ -37,7 +37,7 @@ impl<'iter, 'a: 'iter, 'db: 'a> FromIterator<&'iter Family<'a, 'db>> for Builder
 }
 
 impl<'a> Builder<'a> {
-    pub fn add_family(&mut self, family: &Family<'a, '_>) -> &mut Self {
+    pub fn add_family(&mut self, family: &Family<'a>) -> &mut Self {
         self.families.push(family.name);
         self
     }

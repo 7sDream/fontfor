@@ -17,8 +17,8 @@ httparse = "1"
 crossterm = "0.27"
 fontdb = "0.16"
 ab_glyph = "0.2"
-owned_ttf_parser = "0.20.0"
-thiserror = "1.0.50"
+owned_ttf_parser = "0.20"
+thiserror = "1"
 
 [dependencies.clap]
 version = "4"

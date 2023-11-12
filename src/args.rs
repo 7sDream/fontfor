@@ -31,8 +31,8 @@ pub struct Args {
     #[arg(short, long)]
     pub preview: bool,
 
-    /// Enable Terminal UI mode
-    /// enable this mode will disable the --preview/-p and ignore --verbose/-v arg
+    /// Enable Terminal UI mode.
+    /// enable this mode will disable the --preview/-p and ignore --verbose/-v option
     #[arg(short, long)]
     pub tui: bool,
 

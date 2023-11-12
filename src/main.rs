@@ -21,26 +21,25 @@
 
 mod args;
 mod loader;
-mod font;
+mod family;
 mod rasterizer;
 mod one_char;
 mod preview;
 
-use std::{cmp::Reverse, io::Write, iter::FromIterator, net::SocketAddr};
+use std::{
+    io::{Read, Write},
+    net::SocketAddr,
+};
 
-use font::SortedFamilies;
+use family::{group_by_family_sort_by_name, Family};
 use preview::{browser::ServerBuilder as PreviewServerBuilder, terminal::ui::UI};
 
 fn main() {
     let argument = args::get();
 
-    loader::init();
+    let font_set = loader::faces_contains(argument.char.0);
 
-    let charset = loader::Charset::default().add_char(argument.char.0);
-    let pattern = loader::Pattern::default().add_charset(charset);
-    let font_set = loader::FontSet::match_pattern(&pattern);
-
-    let families = font::SortedFamilies::from(&font_set);
+    let families = group_by_family_sort_by_name(&font_set);
 
     if families.is_empty() {
         println!("No font support this character.");
@@ -75,22 +74,21 @@ fn show_preview_addr_and_wait(addr: SocketAddr) {
     std::io::stdout().flush().unwrap();
 
     // Wait until user input any character before stop the server
-    let mut line = " ".to_string();
-    std::io::stdin().read_line(&mut line).unwrap();
+    let _ = std::io::stdin().read(&mut [0u8]).unwrap();
 }
 
-fn show_font_list(families: SortedFamilies<'_, '_>, verbose: bool) {
+fn show_font_list(families: Vec<Family<'_>>, verbose: bool) {
     let max_len = if verbose {
         0
     } else {
         families.iter().map(|f| f.default_name_width).max().unwrap_or_default()
     };
 
-    families.into_iter().for_each(|mut family| {
+    families.into_iter().for_each(|family| {
         if verbose {
             println!("{}", family.name);
-            while let Some(Reverse(face)) = family.fonts.pop() {
-                println!("    {}", face.0.name);
+            for face in family.faces {
+                println!("    {}", face.name);
             }
         } else {
             println!(

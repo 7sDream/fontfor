@@ -33,7 +33,7 @@ pub struct Bitmap {
 }
 
 impl Bitmap {
-    pub(super) fn new<'db>(_font_face: FontFace) -> Self {
+    pub(super) fn new(_font_face: FontFace) -> Self {
         // let face_rec = unsafe { &*font_face.face };
         // let glyph = unsafe { &*face_rec.glyph };
         // let left = glyph.bitmap_left;

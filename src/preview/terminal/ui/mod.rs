@@ -43,7 +43,7 @@ use tui::{
     widgets::{canvas::Canvas, Block, Borders, List, ListItem, Paragraph},
 };
 
-use crate::font::SortedFamilies;
+use crate::family::Family;
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 enum OnEventResult {
@@ -52,13 +52,13 @@ enum OnEventResult {
     Exit,
 }
 
-pub struct UI<'a, 'db> {
+pub struct UI<'a> {
     idle_redraw: u8,
-    state: State<'a, 'db>,
+    state: State<'a>,
 }
 
-impl<'a, 'db: 'a> UI<'a, 'db> {
-    pub fn new(c: char, families: SortedFamilies<'a, 'db>) -> Option<Self> {
+impl<'a: 'a> UI<'a> {
+    pub fn new(c: char, families: Vec<Family<'a>>) -> Option<Self> {
         if families.len() > 0 {
             Some(Self { state: State::new(c, families), idle_redraw: 0 })
         } else {

@@ -26,8 +26,8 @@ use once_cell::unsync::Lazy;
 use tui::widgets::ListState;
 
 use crate::{
-    font::{Font, SortedFamilies},
-    loader,
+    family::Family,
+    loader::{FaceInfo, DATABASE},
     preview::terminal::render::{
         AsciiRender, AsciiRenders, CharBitmapRender, MonoRender, MoonRender, RenderResult,
     },
@@ -56,9 +56,9 @@ thread_local! {
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 struct CacheKey(usize, RenderType, u32, u32);
 
-pub struct State<'a, 'db> {
+pub struct State<'a> {
     c: char,
-    font_faces_info: Vec<Font<'a, 'db>>,
+    font_faces_info: Vec<&'a FaceInfo>,
     font_faces_name: Vec<&'a str>,
     name_width_max: usize,
     list_state: RefCell<ListState>,
@@ -69,11 +69,11 @@ pub struct State<'a, 'db> {
     font_faces: Vec<Cell<Option<FtFontFace>>>,
 }
 
-impl<'a, 'db: 'a> State<'a, 'db> {
-    pub fn new(c: char, families: SortedFamilies<'a, 'db>) -> Self {
+impl<'a: 'a> State<'a> {
+    pub fn new(c: char, families: Vec<Family<'a>>) -> Self {
         let font_faces_info: Vec<_> =
-            families.into_iter().flat_map(|f| f.fonts.into_iter().map(|r| r.0)).collect();
-        let font_faces_name: Vec<_> = font_faces_info.iter().map(|f| f.0.fullname()).collect();
+            families.into_iter().flat_map(|f| f.faces.into_iter()).collect();
+        let font_faces_name: Vec<_> = font_faces_info.iter().map(|f| f.name.as_str()).collect();
         let name_width_max = font_faces_name.iter().map(|f| f.len()).max().unwrap_or_default();
 
         let mut font_faces = Vec::new();
@@ -119,19 +119,12 @@ impl<'a, 'db: 'a> State<'a, 'db> {
                 let font_info = &self.font_faces_info[self.index()];
                 #[allow(clippy::map_err_ignore)]
                 FtFontFace::new(
-                    loader::DATABASE
-                        .with_face_data(font_info.0.id, |data, _| data.to_vec())
-                        .unwrap(),
-                    font_info.0.index,
+                    DATABASE.with_face_data(font_info.id, |data, _| data.to_vec()).unwrap(),
+                    font_info.index,
                 )
                 .map_err(|_| "Can't load current font")
             })
             .and_then(|font_face| self.set_font_face_size(font_face))
-    }
-
-    fn return_font_face(&self, font: FtFontFace) {
-        let font_face_slot = self.font_faces.get(self.index()).unwrap();
-        font_face_slot.set(Some(font));
     }
 
     fn set_font_face_size(&self, mut font_face: FtFontFace) -> Result<FtFontFace, &'static str> {

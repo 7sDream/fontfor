@@ -28,7 +28,7 @@ use std::{
 use httparse::Request as PartRequest;
 
 pub struct SingleThread {
-    html: Option<String>,
+    html: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash)]
@@ -48,7 +48,7 @@ enum CheckRequestResult {
 
 impl SingleThread {
     pub const fn new(html: String) -> Self {
-        Self { html: Some(html) }
+        Self { html }
     }
 
     fn response_status_line(code: u16, reason: &str) -> String {
@@ -221,11 +221,13 @@ impl SingleThread {
     }
 
     pub fn run_until<F>(self, stop: F)
-    where F: FnOnce(SocketAddr) {
+    where
+        F: FnOnce(SocketAddr),
+    {
         let (addr_tx, addr_rx) = channel();
         let (exit_tx, exit_rx) = channel();
 
-        let handler = thread::spawn(|| Self::server(addr_tx, exit_rx, self.html.unwrap()));
+        let handler = thread::spawn(|| Self::server(addr_tx, exit_rx, self.html));
 
         if let Ok(addr) = addr_rx.recv() {
             stop(addr);

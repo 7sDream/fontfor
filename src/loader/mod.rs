@@ -16,16 +16,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod charset;
-mod font_info;
-mod font_set;
-mod pattern;
+mod face_info;
+mod cmap;
+mod error;
 
-pub use charset::Charset;
-pub use font_info::FontInfo;
-pub use font_set::FontSet;
 use once_cell::sync::Lazy;
-pub use pattern::Pattern;
+
+pub use self::{cmap::CMapTable, error::Error, face_info::FaceInfo};
+pub type Result<T> = std::result::Result<T, Error>;
 
 pub static DATABASE: Lazy<fontdb::Database> = Lazy::new(|| {
     let mut db = fontdb::Database::default();
@@ -33,4 +31,20 @@ pub static DATABASE: Lazy<fontdb::Database> = Lazy::new(|| {
     db
 });
 
-pub fn init() {}
+pub fn faces_contains(c: char) -> Vec<FaceInfo> {
+    DATABASE
+        .faces()
+        .filter_map(|info| {
+            let face = FaceInfo::parse_if_contains(info, c);
+
+            if cfg!(debug_assertions) {
+                if let Err(ref err) = face {
+                    eprintln!("Parse {:?}: {}", info.source, err)
+                }
+            }
+
+            return face.transpose();
+        })
+        .filter_map(|f| f.ok())
+        .collect()
+}
