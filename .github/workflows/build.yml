@@ -72,8 +72,12 @@ jobs:
         run: |
           cargo clean
           cargo build --release --all-targets --all-features -vv
-      - name: Upload build result
+      - name: Move and rename binary
+        shell: bash
+        run: |
+          mv target/release/${{ inputs.name }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }} ${{ inputs.name }}-${{ matrix.platform }}-${{ matrix.arch }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
+      - name: Upload binary
         uses: actions/upload-artifact@v3
         with:
           name: ${{ inputs.name }}-${{ matrix.platform }}-${{ matrix.arch }}
-          path: target/release/${{ inputs.name }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
+          path: ${{ inputs.name }}-${{ matrix.platform }}-${{ matrix.arch }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
