@@ -76,4 +76,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ inputs.name }}-${{ matrix.platform }}-${{ matrix.arch }}
-          path: target/release/${{ inputs.name }}${{ fromJSON('[".exe", ""]')[matrix.platform == 'win32'] }}
+          path: target/release/${{ inputs.name }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
