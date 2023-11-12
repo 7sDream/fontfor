@@ -15,62 +15,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Install Rust toolchains
-        uses: actions-rs/toolchain@v1
+        uses: actions/checkout@v4
+
+      - name: Install Rust nightly toolchains
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          toolchain: stable
-          override: true
-          components: rustfmt, clippy
+          components: rustfmt
       - name: Check code style
         uses: actions-rs/cargo@v1
         with:
           command: fmt
-          args: --all -- --check
+          args: +nightly --all -- --check
+
+      - name: Install Rust stable toolchains
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
       - name: Lint code by clippy
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-targets --all-features -- -D warnings
+          args: --all-targets --all-features -- -D warnings'
+
   build:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Install freetype and fontconfig for macOS
-        if: ${{ runner.os == 'macOS' }}
-        run: |
-          brew install pkg-config cmake freetype fontconfig
-          pkg-config --libs --static fontconfig
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Install Rust toolchains
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - name: Cache cargo registry
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-      - name: Cache cargo index
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-      - name: Build
-        id: build
-        run: |
-          cargo clean
-          cargo build --all-targets --all-features --jobs 1 -vv || echo "::set-output name=fail::1"
-      - name: Upload build result to artifact
-        if: steps.build.outputs.fail == '1'
-        uses: actions/upload-artifact@v2
-        with:
-          name: target-${{ runner.OS }}
-          path: target/
-      - name: Fail after upload build result
-        if: steps.build.outputs.fail == '1'
-        run: "false"
+    uses: ./.github/workflows/build.yml
+    with:
+      name: fontfor

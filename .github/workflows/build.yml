@@ -1,0 +1,79 @@
+name: build
+on:
+  workflow_call:
+    inputs:
+      name:
+        required: true
+        type: string
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            rust-target: x86_64-pc-windows-msvc
+            platform: win32
+            arch: x64
+          - os: windows-latest
+            rust-target: i686-pc-windows-msvc
+            platform: win32
+            arch: ia32
+          - os: windows-latest
+            rust-target: aarch64-pc-windows-msvc
+            platform: win32
+            arch: arm64
+          - os: ubuntu-20.04
+            rust-target: x86_64-unknown-linux-gnu
+            platform: linux
+            arch: x64
+          - os: ubuntu-20.04
+            rust-target: aarch64-unknown-linux-gnu
+            platform: linux
+            arch: arm64
+          - os: ubuntu-20.04
+            rust-target: arm-unknown-linux-gnueabihf
+            platform: linux
+            arch: armhf
+          - os: macos-11
+            rust-target: x86_64-apple-darwin
+            platform: darwin
+            arch: x64
+          - os: macos-11
+            rust-target: aarch64-apple-darwin
+            platform: darwin
+            arch: arm64
+    name: Build for ${{ matrix.platform }}-${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install Rust toolchains
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          target: ${{ matrix.rust-target }}
+      - name: Install AArch64 target toolchain
+        if: matrix.rust-target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install gcc-aarch64-linux-gnu
+      - name: Install ARM target toolchain
+        if: matrix.rust-target == 'arm-unknown-linux-gnueabihf'
+        run: |
+          sudo apt-get update
+          sudo apt-get install gcc-arm-linux-gnueabihf
+      - name: Cache cargo registry and index
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+      - name: Build
+        run: |
+          cargo clean
+          cargo build --release --all-targets --all-features -vv
+      - name: Upload build result
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ inputs.name }}-${{ matrix.platform }}-${{ matrix.arch }}
+          path: target/release/${{ inputs.name }}${{ fromJSON('[".exe", ""]')[matrix.platform == 'win32'] }}
