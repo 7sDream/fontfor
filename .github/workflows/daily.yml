@@ -3,9 +3,10 @@ name: Daily check
 on:
   schedule:
     - cron: '0 23 * * *' # CST 7:00 = UTC prev day 23:00
+  workflow_call:
 
 jobs:
-  daily_deps_version_check:
+  deps_version:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -27,6 +28,11 @@ jobs:
           command: outdated
           args: -R --exit-code 1 --verbose
 
+  security_audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       - name: Security audit
         uses: actions-rs/audit-check@v1
         with:

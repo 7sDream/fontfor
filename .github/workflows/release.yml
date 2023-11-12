@@ -7,51 +7,25 @@ on:
 
 jobs:
 
-  tag_check_deps_version:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-      - name: Install cargo-outdated
-        uses: actions-rs/install@v0.1
-        with:
-          crate: cargo-outdated
-          version: latest
-          use-tool-cache: true
-      - name: Check deps crates version
-        uses: actions-rs/cargo@v1
-        with:
-          command: outdated
-          args: -R --exit-code 1 --verbose
-      - name: Check Lock file updated
-        uses: actions-rs/cargo@v1
-        with:
-          command: generate-lockfile
-          args: --locked
-      - name: Security audit
-        uses: actions-rs/audit-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+  daily:
+    uses: ./.github/workflows/daily.yml
 
   build:
     uses: ./.github/workflows/build.yml
     with: 
       name: fontfor
 
-  create_release:
-    needs: [tag_check_deps_version, build]
+  release:
+    needs: [daily, build]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
       # Multi line outputs needs escaped before echo, ref:
       # https://github.community/t5/GitHub-Actions/set-output-Truncates-Multiline-Strings/td-p/37870
-      - name: Get Tag Name and message
+      - name: Get message
         id: tag
         run: |
-          echo "::set-output name=name::$(echo $GITHUB_REF | cut -d/ -f3)"
           message=$(echo "${{ github.event.head_commit.message }}" | tail -n +3)
           message="${message//'%'/'%25'}"
           message="${message//$'\n'/'%0A'}"
