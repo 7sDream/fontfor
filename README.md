@@ -6,23 +6,18 @@ Find fonts which can show a specified character and preview them in browser.
 
 This is port from my early python script called [which_fonts_support][which_fonts_support-github], but with some improvements:
 
-- Write in Rust, safe and faster
-- Use [`Fontconfig`][fontconfig-home] library instead of depends on `fc-list` command installed
-- Support preview in shell (powered by [`FreeType`][free-type-home]), no browser needed
-
-## Dependencies
-
-This program needs `Fontconfig` and `FreeType` library to run, and some of their deps needs `cmake` to compile, so we need to install them before compile:
-
-- macOS: `brew install cmake freetype fontconfig`
-- Linux: Please refer to the docs of your Linux distribution to figure out how to install them
-- Win: Do not support Windows for now
+- 🛡️ Write in Rust. Safety
+- 🚀️ Mmap to load font file. Fast
+- 🚀️ Only parse font table we need, not all bytes of font file. Faster
+- 🖥 Support preview in terminal and browser. Friendly
 
 ## Install or Update
 
 ```bash
 cargo install -f fontfor
 ```
+
+Or download binary from release page.
 
 ## Usage
 
@@ -73,6 +68,8 @@ add `-v` flag to show all font style.
 
 We don't show [screenshot picture][verbose-mode-screenshot] here because it's a bit long.
 
+add more `-v`, or `-vv` to show font file and face index.
+
 ### Preview in Browser
 
 Add `-p` flag to enable browser preview:
@@ -109,8 +106,6 @@ See [COPYING][COPYING-file].
 [crates-io-page]: https://crates.io/crates/fontfor
 [ci-badge]: https://github.com/7sDream/fontfor/workflows/CI/badge.svg
 [github-actions-page]: https://github.com/7sDream/fontfor/actions
-[fontconfig-home]: https://www.freedesktop.org/wiki/Software/fontconfig/
-[free-type-home]: https://www.freetype.org/
 [which_fonts_support-github]: https://github.com/7sDream/which_fonts_support
 [verbose-mode-screenshot]: https://rikka.7sdre.am/files/22ea7500-525b-47ba-9c4e-6ef963999983.png
 [browser-preview-screenshot]: https://rikka.7sdre.am/files/8f27f97b-a9b5-4fac-b922-594d188f648c.png

@@ -16,22 +16,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use super::CharBitmapRender;
+use super::Render;
 
+#[derive(Default)]
 pub struct MonoRender {}
 
-impl Default for MonoRender {
-    fn default() -> Self {
-        Self {}
-    }
-}
+impl Render for MonoRender {
+    type Pixel = bool;
 
-impl CharBitmapRender for MonoRender {
-    fn gray_to_char(&self, _up: u8, _left: u8, gray: u8, _right: u8, _down: u8) -> char {
-        if gray == u8::max_value() {
-            '#'
-        } else {
-            ' '
-        }
+    fn render_pixel(&self, _up: u8, _left: u8, gray: u8, _right: u8, _down: u8) -> Self::Pixel {
+        gray == u8::MAX
     }
 }

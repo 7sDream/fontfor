@@ -16,7 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::{convert::TryFrom, hint::unreachable_unchecked, str::FromStr, string::ToString};
+use std::{convert::TryFrom, str::FromStr};
+
+use thiserror::Error;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct OneChar(pub char);
@@ -38,40 +40,26 @@ impl OneChar {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Error)]
 pub enum ParseError {
+    #[error("you don't input anything")]
     EmptyInput,
+    #[error("invalid unicode scalar value {0}")]
     InvalidUnicodeScalarValue(u32),
+    #[error("has invalid char when parse as a base {0} number")]
     InvalidDigitInRadix(u32),
+    #[error("need bytes str after `0x`")]
     UTF8BytesEmpty,
+    #[error("can't align to bytes")]
     UTF8BytesStrCantAlignToBytes,
+    #[error("invalid utf8 bytes")]
     UTF8BytesInvalid,
+    #[error("utf8 bytes represent for more then one char")]
     UTF8BytesParseResultMoreThenOneChar,
-}
-
-impl ToString for ParseError {
-    fn to_string(&self) -> String {
-        match self {
-            Self::EmptyInput => "you don't input anything".to_string(),
-            Self::InvalidUnicodeScalarValue(scalar_value) => {
-                format!("invalid unicode scalar value {}", scalar_value)
-            }
-            Self::InvalidDigitInRadix(radix) => {
-                format!("has invalid char when parse as a base {} number", radix)
-            }
-            Self::UTF8BytesEmpty => "need bytes str after `0x`".to_string(),
-            Self::UTF8BytesStrCantAlignToBytes => "can't align to bytes".to_string(),
-            Self::UTF8BytesInvalid => "invalid utf8 bytes".to_string(),
-            Self::UTF8BytesParseResultMoreThenOneChar => {
-                "utf8 bytes represent for more then one char".to_string()
-            }
-        }
-    }
 }
 
 impl OneChar {
     pub fn from_scalar_value(scalar_value: u32) -> Result<Self, ParseError> {
-        #[allow(clippy::map_err_ignore)]
         char::try_from(scalar_value)
             .map(Self)
             .map_err(|_| ParseError::InvalidUnicodeScalarValue(scalar_value))
@@ -79,7 +67,6 @@ impl OneChar {
 
     pub fn from_scalar_value_str_radix(s: &str, radix: u32) -> Result<Self, ParseError> {
         Self::from_scalar_value(
-            #[allow(clippy::map_err_ignore)]
             u32::from_str_radix(s, radix).map_err(|_| ParseError::InvalidDigitInRadix(radix))?,
         )
     }
@@ -113,7 +100,6 @@ impl OneChar {
                 let c1 = c1.unwrap(); // at least one char because of the `take_while`
                 let c2 = c2.ok_or(ParseError::UTF8BytesStrCantAlignToBytes)?;
                 if c1.is_ascii_hexdigit() && c2.is_ascii_hexdigit() {
-                    #[allow(clippy::cast_possible_truncation)] // two hex digit is a 8-bit number
                     Ok((c1.to_digit(16).unwrap() << 4 | c2.to_digit(16).unwrap()) as u8)
                 } else {
                     Err(ParseError::InvalidDigitInRadix(16))
@@ -121,7 +107,6 @@ impl OneChar {
             })
             .collect::<Result<Vec<_>, _>>()?;
 
-        #[allow(clippy::map_err_ignore)]
         let utf8 = String::from_utf8(bytes).map_err(|_| ParseError::UTF8BytesInvalid)?;
 
         let mut iter = utf8.chars();
@@ -130,8 +115,7 @@ impl OneChar {
             (Some(c), None) => Ok(Self(c)),
             (None, None) => Err(ParseError::UTF8BytesEmpty),
             (Some(_), Some(_)) => Err(ParseError::UTF8BytesParseResultMoreThenOneChar),
-            // Because an iterator can not produce value after returning None
-            (None, Some(_)) => unsafe { unreachable_unchecked() },
+            (None, Some(_)) => unreachable!("iterator can not produce value after returning None"),
         }
     }
 }
@@ -155,8 +139,7 @@ impl FromStr for OneChar {
                     _ => Self::from_scalar_value_str_dec(s),
                 }
             }
-            // Because an iterator can not produce value after returning None
-            (None, Some(_)) => unsafe { unreachable_unchecked() },
+            (None, Some(_)) => unreachable!("iterator can not produce value after returning None"),
         }
     }
 }

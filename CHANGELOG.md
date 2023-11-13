@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Remove dependency of fontconfig and freetype lib
+- Add `-vv` option to show font file location and face index
+- Now release contains ia32/x64/arm64 binary for Windows
+- Now release contains x64/arm64 binary for macOS
+- Now release contains x64/arm64/armhf binary Linux
+
 ## 0.3.1
 
 - Display help message directly when `char` arg are missing (Issue #11, Pr #12)

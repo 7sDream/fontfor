@@ -16,71 +16,39 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use {
-    crate::{
-        font::{Font, GetValueByLang, SortedFamilies},
-        ft::{FontFace as FtFontFace, Library as FtLibrary},
-        preview::terminal::render::{
-            AsciiRender, AsciiRenders, CharBitmapRender, MonoRender, MoonRender, RenderResult,
-        },
-    },
-    once_cell::unsync::Lazy,
-    std::{
-        cell::{Cell, RefCell, RefMut},
-        collections::hash_map::HashMap,
-        rc::Rc,
-    },
-    tui::widgets::ListState,
+use std::{
+    cell::{Cell, RefCell, RefMut},
+    collections::hash_map::HashMap,
+    rc::Rc,
 };
 
-#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub enum RenderType {
-    AsciiLevel10,
-    AsciiLevel70,
-    Moon,
-    Mono,
-}
+use tui::widgets::ListState;
 
-thread_local! {
-    static RENDERS: Lazy<HashMap<RenderType, Box<dyn CharBitmapRender>>> = Lazy::new(|| {
-        let mut renders: HashMap<RenderType, Box<dyn CharBitmapRender>> = HashMap::new();
-        renders.insert(RenderType::AsciiLevel10, Box::new(AsciiRender::new(AsciiRenders::Level10)));
-        renders.insert(RenderType::AsciiLevel70, Box::new(AsciiRender::new(AsciiRenders::Level70)));
-        renders.insert(RenderType::Moon, Box::new(MoonRender::new()));
-        renders.insert(RenderType::Mono, Box::new(MonoRender::default()));
-        renders
-    });
-}
+use super::cache::{CacheKey, GlyphCache, GlyphCanvasShape, RenderType, CHAR_RENDERS, MONO_RENDER};
+use crate::{
+    family::Family,
+    loader::{FaceInfo, DATABASE},
+    preview::terminal::ui::cache::GlyphParagraph,
+    rasterizer::{Bitmap, FontFace, PixelFormat},
+};
 
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-struct CacheKey(usize, RenderType, u32, u32);
-
-pub struct State<'fc, 'ft> {
-    c: char,
-    font_faces_info: Vec<Font<'fc>>,
-    font_faces_name: Vec<&'fc str>,
+pub struct State<'a> {
+    font_faces_info: Vec<&'a FaceInfo>,
+    font_faces_name: Vec<&'a str>,
     name_width_max: usize,
     list_state: RefCell<ListState>,
     height: Cell<u32>,
     width: Cell<u32>,
     rt: RenderType,
-    cache: RefCell<HashMap<CacheKey, Rc<Result<RenderResult, &'static str>>>>,
-    font_faces: Vec<Cell<Option<FtFontFace<'ft>>>>,
-    ft: &'ft FtLibrary,
+    cache: RefCell<HashMap<CacheKey, Rc<Result<GlyphCache, &'static str>>>>,
 }
 
-impl<'fc, 'ft> State<'fc, 'ft> {
-    pub fn new(c: char, families: SortedFamilies<'fc>, ft: &'ft FtLibrary) -> Self {
+impl<'a> State<'a> {
+    pub fn new(families: Vec<Family<'a>>) -> Self {
         let font_faces_info: Vec<_> =
-            families.into_iter().flat_map(|f| f.fonts.into_iter().map(|r| r.0)).collect();
-        let font_faces_name: Vec<_> =
-            font_faces_info.iter().map(|f| *f.fullnames.get_default()).collect();
+            families.into_iter().flat_map(|f| f.faces.into_iter()).collect();
+        let font_faces_name: Vec<_> = font_faces_info.iter().map(|f| f.name.as_ref()).collect();
         let name_width_max = font_faces_name.iter().map(|f| f.len()).max().unwrap_or_default();
-
-        let mut font_faces = Vec::new();
-        for _ in 0..font_faces_info.len() {
-            font_faces.push(Cell::new(None));
-        }
 
         let cache = RefCell::default();
 
@@ -88,7 +56,6 @@ impl<'fc, 'ft> State<'fc, 'ft> {
         list_state.select(Some(0));
 
         Self {
-            c,
             font_faces_info,
             font_faces_name,
             name_width_max,
@@ -97,74 +64,55 @@ impl<'fc, 'ft> State<'fc, 'ft> {
             width: Cell::new(0),
             rt: RenderType::Mono,
             cache,
-            font_faces,
-            ft,
         }
     }
 
     fn cache_key(&self) -> CacheKey {
-        CacheKey(self.index(), self.rt, self.height.get(), self.width.get())
+        CacheKey {
+            index: self.index(),
+            rt: self.rt,
+            height: self.height.get(),
+            width: self.width.get(),
+        }
     }
 
-    pub fn render(&self) -> Rc<Result<RenderResult, &'static str>> {
+    pub fn render(&self) -> Rc<Result<GlyphCache, &'static str>> {
         let key = self.cache_key();
         self.cache.borrow_mut().entry(key).or_insert_with(|| Rc::new(self.real_render())).clone()
     }
 
-    fn get_font_face(&self) -> Result<FtFontFace<'ft>, &'static str> {
-        let font_face_slot = self.font_faces.get(self.index()).unwrap();
-
-        font_face_slot
-            .take()
-            .ok_or(())
-            .or_else(|_| {
-                let font_info = &self.font_faces_info[self.index()];
-                #[allow(clippy::map_err_ignore)]
-                self.ft
-                    .load_font(font_info.path, font_info.index.into())
-                    .map_err(|_| "Can't load current font")
+    fn real_render(&self) -> Result<GlyphCache, &'static str> {
+        let info = self.font_faces_info[self.index()];
+        let glyph = DATABASE
+            .with_face_data(info.id, |data, index| -> Option<Bitmap> {
+                let mut face = FontFace::new(data, index).ok()?;
+                face.set_size(self.height.get(), self.width.get());
+                face.load_glyph(info.gid.0, match self.rt {
+                    RenderType::Mono => PixelFormat::Monochrome,
+                    _ => PixelFormat::Gray,
+                })
             })
-            .and_then(|font_face| self.set_font_face_size(font_face))
-    }
+            .unwrap();
 
-    fn return_font_face(&self, font: FtFontFace<'ft>) {
-        let font_face_slot = self.font_faces.get(self.index()).unwrap();
-        font_face_slot.set(Some(font));
-    }
-
-    fn set_font_face_size(
-        &self, mut font_face: FtFontFace<'ft>,
-    ) -> Result<FtFontFace<'ft>, &'static str> {
-        let height = self.height.get();
-        let width = self.width.get();
-
-        #[allow(clippy::map_err_ignore)]
-        font_face
-            .set_cell_pixel(height.into(), width.into())
-            .map(|_| font_face)
-            .map_err(|_| "Current font don't support this size")
-    }
-
-    fn real_render(&self) -> Result<RenderResult, &'static str> {
-        let font_face = self.get_font_face()?;
-
-        match font_face.load_char(self.c, self.rt == RenderType::Mono) {
-            Ok(bitmap) => {
-                let result: RenderResult = RENDERS.with(|renders| {
-                    let render = renders.get(&self.rt).unwrap();
-                    render.render(&bitmap)
-                });
-                self.return_font_face(bitmap.return_font_face());
-                Ok(result)
+        match glyph {
+            Some(bitmap) => {
+                let cache = match self.rt {
+                    RenderType::Mono => GlyphCache::Canvas(GlyphCanvasShape::new(
+                        MONO_RENDER.render(&bitmap),
+                        self.width.get() as f64,
+                        self.height.get() as f64,
+                    )),
+                    rt => GlyphCache::Paragraph(GlyphParagraph::new(
+                        CHAR_RENDERS.get(&rt).expect("all render must be exist").render(&bitmap),
+                    )),
+                };
+                Ok(cache)
             }
-            Err((font, _)) => {
-                self.return_font_face(font);
-                Err("Can't get glyph info from current font")
-            }
+            None => Err("Can't get glyph from this font"),
         }
     }
 
-    pub fn current_name(&self) -> &'fc str {
+    pub fn current_name(&self) -> &'a str {
         self.font_faces_name[self.index()]
     }
 
@@ -172,7 +120,7 @@ impl<'fc, 'ft> State<'fc, 'ft> {
         self.name_width_max
     }
 
-    pub const fn family_names(&self) -> &Vec<&'fc str> {
+    pub const fn family_names(&self) -> &Vec<&'a str> {
         &self.font_faces_name
     }
 

@@ -16,35 +16,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod canvas_render;
+mod cache;
 mod event;
 mod state;
 
-use {
-    crate::{font::SortedFamilies, ft::Library as FtLibrary},
-    canvas_render::CanvasRenderResult,
-    crossterm::{
-        event::{KeyCode as CtKeyCode, KeyModifiers as CtKM},
-        execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-        Result as CTResult,
-    },
-    event::{TerminalEvent, TerminalEventStream},
-    state::{RenderType, State},
-    std::{
-        io::{Stdout, Write},
-        ops::DerefMut,
-        time::Duration,
-    },
-    tui::{
-        backend::CrosstermBackend,
-        layout::{Alignment, Constraint, Direction, Layout, Rect},
-        style::{Color, Modifier, Style},
-        terminal::{Frame, Terminal},
-        text::{Span, Spans, Text},
-        widgets::{canvas::Canvas, Block, Borders, List, ListItem, Paragraph},
-    },
+use std::{
+    io::{Result as IoResult, Stdout},
+    time::Duration,
 };
+
+use crossterm::{
+    event::{KeyCode as CtKeyCode, KeyModifiers as CtKM},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
+use tui::{
+    backend::CrosstermBackend,
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    style::{Color, Modifier, Style},
+    terminal::{Frame, Terminal},
+    text::{Line, Span, Text},
+    widgets::{canvas::Canvas, Block, Borders, List, ListItem, Paragraph},
+};
+
+use self::{
+    cache::{GlyphCache, GlyphCanvasShape, RenderType},
+    event::{TerminalEvent, TerminalEventStream},
+    state::State,
+};
+use crate::family::Family;
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 enum OnEventResult {
@@ -53,24 +53,21 @@ enum OnEventResult {
     Exit,
 }
 
-pub struct UI<'fc, 'ft> {
+pub struct UI<'a> {
     idle_redraw: u8,
-    state: State<'fc, 'ft>,
+    state: State<'a>,
 }
 
-impl<'fc, 'ft> UI<'fc, 'ft> {
-    pub fn new(c: char, families: SortedFamilies<'fc>, ft: &'ft mut FtLibrary) -> Option<Self> {
-        if families.len() > 0 {
-            Some(Self { state: State::new(c, families, ft), idle_redraw: 0 })
+impl<'a: 'a> UI<'a> {
+    pub fn new(families: Vec<Family<'a>>) -> Option<Self> {
+        if !families.is_empty() {
+            Some(Self { state: State::new(families), idle_redraw: 0 })
         } else {
             None
         }
     }
 
-    fn draw_list<B>(&self, area: Rect, f: &mut Frame<'_, B>)
-    where
-        B: tui::backend::Backend,
-    {
+    fn draw_list(&self, area: Rect, f: &mut Frame<'_>) {
         let families = self.state.family_names();
         let index = self.state.index();
         let title = format!("Fonts {}/{}", index + 1, families.len());
@@ -79,53 +76,61 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
             .block(Block::default().title(Span::raw(title)).borders(Borders::ALL))
             .highlight_style(Style::default().fg(Color::LightBlue).add_modifier(Modifier::BOLD));
 
-        f.render_stateful_widget(list, area, self.state.mut_list_state().deref_mut())
+        f.render_stateful_widget(list, area, &mut self.state.mut_list_state())
     }
 
-    fn draw_canvas<B>(&self, area: Rect, f: &mut Frame<'_, B>)
+    fn draw_preview_canvas(&self, area: Rect, f: &mut Frame<'_>, shape: &GlyphCanvasShape) {
+        let (canvas_width, canvas_height) = self.state.get_char_pixel_cell();
+        let canvas_width = f64::from(canvas_width);
+        let canvas_height = f64::from(canvas_height);
+        let canvas = Canvas::default()
+            .block(Block::default().title("Preview").borders(Borders::ALL))
+            .x_bounds([0.0, canvas_width])
+            .y_bounds([0.0, canvas_height])
+            .paint(|ctx| {
+                ctx.draw(shape);
+            });
+        f.render_widget(canvas, area);
+    }
+
+    fn draw_preview_paragraph<'s, I>(&self, area: Rect, f: &mut Frame<'_>, paragraph: I)
     where
-        B: tui::backend::Backend,
+        I: IntoIterator<Item = &'s str>,
+        I::IntoIter: ExactSizeIterator,
     {
+        let iter = paragraph.into_iter();
+        let padding = (area.height as usize).saturating_sub(2).saturating_sub(iter.len());
+        let mut lines = vec![Line::from(""); padding / 2];
+
+        for line in iter {
+            lines.push(Line::from(line));
+        }
+
+        let canvas = Paragraph::new(Text::from(lines))
+            .block(Block::default().title("Preview").borders(Borders::ALL))
+            .alignment(Alignment::Center)
+            .style(Style::default().fg(Color::Reset).add_modifier(Modifier::BOLD));
+        f.render_widget(canvas, area);
+    }
+
+    fn draw_preview(&self, area: Rect, f: &mut Frame<'_>) {
         let result = self.state.render();
 
-        if self.state.get_render_type() == &RenderType::Mono && result.is_ok() {
-            // Mono render to canvas
-            let (canvas_width, canvas_height) = self.state.get_char_pixel_cell();
-            let canvas_width = f64::from(canvas_width);
-            let canvas_height = f64::from(canvas_height);
-            let canvas = Canvas::default()
-                .block(Block::default().title("Preview").borders(Borders::ALL))
-                .x_bounds([0.0, canvas_width - 1.0])
-                .y_bounds([0.0, canvas_height - 1.0])
-                .paint(|ctx| {
-                    let chars = result.as_ref().as_ref().unwrap();
-                    let shape = CanvasRenderResult::new(chars, canvas_width, canvas_height);
-                    ctx.draw(&shape);
-                });
-            f.render_widget(canvas, area);
-        } else {
-            // Others render to paragraph
-            let (height, result) = match result.as_ref() {
-                Ok(result) => (result.height(), result.to_string()),
-                Err(err) => (err.lines().count(), (*err).to_string()),
-            };
-
-            let padding = (area.height as usize).saturating_sub(2).saturating_sub(height);
-            let mut lines = vec![Spans::from(""); padding / 2];
-
-            for line in result.lines() {
-                lines.push(Spans::from(line));
+        match result.as_ref().as_ref() {
+            Ok(GlyphCache::Canvas(ref shape)) => {
+                self.draw_preview_canvas(area, f, shape);
             }
-
-            let canvas = Paragraph::new(Text::from(lines))
-                .block(Block::default().title("Preview").borders(Borders::ALL))
-                .alignment(Alignment::Center)
-                .style(Style::default().fg(Color::Reset).add_modifier(Modifier::BOLD));
-            f.render_widget(canvas, area);
+            Ok(GlyphCache::Paragraph(ref s)) => {
+                self.draw_preview_paragraph(area, f, s.lines.iter().map(|s| s.as_str()))
+            }
+            Err(s) => {
+                let paragraph: [&str; 1] = [s];
+                self.draw_preview_paragraph(area, f, paragraph)
+            }
         }
     }
 
-    fn generate_help_text<'a>(key: &'a str, help: &'a str) -> Vec<Span<'a>> {
+    fn generate_help_text<'x>(key: &'x str, help: &'x str) -> Vec<Span<'x>> {
         vec![
             Span::styled(key, Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
             Span::raw(": "),
@@ -133,10 +138,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         ]
     }
 
-    fn draw_status_bar_info<B>(&self, area: Rect, f: &mut Frame<'_, B>)
-    where
-        B: tui::backend::Backend,
-    {
+    fn draw_status_bar_info(&self, area: Rect, f: &mut Frame<'_>) {
         let cols = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Percentage(65), Constraint::Percentage(35)].as_ref())
@@ -154,7 +156,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
             ),
         ];
         f.render_widget(
-            Paragraph::new(Spans::from(texts))
+            Paragraph::new(Line::from(texts))
                 .block(Block::default().title("Info").borders(Borders::TOP | Borders::LEFT))
                 .alignment(Alignment::Left),
             name,
@@ -169,17 +171,14 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
             ),
         ];
         f.render_widget(
-            Paragraph::new(Spans::from(texts))
+            Paragraph::new(Line::from(texts))
                 .block(Block::default().borders(Borders::TOP | Borders::RIGHT))
                 .alignment(Alignment::Right),
             mode,
         );
     }
 
-    fn draw_status_bar_help<B>(area: Rect, f: &mut Frame<'_, B>)
-    where
-        B: tui::backend::Backend,
-    {
+    fn draw_status_bar_help(area: Rect, f: &mut Frame<'_>) {
         let cols = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(
@@ -197,31 +196,28 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         let quit_help = Self::generate_help_text("[Q]", "Quit");
 
         f.render_widget(
-            Paragraph::new(Spans::from(list_help))
+            Paragraph::new(Line::from(list_help))
                 .block(Block::default().borders(Borders::BOTTOM | Borders::LEFT))
                 .alignment(Alignment::Left),
             cols[0],
         );
 
         f.render_widget(
-            Paragraph::new(Spans::from(mode_help))
+            Paragraph::new(Line::from(mode_help))
                 .block(Block::default().borders(Borders::BOTTOM))
                 .alignment(Alignment::Center),
             cols[1],
         );
 
         f.render_widget(
-            Paragraph::new(Spans::from(quit_help))
+            Paragraph::new(Line::from(quit_help))
                 .block(Block::default().borders(Borders::BOTTOM | Borders::RIGHT))
                 .alignment(Alignment::Right),
             cols[2],
         );
     }
 
-    fn draw_status_bar<B>(&self, area: Rect, f: &mut Frame<'_, B>)
-    where
-        B: tui::backend::Backend,
-    {
+    fn draw_status_bar(&self, area: Rect, f: &mut Frame<'_>) {
         let rows = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Length(2), Constraint::Length(2)].as_ref())
@@ -234,10 +230,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         Self::draw_status_bar_help(help, f);
     }
 
-    fn draw<B>(&self, f: &mut Frame<'_, B>)
-    where
-        B: tui::backend::Backend,
-    {
+    fn draw(&self, f: &mut Frame<'_>) {
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Min(3), Constraint::Length(4)].as_ref())
@@ -246,7 +239,6 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         let main = layout[0];
         let status_bar = layout[1];
 
-        #[allow(clippy::cast_possible_truncation)] // never truncation because we `min` with 24
         let list_width = self.state.name_width_max().min(32) as u16;
 
         let main = Layout::default()
@@ -270,11 +262,11 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         self.state.update_char_pixel_cell(width, height);
 
         self.draw_list(list, f);
-        self.draw_canvas(canvas, f);
+        self.draw_preview(canvas, f);
         self.draw_status_bar(status_bar, f);
     }
 
-    fn on_event(&mut self, event: CTResult<TerminalEvent>) -> CTResult<OnEventResult> {
+    fn on_event(&mut self, event: IoResult<TerminalEvent>) -> IoResult<OnEventResult> {
         match event? {
             TerminalEvent::Tick => {
                 self.idle_redraw += 1;
@@ -313,7 +305,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         }
     }
 
-    fn setup() -> CTResult<Terminal<CrosstermBackend<Stdout>>> {
+    fn setup() -> IoResult<Terminal<CrosstermBackend<Stdout>>> {
         enable_raw_mode()?;
         let mut stdout = std::io::stdout();
         execute!(stdout, EnterAlternateScreen)?;
@@ -324,7 +316,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         Ok(terminal)
     }
 
-    fn shutdown(mut terminal: Terminal<CrosstermBackend<Stdout>>) -> CTResult<()> {
+    fn shutdown(mut terminal: Terminal<CrosstermBackend<Stdout>>) -> IoResult<()> {
         terminal.show_cursor()?;
         let backend = terminal.backend_mut();
         execute!(backend, LeaveAlternateScreen)?;
@@ -332,12 +324,12 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
         Ok(())
     }
 
-    pub fn show(mut self) -> CTResult<()> {
+    pub fn show(mut self) -> IoResult<()> {
         let mut terminal = Self::setup()?;
 
         let events = TerminalEventStream::new(Duration::from_millis(1000 / 60));
 
-        terminal.draw(|mut f| self.draw(&mut f))?;
+        terminal.draw(|f| self.draw(f))?;
 
         for event in events.iter() {
             match self.on_event(event) {
@@ -347,7 +339,7 @@ impl<'fc, 'ft> UI<'fc, 'ft> {
                 }
                 Ok(result) => match result {
                     OnEventResult::ReDraw => {
-                        terminal.draw(|mut f| self.draw(&mut f))?;
+                        terminal.draw(|f| self.draw(f))?;
                         self.idle_redraw = 0;
                     }
                     OnEventResult::Continue => (),

@@ -19,4 +19,5 @@
 mod builder;
 mod server;
 
-pub use {builder::Builder as ServerBuilder, server::SingleThread as SingleThreadServer};
+pub use builder::Builder as ServerBuilder;
+pub use server::SingleThread as SingleThreadServer;

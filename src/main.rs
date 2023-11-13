@@ -16,37 +16,31 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#![deny(clippy::all)]
 #![deny(warnings)]
-#![deny(clippy::all, clippy::pedantic, clippy::nursery)]
-#![deny(missing_debug_implementations, rust_2018_idioms)]
-#![allow(clippy::module_name_repetitions)]
+#![deny(rust_2018_idioms, unsafe_code)]
 
 mod args;
-mod fc;
-mod font;
-mod ft;
+mod loader;
+mod family;
+mod rasterizer;
 mod one_char;
 mod preview;
 
-use {
-    font::{GetValueByLang, SortedFamilies},
-    preview::{browser::ServerBuilder as PreviewServerBuilder, terminal::ui::UI},
-    std::{cmp::Reverse, io::Write, iter::FromIterator, net::SocketAddr, process::exit},
+use std::{
+    io::{Read, Write},
+    net::SocketAddr,
 };
+
+use family::Family;
+use preview::{browser::ServerBuilder as PreviewServerBuilder, terminal::ui::UI};
 
 fn main() {
     let argument = args::get();
 
-    fc::init().unwrap_or_else(|_| {
-        eprintln!("init FontConfig failed");
-        exit(1);
-    });
+    let font_set = loader::faces_contains(argument.char.0);
 
-    let charset = fc::Charset::default().add_char(argument.char.0);
-    let pattern = fc::Pattern::default().add_charset(&charset);
-    let font_set = fc::FontSet::match_pattern(&pattern);
-
-    let families = font::SortedFamilies::from(&font_set);
+    let families = family::group_by_family_sort_by_name(&font_set);
 
     if families.is_empty() {
         println!("No font support this character.");
@@ -54,11 +48,7 @@ fn main() {
     }
 
     if argument.tui {
-        let mut ft_library = ft::Library::new().unwrap_or_else(|e| {
-            eprintln!("init FreeType failed: {}", e);
-            exit(2);
-        });
-        let ui = UI::new(argument.char.0, families, &mut ft_library).unwrap();
+        let ui = UI::new(families).unwrap();
         ui.show().unwrap_or_else(|err| {
             eprintln!("{:?}", err);
         });
@@ -76,8 +66,6 @@ fn main() {
             builder.build_for(argument.char.0).run_until(show_preview_addr_and_wait);
         }
     }
-
-    fc::finalize();
 }
 
 fn show_preview_addr_and_wait(addr: SocketAddr) {
@@ -87,27 +75,30 @@ fn show_preview_addr_and_wait(addr: SocketAddr) {
     std::io::stdout().flush().unwrap();
 
     // Wait until user input any character before stop the server
-    let mut line = " ".to_string();
-    std::io::stdin().read_line(&mut line).unwrap();
+    let _ = std::io::stdin().read(&mut [0u8]).unwrap();
 }
 
-fn show_font_list(families: SortedFamilies<'_>, verbose: bool) {
-    let max_len = if verbose {
+fn show_font_list(families: Vec<Family<'_>>, verbose: u8) {
+    let max_len = if verbose > 0 {
         0
     } else {
         families.iter().map(|f| f.default_name_width).max().unwrap_or_default()
     };
 
-    families.into_iter().for_each(|mut family| {
-        if verbose {
-            println!("{}", family.name.get_default());
-            while let Some(Reverse(face)) = family.fonts.pop() {
-                println!("    {}", face.fullnames.get_default());
+    families.into_iter().for_each(|family| {
+        if verbose > 0 {
+            println!("{}", family.name);
+            for face in family.faces {
+                print!("\t{}", face.name);
+                if verbose > 1 {
+                    print!("\t{}:{}", face.path.to_string_lossy(), face.index)
+                }
+                println!()
             }
         } else {
             println!(
                 "{:<family_name_length$} with {} style{}",
-                family.name.get_default(),
+                family.name,
                 family.styles_count(),
                 if family.styles_count() > 1 { "s" } else { "" },
                 family_name_length = max_len,

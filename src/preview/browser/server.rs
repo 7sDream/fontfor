@@ -16,20 +16,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use {
-    httparse::Request as PartRequest,
-    std::{
-        cell::RefCell,
-        io::{Error as IOError, ErrorKind as IOErrorKind, Read, Write},
-        net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream},
-        sync::mpsc::{channel, Receiver, Sender, TryRecvError},
-        thread,
-        time::Duration,
-    },
+use std::{
+    cell::RefCell,
+    io::{Error as IOError, ErrorKind as IOErrorKind, Read, Write},
+    net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream},
+    sync::mpsc::{channel, Receiver, Sender, TryRecvError},
+    thread,
+    time::Duration,
 };
 
+use httparse::Request;
+
 pub struct SingleThread {
-    html: Option<String>,
+    html: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash)]
@@ -49,7 +48,7 @@ enum CheckRequestResult {
 
 impl SingleThread {
     pub const fn new(html: String) -> Self {
-        Self { html: Some(html) }
+        Self { html }
     }
 
     fn response_status_line(code: u16, reason: &str) -> String {
@@ -90,7 +89,7 @@ impl SingleThread {
         }
 
         let mut headers = [httparse::EMPTY_HEADER; 16];
-        let mut req = PartRequest::new(&mut headers);
+        let mut req = Request::new(&mut headers);
         match req.parse(buffer) {
             Ok(result) => {
                 // We Only accept `GET /` request
@@ -180,7 +179,6 @@ impl SingleThread {
         }
     }
 
-    #[allow(clippy::needless_pass_by_value)] // channel is designed to be used like this
     fn server(
         addr_tx: Sender<SocketAddr>, exit_rx: Receiver<()>, content: String,
     ) -> Result<(), IOError> {
@@ -228,7 +226,7 @@ impl SingleThread {
         let (addr_tx, addr_rx) = channel();
         let (exit_tx, exit_rx) = channel();
 
-        let handler = thread::spawn(|| Self::server(addr_tx, exit_rx, self.html.unwrap()));
+        let handler = thread::spawn(|| Self::server(addr_tx, exit_rx, self.html));
 
         if let Ok(addr) = addr_rx.recv() {
             stop(addr);

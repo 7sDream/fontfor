@@ -20,66 +20,39 @@ mod ascii;
 mod mono;
 mod moon;
 
-use {
-    crate::ft::Bitmap,
-    std::fmt::{Display, Error, Formatter, Write},
-};
+use grid::Grid;
 
-pub use {
+pub use self::{
     ascii::{AsciiRender, AsciiRenders},
     mono::MonoRender,
     moon::MoonRender,
 };
+use crate::rasterizer::Bitmap;
 
-#[derive(Clone)]
-pub struct RenderResult(pub Vec<Vec<char>>);
+pub trait Render {
+    type Pixel: Default;
 
-impl Display for RenderResult {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        for line in &self.0 {
-            for c in line.iter() {
-                f.write_char(*c)?;
-            }
-            f.write_char('\n')?;
-        }
-        Ok(())
-    }
-}
-
-impl RenderResult {
-    pub fn height(&self) -> usize {
-        self.0.len()
-    }
-
-    pub fn width(&self) -> usize {
-        self.0.first().map_or(0, Vec::len)
-    }
-}
-
-pub trait CharBitmapRender {
     #[allow(clippy::too_many_arguments)] // need them..., fine, I will try make them a struct
-    fn gray_to_char(&self, up: u8, left: u8, gray: u8, right: u8, down: u8) -> char;
+    fn render_pixel(&self, up: u8, left: u8, gray: u8, right: u8, down: u8) -> Self::Pixel;
 
-    fn render(&self, bm: &Bitmap<'_>) -> RenderResult {
-        let m = bm.get_metrics();
+    fn render(&self, bm: &Bitmap) -> Grid<Self::Pixel> {
+        let m = bm.metrics();
 
-        RenderResult(
-            (0..m.height)
-                .map(|row| {
-                    (0..m.width)
-                        .map(move |col| {
-                            let gray = bm.get_pixel(row, col);
+        let mut result = Grid::new(m.height, m.width);
 
-                            let l = if col > 0 { bm.get_pixel(row, col - 1) } else { 0 };
-                            let r = if col < m.width - 1 { bm.get_pixel(row, col + 1) } else { 0 };
-                            let u = if row > 0 { bm.get_pixel(row - 1, col) } else { 0 };
-                            let d = if row < m.height - 1 { bm.get_pixel(row + 1, col) } else { 0 };
+        for row in 0..m.height {
+            for col in 0..m.width {
+                let gray = bm.pixel(row, col);
 
-                            self.gray_to_char(u, l, gray, r, d)
-                        })
-                        .collect::<Vec<_>>()
-                })
-                .collect::<Vec<_>>(),
-        )
+                let l = if col > 0 { bm.pixel(row, col - 1) } else { 0 };
+                let r = if col < m.width - 1 { bm.pixel(row, col + 1) } else { 0 };
+                let u = if row > 0 { bm.pixel(row - 1, col) } else { 0 };
+                let d = if row < m.height - 1 { bm.pixel(row + 1, col) } else { 0 };
+
+                result[row][col] = self.render_pixel(u, l, gray, r, d)
+            }
+        }
+
+        result
     }
 }

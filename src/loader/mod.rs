@@ -16,38 +16,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod bitmap;
-mod font_face;
-mod library;
+mod face_info;
+mod cmap;
+mod error;
 
-use freetype::freetype as ft;
+use once_cell::sync::Lazy;
 
-pub trait FreeTypeError<T> {
-    fn get_err(&self) -> Option<ft::FT_Error>;
-    fn as_result(&self, result: T) -> Result<T, ft::FT_Error> {
-        self.get_err().map_or_else(|| Ok(result), Err)
-    }
-    fn map_result<F>(&self, f: F) -> Result<T, ft::FT_Error>
-    where
-        Self: Sized,
-        F: FnOnce() -> T,
-    {
-        self.get_err().map_or_else(|| Ok(f()), Err)
-    }
+pub use self::{error::Error, face_info::FaceInfo};
+pub type Result<T> = std::result::Result<T, Error>;
+
+pub static DATABASE: Lazy<fontdb::Database> = Lazy::new(|| {
+    let mut db = fontdb::Database::default();
+    db.load_system_fonts();
+    db
+});
+
+pub fn faces_contains(c: char) -> Vec<FaceInfo> {
+    DATABASE
+        .faces()
+        .filter_map(|info| {
+            let face = FaceInfo::parse_if_contains(info, c);
+
+            if cfg!(debug_assertions) {
+                if let Err(ref err) = face {
+                    eprintln!("Parse {:?}: {}", info.source, err)
+                }
+            }
+
+            face.transpose()
+        })
+        .filter_map(|f| f.ok())
+        .collect()
 }
-
-impl<T> FreeTypeError<T> for ft::FT_Error {
-    fn get_err(&self) -> Option<i32> {
-        if *self == 0 {
-            None
-        } else {
-            Some(*self)
-        }
-    }
-}
-
-pub use {
-    bitmap::{Bitmap, Metrics},
-    font_face::FontFace,
-    library::Library,
-};

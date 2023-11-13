@@ -1,8 +1,8 @@
 [package]
 name = "fontfor"
-version = "0.3.1"
+version = "0.4.0-alpha.1"
 authors = ["7sDream <i@7sdre.am>"]
-edition = "2018"
+edition = "2021"
 description = "find fonts which can show a specified character and preview them in terminal or browser"
 homepage = "https://github.com/7sDream/fontfor"
 repository = "https://github.com/7sDream/fontfor"
@@ -12,14 +12,21 @@ keywords = ["font", "character", "cli", "utilities"]
 categories = ["command-line-utilities", "text-processing", "visualization"]
 
 [dependencies]
-structopt = "0.3"
-servo-fontconfig = "0.5"
-once_cell = "1.5"
-httparse = "1.3"
-freetype = "0.7"
-crossterm = "0.18"
+once_cell = "1"
+httparse = "1"
+crossterm = "0.27"
+fontdb = "0.16"
+ttf-parser = "0.20"
+ab_glyph = "0.2"
+thiserror = "1"
+grid = "0.11"
+
+[dependencies.clap]
+version = "4"
+features = ["derive", "unicode", "wrap_help"]
 
 [dependencies.tui]
-version = "0.13"
+package = "ratatui"
+version = "0.24"
 default-features = false
 features = ["crossterm"]

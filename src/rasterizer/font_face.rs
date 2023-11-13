@@ -16,38 +16,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod charset;
-mod consts;
-mod font_info;
-mod font_set;
-mod object_set;
-mod pattern;
+use ab_glyph::{Font, FontRef, GlyphId, InvalidFont};
 
-pub use {
-    charset::Charset,
-    font_info::{FontInfo, StrValuesByLang, ValuesByLang},
-    font_set::{FontSet, Fonts},
-    object_set::ObjectSet,
-    pattern::Pattern,
-};
+use super::{Bitmap, PixelFormat};
 
-use {consts::THE_OBJECT_SET, fontconfig::fontconfig as fc, once_cell::unsync::Lazy};
-
-pub fn init() -> Result<(), ()> {
-    let config = unsafe { fc::FcInitLoadConfigAndFonts() };
-    if config.is_null() {
-        Err(())
-    } else {
-        unsafe { fc::FcConfigDestroy(config) };
-        THE_OBJECT_SET.with(|this| {
-            Lazy::force(this);
-        });
-        Ok(())
-    }
+pub struct FontFace<'a> {
+    face: FontRef<'a>,
+    height: u32,
+    width: u32,
 }
 
-pub fn finalize() {
-    unsafe {
-        fc::FcFini();
+impl<'a> FontFace<'a> {
+    pub fn new(data: &'a [u8], index: u32) -> Result<Self, InvalidFont> {
+        let face = FontRef::try_from_slice_and_index(data, index)?;
+        Ok(Self { face, height: 0, width: 0 })
+    }
+
+    pub fn set_size(&mut self, height: u32, width: u32) {
+        self.height = height;
+        self.width = width;
+    }
+
+    pub fn load_glyph(self, gid: u16, format: PixelFormat) -> Option<Bitmap> {
+        let curves = self.face.outline_glyph(GlyphId(gid).with_scale(self.height as f32))?;
+        Some(Bitmap::new(&curves, format))
     }
 }

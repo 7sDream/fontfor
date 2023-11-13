@@ -16,13 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use super::CharBitmapRender;
+use super::Render;
 
 static LEVEL10RAMP: &str = " .:-=+*#%@";
 static LEVEL70RAMP: &str =
     " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
 
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone)]
 pub enum AsciiRenders {
     Level10,
     Level70,
@@ -41,16 +41,15 @@ impl AsciiRender {
         };
         let ramp: Vec<_> = s.chars().collect();
         let level = ramp.len();
-        #[allow(clippy::cast_precision_loss)] // max level is 70, small enough
         let multiplier = (level as f64) / (f64::from(u8::max_value()) + 1.0);
         Self { ramp, multiplier }
     }
 }
 
-impl CharBitmapRender for AsciiRender {
-    fn gray_to_char(&self, _up: u8, _left: u8, gray: u8, _right: u8, _down: u8) -> char {
-        #[allow(clippy::cast_sign_loss)] // gray and multiplier both positive
-        #[allow(clippy::cast_possible_truncation)] // result small then ramp's length(usize)
+impl Render for AsciiRender {
+    type Pixel = char;
+
+    fn render_pixel(&self, _up: u8, _left: u8, gray: u8, _right: u8, _down: u8) -> Self::Pixel {
         let index = (f64::from(gray) * self.multiplier).floor() as usize;
         self.ramp[index]
     }
