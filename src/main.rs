@@ -79,8 +79,6 @@ fn show_preview_addr_and_wait(addr: SocketAddr) {
 }
 
 fn show_font_list(families: Vec<Family<'_>>, verbose: u8) {
-    let info = families[0].faces[0];
-
     let max_len = if verbose > 0 {
         0
     } else {
@@ -107,15 +105,4 @@ fn show_font_list(families: Vec<Family<'_>>, verbose: u8) {
             );
         }
     });
-
-    let bitmap = loader::DATABASE
-        .with_face_data(info.id, |data, index| -> Option<rasterizer::Bitmap> {
-            let mut face = rasterizer::FontFace::new(data, index).ok()?;
-            face.set_cell_pixel(20, 20);
-            face.load_glyph(info.gid.0, rasterizer::PixelFormat::Monochrome)
-        })
-        .unwrap()
-        .unwrap();
-
-    println!("bitmap metrics: {:?}", bitmap.get_metrics());
 }
