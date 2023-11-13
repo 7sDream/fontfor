@@ -47,7 +47,6 @@ impl FontFace {
         // }
         // let c = ft::FT_ULong::from(u32::from(c));
         // let ret = unsafe {
-        //     #[allow(clippy::cast_possible_wrap)] // flag enum value is small enough
         //     ft::FT_Load_Char(self.face, c, flag as ft::FT_Int)
         // };
 

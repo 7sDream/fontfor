@@ -22,7 +22,7 @@ mod error;
 
 use once_cell::sync::Lazy;
 
-pub use self::{cmap::CMapTable, error::Error, face_info::FaceInfo};
+pub use self::{error::Error, face_info::FaceInfo};
 pub type Result<T> = std::result::Result<T, Error>;
 
 pub static DATABASE: Lazy<fontdb::Database> = Lazy::new(|| {

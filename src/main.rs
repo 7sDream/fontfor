@@ -17,7 +17,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #![deny(clippy::all)]
-#![deny(missing_debug_implementations, rust_2018_idioms)]
+#![deny(warnings)]
+#![deny(missing_debug_implementations, rust_2018_idioms, unsafe_code)]
 
 mod args;
 mod loader;
@@ -77,18 +78,22 @@ fn show_preview_addr_and_wait(addr: SocketAddr) {
     let _ = std::io::stdin().read(&mut [0u8]).unwrap();
 }
 
-fn show_font_list(families: Vec<Family<'_>>, verbose: bool) {
-    let max_len = if verbose {
+fn show_font_list(families: Vec<Family<'_>>, verbose: u8) {
+    let max_len = if verbose > 0 {
         0
     } else {
         families.iter().map(|f| f.default_name_width).max().unwrap_or_default()
     };
 
     families.into_iter().for_each(|family| {
-        if verbose {
+        if verbose > 0 {
             println!("{}", family.name);
             for face in family.faces {
-                println!("    {}", face.name);
+                print!("\t{}", face.name);
+                if verbose > 1 {
+                    print!("\t{}:{}", face.path.to_string_lossy(), face.index)
+                }
+                println!()
             }
         } else {
             println!(

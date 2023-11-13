@@ -23,9 +23,9 @@ use super::one_char::OneChar;
 #[derive(clap::Parser)]
 #[command(author, version, about, arg_required_else_help(true))]
 pub struct Args {
-    /// Verbose mode, show all font styles
-    #[arg(short, long)]
-    pub verbose: bool,
+    /// Verbose mode, -v show all font styles, -vv adds file and font face index
+    #[arg(short, long, action = clap::ArgAction::Count)]
+    pub verbose: u8,
 
     /// Preview character use supported fonts in browser
     #[arg(short, long)]

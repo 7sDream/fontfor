@@ -49,7 +49,6 @@ impl Deref for TerminalEventStream {
     }
 }
 
-#[allow(clippy::needless_pass_by_value)] // because it is run in other thread
 fn keyboard_event_generator(tick_interval: Duration, tx: mpsc::Sender<CTResult<TerminalEvent>>) {
     loop {
         match event::poll(tick_interval) {

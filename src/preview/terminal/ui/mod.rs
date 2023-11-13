@@ -227,7 +227,6 @@ impl<'a: 'a> UI<'a> {
         let main = layout[0];
         let status_bar = layout[1];
 
-        #[allow(clippy::cast_possible_truncation)] // never truncation because we `min` with 24
         let list_width = self.state.name_width_max().min(32) as u16;
 
         let main = Layout::default()

@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::path::PathBuf;
+use std::{borrow::Cow, path::Path};
 
 use owned_ttf_parser::{
     name::{name_id, Table as NameTable},
@@ -24,27 +24,27 @@ use owned_ttf_parser::{
 };
 
 use super::{
+    cmap::CMapTable,
     error::{BROKEN_NAME_TABLE, MISSING_NAME_TABLE, NAME_TAG},
-    Error, Result,
+    Error, Result, DATABASE,
 };
-use crate::loader::{CMapTable, DATABASE};
 
 /// FaceInfo contains basic font face info like family and name,
-/// and pre-parsed cmap tables we need to query if it contains a codepoint.
+/// and pre-located glyph id for target character.
 pub struct FaceInfo {
     pub id: fontdb::ID,
 
-    pub family: String,
-    pub name: String,
+    pub family: &'static str,
+    pub name: Cow<'static, str>,
 
-    pub path: PathBuf,
+    pub path: &'static Path,
     pub index: u32,
 
     pub gid: GlyphId,
 }
 
 impl FaceInfo {
-    pub fn parse_if_contains(face: &fontdb::FaceInfo, c: char) -> Result<Option<Self>> {
+    pub fn parse_if_contains(face: &'static fontdb::FaceInfo, c: char) -> Result<Option<Self>> {
         let Some((gid, name)) = DATABASE
             .with_face_data(face.id, |data, index| -> Result<_> {
                 let rf = RawFace::parse(data, index)?;
@@ -61,12 +61,12 @@ impl FaceInfo {
         };
 
         let family =
-            face.families.get(0).map(|(s, _)| s.clone()).ok_or(Error::MissingFamilyName)?;
+            face.families.get(0).map(|(s, _)| s.as_str()).ok_or(Error::MissingFamilyName)?;
 
-        let name = name.unwrap_or_else(|| face.post_script_name.clone());
+        let name = name.map(Cow::Owned).unwrap_or_else(|| face.post_script_name.as_str().into());
 
         let path = match face.source {
-            fontdb::Source::File(ref path) => path.clone(),
+            fontdb::Source::File(ref path) => path,
             _ => unreachable!("we only load font file, so source must be File variant"),
         };
 

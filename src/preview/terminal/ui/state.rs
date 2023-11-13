@@ -73,7 +73,7 @@ impl<'a: 'a> State<'a> {
     pub fn new(c: char, families: Vec<Family<'a>>) -> Self {
         let font_faces_info: Vec<_> =
             families.into_iter().flat_map(|f| f.faces.into_iter()).collect();
-        let font_faces_name: Vec<_> = font_faces_info.iter().map(|f| f.name.as_str()).collect();
+        let font_faces_name: Vec<_> = font_faces_info.iter().map(|f| f.name.as_ref()).collect();
         let name_width_max = font_faces_name.iter().map(|f| f.len()).max().unwrap_or_default();
 
         let mut font_faces = Vec::new();
@@ -117,7 +117,6 @@ impl<'a: 'a> State<'a> {
             .ok_or(())
             .or_else(|_| {
                 let font_info = &self.font_faces_info[self.index()];
-                #[allow(clippy::map_err_ignore)]
                 FtFontFace::new(
                     DATABASE.with_face_data(font_info.id, |data, _| data.to_vec()).unwrap(),
                     font_info.index,
@@ -131,7 +130,6 @@ impl<'a: 'a> State<'a> {
         let height = self.height.get();
         let width = self.width.get();
 
-        #[allow(clippy::map_err_ignore)]
         font_face.set_cell_pixel(height, width);
 
         Ok(font_face)
