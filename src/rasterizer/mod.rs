@@ -19,5 +19,5 @@
 mod bitmap;
 mod font_face;
 
-pub use bitmap::{Bitmap, Metrics};
+pub use bitmap::{Bitmap, Metrics, PixelFormat};
 pub use font_face::FontFace;

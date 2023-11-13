@@ -16,8 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use super::FontFace;
+use ab_glyph::OutlinedGlyph;
 
+#[derive(Debug)]
 pub struct Metrics {
     pub left: usize,
     pub top: usize,
@@ -25,51 +26,61 @@ pub struct Metrics {
     pub width: usize,
 }
 
-#[allow(dead_code)] // TODO: remove this
+#[derive(Debug, Copy, Clone)]
+pub enum PixelFormat {
+    Gray,
+    Monochrome,
+}
+
 pub struct Bitmap {
-    pixel_mode: u8,
-    pitch: u32,
     metrics: Metrics,
     bitmap: Vec<u8>,
 }
 
 impl Bitmap {
-    #[allow(dead_code)] // remove this
-    pub fn new(_font_face: FontFace) -> Self {
-        // let face_rec = unsafe { &*font_face.face };
-        // let glyph = unsafe { &*face_rec.glyph };
-        // let left = glyph.bitmap_left;
-        // let top = glyph.bitmap_top;
-        // let width = glyph.bitmap.width;
-        // let height = glyph.bitmap.rows;
-        // let pixel_mode = glyph.bitmap.pixel_mode;
-        // let pitch = glyph.bitmap.pitch.abs() as u32;
-        // let size = (pitch * height) as usize;
-        // let bitmap = unsafe { std::slice::from_raw_parts(glyph.bitmap.buffer, size) };
-        // Self { font_face, pixel_mode, pitch, metrics: Metrics { left, top, height, width },
-        // bitmap }
-        todo!()
+    pub fn new(curves: &OutlinedGlyph, format: PixelFormat) -> Self {
+        let bound = curves.px_bounds();
+
+        let metrics = Metrics {
+            left: bound.min.x as usize,
+            top: bound.min.y as usize,
+            height: bound.height() as usize,
+            width: bound.width() as usize,
+        };
+
+        let bits = metrics.height * metrics.width;
+        let bitmap = vec![0; bits];
+
+        let mut result = Self { metrics, bitmap };
+
+        curves.draw(|x, y, c| {
+            let index = result.calc_index(y as usize, x as usize);
+            let value = match format {
+                PixelFormat::Gray => (c * 255.0).round() as u8,
+                PixelFormat::Monochrome => {
+                    if c <= 0.5 {
+                        0
+                    } else {
+                        255
+                    }
+                }
+            };
+            result.bitmap[index] = value
+        });
+
+        result
+    }
+
+    fn calc_index(&self, row: usize, col: usize) -> usize {
+        row * self.metrics.width + col
     }
 
     pub const fn get_metrics(&self) -> &Metrics {
         &self.metrics
     }
 
-    pub fn get_pixel(&self, _row: usize, _col: usize) -> u8 {
-        // if u32::from(self.pixel_mode) == ft::FT_Pixel_Mode::FT_PIXEL_MODE_MONO as u32 {
-        //     let index = (row * self.pitch + col / 8) as usize;
-        //     let bit_pos = (col % 8) as u8;
-        //     let gray = self.bitmap[index];
-        //     let mask = 0b_1000_0000 >> (bit_pos);
-        //     if gray & mask == 0 {
-        //         u8::min_value()
-        //     } else {
-        //         u8::max_value()
-        //     }
-        // } else {
-        //     let index = (row * self.pitch + col) as usize;
-        //     self.bitmap[index]
-        // }
-        todo!()
+    pub fn get_pixel(&self, row: usize, col: usize) -> u8 {
+        let index = self.calc_index(row, col);
+        self.bitmap[index]
     }
 }

@@ -16,18 +16,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::rasterizer::bitmap::Bitmap;
+use ab_glyph::{Font, FontRef, GlyphId, InvalidFont};
 
-pub struct FontFace {
-    #[allow(dead_code)] // TODO: remove this
-    face: owned_ttf_parser::OwnedFace,
+use super::{Bitmap, PixelFormat};
+
+pub struct FontFace<'a> {
+    face: FontRef<'a>,
     height: u32,
     width: u32,
 }
 
-impl FontFace {
-    pub fn new(data: Vec<u8>, index: u32) -> Result<Self, owned_ttf_parser::FaceParsingError> {
-        let face = owned_ttf_parser::OwnedFace::from_vec(data, index)?;
+impl<'a> FontFace<'a> {
+    pub fn new(data: &'a [u8], index: u32) -> Result<Self, InvalidFont> {
+        let face = FontRef::try_from_slice_and_index(data, index)?;
         Ok(Self { face, height: 0, width: 0 })
     }
 
@@ -36,25 +37,8 @@ impl FontFace {
         self.width = width;
     }
 
-    // FreeType's Load_Char API with render mode will change the glyph slot in `Face`, the result
-    // `Bitmap` object can only be used before another call of load_char itself. So we consume self
-    // and move it into the result `Bitmap`, which has an `return_face` method will consume itself
-    // and return the `Face` to you.
-    pub fn load_char(self, _c: char, _mono: bool) -> Result<Bitmap, ()> {
-        // let mut flag = ft::FT_LOAD_RENDER;
-        // if mono {
-        //     flag |= ft::FT_LOAD_MONOCHROME;
-        // }
-        // let c = ft::FT_ULong::from(u32::from(c));
-        // let ret = unsafe {
-        //     ft::FT_Load_Char(self.face, c, flag as ft::FT_Int)
-        // };
-
-        // if ret == 0 {
-        //     Ok(Bitmap::new(self))
-        // } else {
-        //     Err((self, ret))
-        // }
-        todo!()
+    pub fn load_glyph(self, gid: u16, format: PixelFormat) -> Option<Bitmap> {
+        let curves = self.face.outline_glyph(GlyphId(gid).with_scale(self.height as f32))?;
+        Some(Bitmap::new(&curves, format))
     }
 }

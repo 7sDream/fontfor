@@ -58,9 +58,9 @@ pub struct UI<'a> {
 }
 
 impl<'a: 'a> UI<'a> {
-    pub fn new(c: char, families: Vec<Family<'a>>) -> Option<Self> {
+    pub fn new(families: Vec<Family<'a>>) -> Option<Self> {
         if !families.is_empty() {
-            Some(Self { state: State::new(c, families), idle_redraw: 0 })
+            Some(Self { state: State::new(families), idle_redraw: 0 })
         } else {
             None
         }
@@ -88,8 +88,8 @@ impl<'a: 'a> UI<'a> {
             let canvas_height = f64::from(canvas_height);
             let canvas = Canvas::default()
                 .block(Block::default().title("Preview").borders(Borders::ALL))
-                .x_bounds([0.0, canvas_width - 1.0])
-                .y_bounds([0.0, canvas_height - 1.0])
+                .x_bounds([0.0, canvas_width])
+                .y_bounds([0.0, canvas_height])
                 .paint(|ctx| {
                     let chars = result.as_ref().as_ref().unwrap();
                     let shape = CanvasRenderResult::new(chars, canvas_width, canvas_height);

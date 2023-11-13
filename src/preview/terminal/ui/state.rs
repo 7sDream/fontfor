@@ -31,7 +31,7 @@ use crate::{
     preview::terminal::render::{
         AsciiRender, AsciiRenders, CharBitmapRender, MonoRender, MoonRender, RenderResult,
     },
-    rasterizer::FontFace as FtFontFace,
+    rasterizer::{Bitmap, FontFace as FtFontFace, PixelFormat},
 };
 
 #[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash)]
@@ -57,7 +57,6 @@ thread_local! {
 struct CacheKey(usize, RenderType, u32, u32);
 
 pub struct State<'a> {
-    c: char,
     font_faces_info: Vec<&'a FaceInfo>,
     font_faces_name: Vec<&'a str>,
     name_width_max: usize,
@@ -66,20 +65,20 @@ pub struct State<'a> {
     width: Cell<u32>,
     rt: RenderType,
     cache: RefCell<HashMap<CacheKey, Rc<Result<RenderResult, &'static str>>>>,
-    font_faces: Vec<Cell<Option<FtFontFace>>>,
+    // font_faces: Vec<Cell<Option<FtFontFace>>>,
 }
 
 impl<'a: 'a> State<'a> {
-    pub fn new(c: char, families: Vec<Family<'a>>) -> Self {
+    pub fn new(families: Vec<Family<'a>>) -> Self {
         let font_faces_info: Vec<_> =
             families.into_iter().flat_map(|f| f.faces.into_iter()).collect();
         let font_faces_name: Vec<_> = font_faces_info.iter().map(|f| f.name.as_ref()).collect();
         let name_width_max = font_faces_name.iter().map(|f| f.len()).max().unwrap_or_default();
 
-        let mut font_faces = Vec::new();
-        for _ in 0..font_faces_info.len() {
-            font_faces.push(Cell::new(None));
-        }
+        // let mut font_faces = Vec::new();
+        // for _ in 0..font_faces_info.len() {
+        //     font_faces.push(Cell::new(None));
+        // }
 
         let cache = RefCell::default();
 
@@ -87,7 +86,6 @@ impl<'a: 'a> State<'a> {
         list_state.select(Some(0));
 
         Self {
-            c,
             font_faces_info,
             font_faces_name,
             name_width_max,
@@ -96,7 +94,6 @@ impl<'a: 'a> State<'a> {
             width: Cell::new(0),
             rt: RenderType::Mono,
             cache,
-            font_faces,
         }
     }
 
@@ -109,44 +106,28 @@ impl<'a: 'a> State<'a> {
         self.cache.borrow_mut().entry(key).or_insert_with(|| Rc::new(self.real_render())).clone()
     }
 
-    fn get_font_face(&self) -> Result<FtFontFace, &'static str> {
-        let font_face_slot = self.font_faces.get(self.index()).unwrap();
-
-        font_face_slot
-            .take()
-            .ok_or(())
-            .or_else(|_| {
-                let font_info = &self.font_faces_info[self.index()];
-                FtFontFace::new(
-                    DATABASE.with_face_data(font_info.id, |data, _| data.to_vec()).unwrap(),
-                    font_info.index,
-                )
-                .map_err(|_| "Can't load current font")
-            })
-            .and_then(|font_face| self.set_font_face_size(font_face))
-    }
-
-    fn set_font_face_size(&self, mut font_face: FtFontFace) -> Result<FtFontFace, &'static str> {
-        let height = self.height.get();
-        let width = self.width.get();
-
-        font_face.set_cell_pixel(height, width);
-
-        Ok(font_face)
-    }
-
     fn real_render(&self) -> Result<RenderResult, &'static str> {
-        let font_face = self.get_font_face()?;
+        let info = self.font_faces_info[self.index()];
+        let glyph = DATABASE
+            .with_face_data(info.id, |data, index| -> Option<Bitmap> {
+                let mut face = FtFontFace::new(data, index).ok()?;
+                face.set_cell_pixel(self.height.get(), self.width.get());
+                face.load_glyph(info.gid.0, match self.rt {
+                    RenderType::Mono => PixelFormat::Monochrome,
+                    _ => PixelFormat::Gray,
+                })
+            })
+            .unwrap();
 
-        match font_face.load_char(self.c, self.rt == RenderType::Mono) {
-            Ok(bitmap) => {
+        match glyph {
+            Some(bitmap) => {
                 let result: RenderResult = RENDERS.with(|renders| {
                     let render = renders.get(&self.rt).unwrap();
                     render.render(&bitmap)
                 });
                 Ok(result)
             }
-            Err(_) => Err("Can't get glyph info from current font"),
+            None => Err("Can't get glyph from this font"),
         }
     }
 
