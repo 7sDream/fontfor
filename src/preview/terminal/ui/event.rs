@@ -18,7 +18,7 @@
 
 use std::{io::Result as CTResult, ops::Deref, sync::mpsc, thread, time::Duration};
 
-use crossterm::event::{self, Event as CTEvent, KeyEvent as CTKeyEvent};
+use crossterm::event::{self, Event as CTEvent, KeyEvent as CTKeyEvent, KeyEventKind};
 
 #[derive(Debug, Copy, Clone, PartialOrd, Eq, PartialEq, Hash)]
 pub enum TerminalEvent {
@@ -54,8 +54,11 @@ fn keyboard_event_generator(tick_interval: Duration, tx: mpsc::Sender<CTResult<T
         match event::poll(tick_interval) {
             Ok(true) => {
                 if let CTEvent::Key(key) = event::read().unwrap() {
-                    if tx.send(Ok(TerminalEvent::Key(key))).is_err() {
-                        break;
+                    #[allow(clippy::collapsible_if)]
+                    if key.kind != KeyEventKind::Release {
+                        if tx.send(Ok(TerminalEvent::Key(key))).is_err() {
+                            break;
+                        }
                     }
                 }
             }
