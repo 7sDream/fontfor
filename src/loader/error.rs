@@ -1,5 +1,5 @@
-use owned_ttf_parser::{FaceParsingError, Tag};
 use thiserror::Error;
+use ttf_parser::{FaceParsingError, Tag};
 
 #[derive(Debug, Error)]
 pub enum Error {

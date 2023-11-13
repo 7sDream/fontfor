@@ -32,7 +32,7 @@ impl<'a> FontFace<'a> {
         Ok(Self { face, height: 0, width: 0 })
     }
 
-    pub fn set_cell_pixel(&mut self, height: u32, width: u32) {
+    pub fn set_size(&mut self, height: u32, width: u32) {
         self.height = height;
         self.width = width;
     }

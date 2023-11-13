@@ -18,7 +18,7 @@
 
 use std::{borrow::Cow, path::Path};
 
-use owned_ttf_parser::{
+use ttf_parser::{
     name::{name_id, Table as NameTable},
     GlyphId, Language, RawFace,
 };

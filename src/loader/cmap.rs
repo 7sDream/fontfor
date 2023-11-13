@@ -16,14 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use owned_ttf_parser::{cmap, GlyphId, RawFace};
+use ttf_parser::{cmap, GlyphId, RawFace};
 
 use super::{
     error::{BROKEN_CMAP_TABLE, CMAP_TAG, MISSING_CMAP_TABLE},
     Result,
 };
 
-#[derive(Debug)]
 pub struct CMapTable<'a> {
     subtables: Vec<cmap::Subtable<'a>>,
 }

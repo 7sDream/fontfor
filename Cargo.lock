@@ -235,12 +235,19 @@ dependencies = [
  "clap",
  "crossterm",
  "fontdb",
+ "grid",
  "httparse",
  "once_cell",
- "owned_ttf_parser",
  "ratatui",
  "thiserror",
+ "ttf-parser",
 ]
+
+[[package]]
+name = "grid"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1df00eed8d1f0db937f6be10e46e8072b0671accb504cf0f959c5c52c679f5b9"
 
 [[package]]
 name = "hashbrown"

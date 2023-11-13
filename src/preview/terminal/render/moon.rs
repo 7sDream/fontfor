@@ -16,28 +16,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use super::CharBitmapRender;
+use super::Render;
 
 static MOON_CHARS: [[char; 2]; 5] =
     [['🌕', '🌕'], ['🌖', '🌔'], ['🌗', '🌓'], ['🌘', '🌒'], ['🌑', '🌑']];
 
 pub struct MoonRender {
-    pair_count: usize,
     multiplier: f64,
 }
 
 impl MoonRender {
     pub fn new() -> Self {
-        let pair_count = MOON_CHARS.len();
-        let multiplier = pair_count as f64 / 256.0;
-        Self { pair_count, multiplier }
+        let multiplier = MOON_CHARS.len() as f64 / 256.0;
+        Self { multiplier }
     }
 }
 
-impl CharBitmapRender for MoonRender {
-    fn gray_to_char(&self, _up: u8, left: u8, gray: u8, right: u8, _down: u8) -> char {
+impl Render for MoonRender {
+    type Pixel = char;
+
+    fn render_pixel(&self, _up: u8, left: u8, gray: u8, right: u8, _down: u8) -> Self::Pixel {
         if gray == 0 {
-            return MOON_CHARS[self.pair_count - 1][0];
+            return MOON_CHARS[MOON_CHARS.len() - 1][0];
         }
 
         let index = (f64::from(255 - gray) * self.multiplier).floor() as usize;

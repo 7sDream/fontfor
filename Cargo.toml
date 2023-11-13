@@ -16,9 +16,10 @@ once_cell = "1"
 httparse = "1"
 crossterm = "0.27"
 fontdb = "0.16"
+ttf-parser = "0.20"
 ab_glyph = "0.2"
-owned_ttf_parser = "0.20"
 thiserror = "1"
+grid = "0.11"
 
 [dependencies.clap]
 version = "4"

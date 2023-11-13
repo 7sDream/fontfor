@@ -18,7 +18,7 @@
 
 #![deny(clippy::all)]
 #![deny(warnings)]
-#![deny(missing_debug_implementations, rust_2018_idioms, unsafe_code)]
+#![deny(rust_2018_idioms, unsafe_code)]
 
 mod args;
 mod loader;
@@ -32,7 +32,7 @@ use std::{
     net::SocketAddr,
 };
 
-use family::{group_by_family_sort_by_name, Family};
+use family::Family;
 use preview::{browser::ServerBuilder as PreviewServerBuilder, terminal::ui::UI};
 
 fn main() {
@@ -40,7 +40,7 @@ fn main() {
 
     let font_set = loader::faces_contains(argument.char.0);
 
-    let families = group_by_family_sort_by_name(&font_set);
+    let families = family::group_by_family_sort_by_name(&font_set);
 
     if families.is_empty() {
         println!("No font support this character.");

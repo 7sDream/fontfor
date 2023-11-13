@@ -22,39 +22,15 @@ use std::{
     rc::Rc,
 };
 
-use once_cell::unsync::Lazy;
 use tui::widgets::ListState;
 
+use super::cache::{CacheKey, GlyphCache, GlyphCanvasShape, RenderType, CHAR_RENDERS, MONO_RENDER};
 use crate::{
     family::Family,
     loader::{FaceInfo, DATABASE},
-    preview::terminal::render::{
-        AsciiRender, AsciiRenders, CharBitmapRender, MonoRender, MoonRender, RenderResult,
-    },
-    rasterizer::{Bitmap, FontFace as FtFontFace, PixelFormat},
+    preview::terminal::ui::cache::GlyphParagraph,
+    rasterizer::{Bitmap, FontFace, PixelFormat},
 };
-
-#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub enum RenderType {
-    AsciiLevel10,
-    AsciiLevel70,
-    Moon,
-    Mono,
-}
-
-thread_local! {
-    static RENDERS: Lazy<HashMap<RenderType, Box<dyn CharBitmapRender>>> = Lazy::new(|| {
-        let mut renders: HashMap<RenderType, Box<dyn CharBitmapRender>> = HashMap::new();
-        renders.insert(RenderType::AsciiLevel10, Box::new(AsciiRender::new(AsciiRenders::Level10)));
-        renders.insert(RenderType::AsciiLevel70, Box::new(AsciiRender::new(AsciiRenders::Level70)));
-        renders.insert(RenderType::Moon, Box::new(MoonRender::new()));
-        renders.insert(RenderType::Mono, Box::<MonoRender>::default());
-        renders
-    });
-}
-
-#[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-struct CacheKey(usize, RenderType, u32, u32);
 
 pub struct State<'a> {
     font_faces_info: Vec<&'a FaceInfo>,
@@ -64,21 +40,15 @@ pub struct State<'a> {
     height: Cell<u32>,
     width: Cell<u32>,
     rt: RenderType,
-    cache: RefCell<HashMap<CacheKey, Rc<Result<RenderResult, &'static str>>>>,
-    // font_faces: Vec<Cell<Option<FtFontFace>>>,
+    cache: RefCell<HashMap<CacheKey, Rc<Result<GlyphCache, &'static str>>>>,
 }
 
-impl<'a: 'a> State<'a> {
+impl<'a> State<'a> {
     pub fn new(families: Vec<Family<'a>>) -> Self {
         let font_faces_info: Vec<_> =
             families.into_iter().flat_map(|f| f.faces.into_iter()).collect();
         let font_faces_name: Vec<_> = font_faces_info.iter().map(|f| f.name.as_ref()).collect();
         let name_width_max = font_faces_name.iter().map(|f| f.len()).max().unwrap_or_default();
-
-        // let mut font_faces = Vec::new();
-        // for _ in 0..font_faces_info.len() {
-        //     font_faces.push(Cell::new(None));
-        // }
 
         let cache = RefCell::default();
 
@@ -98,20 +68,25 @@ impl<'a: 'a> State<'a> {
     }
 
     fn cache_key(&self) -> CacheKey {
-        CacheKey(self.index(), self.rt, self.height.get(), self.width.get())
+        CacheKey {
+            index: self.index(),
+            rt: self.rt,
+            height: self.height.get(),
+            width: self.width.get(),
+        }
     }
 
-    pub fn render(&self) -> Rc<Result<RenderResult, &'static str>> {
+    pub fn render(&self) -> Rc<Result<GlyphCache, &'static str>> {
         let key = self.cache_key();
         self.cache.borrow_mut().entry(key).or_insert_with(|| Rc::new(self.real_render())).clone()
     }
 
-    fn real_render(&self) -> Result<RenderResult, &'static str> {
+    fn real_render(&self) -> Result<GlyphCache, &'static str> {
         let info = self.font_faces_info[self.index()];
         let glyph = DATABASE
             .with_face_data(info.id, |data, index| -> Option<Bitmap> {
-                let mut face = FtFontFace::new(data, index).ok()?;
-                face.set_cell_pixel(self.height.get(), self.width.get());
+                let mut face = FontFace::new(data, index).ok()?;
+                face.set_size(self.height.get(), self.width.get());
                 face.load_glyph(info.gid.0, match self.rt {
                     RenderType::Mono => PixelFormat::Monochrome,
                     _ => PixelFormat::Gray,
@@ -121,11 +96,17 @@ impl<'a: 'a> State<'a> {
 
         match glyph {
             Some(bitmap) => {
-                let result: RenderResult = RENDERS.with(|renders| {
-                    let render = renders.get(&self.rt).unwrap();
-                    render.render(&bitmap)
-                });
-                Ok(result)
+                let cache = match self.rt {
+                    RenderType::Mono => GlyphCache::Canvas(GlyphCanvasShape::new(
+                        MONO_RENDER.render(&bitmap),
+                        self.width.get() as f64,
+                        self.height.get() as f64,
+                    )),
+                    rt => GlyphCache::Paragraph(GlyphParagraph::new(
+                        CHAR_RENDERS.get(&rt).expect("all render must be exist").render(&bitmap),
+                    )),
+                };
+                Ok(cache)
             }
             None => Err("Can't get glyph from this font"),
         }

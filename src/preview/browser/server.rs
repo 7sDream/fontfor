@@ -25,7 +25,7 @@ use std::{
     time::Duration,
 };
 
-use httparse::Request as PartRequest;
+use httparse::Request;
 
 pub struct SingleThread {
     html: String,
@@ -89,7 +89,7 @@ impl SingleThread {
         }
 
         let mut headers = [httparse::EMPTY_HEADER; 16];
-        let mut req = PartRequest::new(&mut headers);
+        let mut req = Request::new(&mut headers);
         match req.parse(buffer) {
             Ok(result) => {
                 // We Only accept `GET /` request

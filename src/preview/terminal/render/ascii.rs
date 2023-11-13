@@ -16,13 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use super::CharBitmapRender;
+use super::Render;
 
 static LEVEL10RAMP: &str = " .:-=+*#%@";
 static LEVEL70RAMP: &str =
     " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
 
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone)]
 pub enum AsciiRenders {
     Level10,
     Level70,
@@ -46,8 +46,10 @@ impl AsciiRender {
     }
 }
 
-impl CharBitmapRender for AsciiRender {
-    fn gray_to_char(&self, _up: u8, _left: u8, gray: u8, _right: u8, _down: u8) -> char {
+impl Render for AsciiRender {
+    type Pixel = char;
+
+    fn render_pixel(&self, _up: u8, _left: u8, gray: u8, _right: u8, _down: u8) -> Self::Pixel {
         let index = (f64::from(gray) * self.multiplier).floor() as usize;
         self.ramp[index]
     }

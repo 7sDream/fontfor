@@ -16,18 +16,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::{io::Result as CTResult, ops::Deref, sync::mpsc, thread, time::Duration};
+use std::{io::Result as IoResult, ops::Deref, sync::mpsc, thread, time::Duration};
 
-use crossterm::event::{self, Event as CTEvent, KeyEvent as CTKeyEvent, KeyEventKind};
+use crossterm::event::{self, Event, KeyEvent, KeyEventKind};
 
-#[derive(Debug, Copy, Clone, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone)]
 pub enum TerminalEvent {
     Tick,
-    Key(CTKeyEvent),
+    Key(KeyEvent),
 }
 
 pub struct TerminalEventStream {
-    rx: mpsc::Receiver<CTResult<TerminalEvent>>,
+    rx: mpsc::Receiver<IoResult<TerminalEvent>>,
 }
 
 impl TerminalEventStream {
@@ -42,18 +42,18 @@ impl TerminalEventStream {
 }
 
 impl Deref for TerminalEventStream {
-    type Target = mpsc::Receiver<CTResult<TerminalEvent>>;
+    type Target = mpsc::Receiver<IoResult<TerminalEvent>>;
 
     fn deref(&self) -> &Self::Target {
         &self.rx
     }
 }
 
-fn keyboard_event_generator(tick_interval: Duration, tx: mpsc::Sender<CTResult<TerminalEvent>>) {
+fn keyboard_event_generator(tick_interval: Duration, tx: mpsc::Sender<IoResult<TerminalEvent>>) {
     loop {
         match event::poll(tick_interval) {
             Ok(true) => {
-                if let CTEvent::Key(key) = event::read().unwrap() {
+                if let Event::Key(key) = event::read().unwrap() {
                     #[allow(clippy::collapsible_if)]
                     if key.kind != KeyEventKind::Release {
                         if tx.send(Ok(TerminalEvent::Key(key))).is_err() {
