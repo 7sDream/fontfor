@@ -97,10 +97,11 @@ impl OneChar {
             })
             .take_while(|(c1, _)| c1.is_some())
             .map(|(c1, c2)| -> Result<u8, ParseError> {
-                let c1 = c1.unwrap(); // at least one char because of the `take_while`
+                let c1 = c1.expect("at least one char because of the take_while");
                 let c2 = c2.ok_or(ParseError::UTF8BytesStrCantAlignToBytes)?;
                 if c1.is_ascii_hexdigit() && c2.is_ascii_hexdigit() {
-                    Ok((c1.to_digit(16).unwrap() << 4 | c2.to_digit(16).unwrap()) as u8)
+                    Ok((c1.to_digit(16).expect("hexdigit") << 4
+                        | c2.to_digit(16).expect("hexdigit")) as u8)
                 } else {
                     Err(ParseError::InvalidDigitInRadix(16))
                 }

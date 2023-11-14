@@ -53,7 +53,8 @@ fn keyboard_event_generator(tick_interval: Duration, tx: mpsc::Sender<IoResult<T
     loop {
         match event::poll(tick_interval) {
             Ok(true) => {
-                if let Event::Key(key) = event::read().unwrap() {
+                let ev = event::read().expect("read terminal event should not fail");
+                if let Event::Key(key) = ev {
                     #[allow(clippy::collapsible_if)]
                     if key.kind != KeyEventKind::Release {
                         if tx.send(Ok(TerminalEvent::Key(key))).is_err() {

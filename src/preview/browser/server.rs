@@ -47,7 +47,7 @@ enum CheckRequestResult {
 }
 
 impl SingleThread {
-    pub const fn new(html: String) -> Self {
+    pub fn new(html: String) -> Self {
         Self { html }
     }
 
@@ -183,13 +183,18 @@ impl SingleThread {
         addr_tx: Sender<SocketAddr>, exit_rx: Receiver<()>, content: String,
     ) -> Result<(), IOError> {
         let loopback = Ipv4Addr::new(127, 0, 0, 1);
-        let server = TcpListener::bind((loopback, 0)).unwrap_or_else(|err| {
-            eprintln!("Error when start http server: {:?}", err);
-            std::process::exit(-1)
-        });
+        let server = match TcpListener::bind((loopback, 0)) {
+            Ok(server) => server,
+            Err(err) => {
+                eprintln!("Error when start http server: {:?}", err);
+                std::process::exit(-1)
+            }
+        };
 
-        let addr = server.local_addr().unwrap();
-        addr_tx.send(addr).unwrap();
+        let addr = server.local_addr().expect("tcp listener must have a local addr");
+        if addr_tx.send(addr).is_err() {
+            return Ok(());
+        }
 
         // set non-blocking mode to give chance to receive exit message
         server.set_nonblocking(true)?;
@@ -197,22 +202,23 @@ impl SingleThread {
         for stream in server.incoming() {
             match stream {
                 Ok(stream) => match Self::handler(stream, &content, &exit_rx) {
-                    Ok(false) => return Ok(()),
+                    Ok(true) => {}
+                    Ok(false) => break,
                     Err(err) => {
                         eprintln!("Error when process request: {:?}", err);
                     }
-                    Ok(..) => (),
                 },
                 Err(err) if err.kind() == IOErrorKind::WouldBlock => {
                     thread::sleep(Duration::from_millis(100));
-                    match exit_rx.try_recv() {
-                        Ok(()) | Err(TryRecvError::Disconnected) => break,
-                        _ => {
-                            continue;
-                        }
-                    }
                 }
-                Err(_) => break,
+                Err(err) => {
+                    eprintln!("Error when listening: {:?}", err);
+                }
+            }
+
+            match exit_rx.try_recv() {
+                Ok(_) | Err(TryRecvError::Disconnected) => break,
+                Err(TryRecvError::Empty) => {}
             }
         }
 

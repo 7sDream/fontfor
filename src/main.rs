@@ -43,15 +43,15 @@ fn main() {
     let families = family::group_by_family_sort_by_name(&font_set);
 
     if families.is_empty() {
-        println!("No font support this character.");
+        eprintln!("No font support this character {}.", argument.char.description());
         return;
     }
 
     if argument.tui {
-        let ui = UI::new(families).unwrap();
-        ui.show().unwrap_or_else(|err| {
+        let ui = UI::new(families).expect("family length checked before, must not empty");
+        if let Err(err) = ui.show() {
             eprintln!("{:?}", err);
-        });
+        };
     } else {
         let builder = if argument.preview {
             Some(PreviewServerBuilder::from_iter(families.iter()))
@@ -72,10 +72,10 @@ fn show_preview_addr_and_wait(addr: SocketAddr) {
     println!("{}", "-".repeat(40));
     println!("Please visit http://{}/ in your browser for preview", addr);
     print!("And press Enter after your finish...");
-    std::io::stdout().flush().unwrap();
+    std::io::stdout().flush().expect("flush stdout should not fail");
 
     // Wait until user input any character before stop the server
-    let _ = std::io::stdin().read(&mut [0u8]).unwrap();
+    let _ = std::io::stdin().read(&mut [0u8]).expect("read from stdout should not fail");
 }
 
 fn show_font_list(families: Vec<Family<'_>>, verbose: u8) {

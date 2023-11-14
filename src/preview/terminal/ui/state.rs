@@ -81,9 +81,10 @@ impl<'a> State<'a> {
         self.cache.borrow_mut().entry(key).or_insert_with(|| Rc::new(self.real_render())).clone()
     }
 
-    fn real_render(&self) -> Result<GlyphCache, &'static str> {
+    fn rasterize(&self) -> Result<Bitmap, &'static str> {
         let info = self.font_faces_info[self.index()];
-        let glyph = DATABASE
+
+        DATABASE
             .with_face_data(info.id, |data, index| -> Option<Bitmap> {
                 let mut face = FontFace::new(data, index).ok()?;
                 face.set_size(self.height.get(), self.width.get());
@@ -92,35 +93,36 @@ impl<'a> State<'a> {
                     _ => PixelFormat::Gray,
                 })
             })
-            .unwrap();
+            .ok_or("Can't read this font file")?
+            .ok_or("Can't get glyph from this font")
+    }
 
-        match glyph {
-            Some(bitmap) => {
-                let cache = match self.rt {
-                    RenderType::Mono => GlyphCache::Canvas(GlyphCanvasShape::new(
-                        MONO_RENDER.render(&bitmap),
-                        self.width.get() as f64,
-                        self.height.get() as f64,
-                    )),
-                    rt => GlyphCache::Paragraph(GlyphParagraph::new(
-                        CHAR_RENDERS.get(&rt).expect("all render must be exist").render(&bitmap),
-                    )),
-                };
-                Ok(cache)
-            }
-            None => Err("Can't get glyph from this font"),
-        }
+    fn real_render(&self) -> Result<GlyphCache, &'static str> {
+        let bitmap = self.rasterize()?;
+
+        let cache = match self.rt {
+            RenderType::Mono => GlyphCache::Canvas(GlyphCanvasShape::new(
+                MONO_RENDER.render(&bitmap),
+                self.width.get() as f64,
+                self.height.get() as f64,
+            )),
+            rt => GlyphCache::Paragraph(GlyphParagraph::new(
+                CHAR_RENDERS.get(&rt).expect("all render must be exist").render(&bitmap),
+            )),
+        };
+
+        Ok(cache)
     }
 
     pub fn current_name(&self) -> &'a str {
         self.font_faces_name[self.index()]
     }
 
-    pub const fn name_width_max(&self) -> usize {
+    pub fn name_width_max(&self) -> usize {
         self.name_width_max
     }
 
-    pub const fn family_names(&self) -> &Vec<&'a str> {
+    pub fn family_names(&self) -> &Vec<&'a str> {
         &self.font_faces_name
     }
 
@@ -129,7 +131,7 @@ impl<'a> State<'a> {
     }
 
     pub fn index(&self) -> usize {
-        self.list_state.borrow().selected().unwrap()
+        self.list_state.borrow().selected().expect("always has a selected item")
     }
 
     pub fn move_up(&mut self) {
@@ -145,7 +147,7 @@ impl<'a> State<'a> {
         self.list_state.borrow_mut().select(changed);
     }
 
-    pub const fn get_render_type(&self) -> &RenderType {
+    pub fn get_render_type(&self) -> &RenderType {
         &self.rt
     }
 
