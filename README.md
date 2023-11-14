@@ -6,7 +6,7 @@ Find fonts which can show a specified character and preview them in browser.
 
 This is port from my early python script called [which_fonts_support][which_fonts_support-github], but with some improvements:
 
-- 🛡️ Write in Rust. Safety
+- 🛡️ Write in Rust, without unsafe. Safety
 - 🚀️ Mmap to load font file. Fast
 - 🚀️ Only parse font table we need, not all bytes of font file. Faster
 - 🖥 Support preview in terminal and browser. Friendly

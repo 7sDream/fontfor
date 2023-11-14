@@ -1,5 +1,5 @@
 // FontFor: find fonts which can show a specified character
-// Copyright (C) 2019 - 2020 7sDream <i@7sdre.am> and contributors
+// Copyright (C) 2019 - 2023 7sDream <i@7sdre.am> and contributors
 //
 // This file is part of FontFor.
 //
@@ -23,7 +23,7 @@ use super::one_char::OneChar;
 #[derive(clap::Parser)]
 #[command(author, version, about, arg_required_else_help(true))]
 pub struct Args {
-    /// Verbose mode, -v show all font styles, -vv adds file and font face index
+    /// Verbose mode, -v show all font styles, -vv adds font file and face index
     #[arg(short, long, action = clap::ArgAction::Count)]
     pub verbose: u8,
 
