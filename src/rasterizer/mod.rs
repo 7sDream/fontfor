@@ -17,7 +17,49 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 mod bitmap;
-mod font_face;
 
-pub use bitmap::{Bitmap, Metrics, PixelFormat};
-pub use font_face::FontFace;
+use ab_glyph::{Font, FontRef, GlyphId, InvalidFont, OutlinedGlyph, PxScaleFactor, ScaleFont};
+
+pub use self::bitmap::{Bitmap, Metrics};
+
+pub struct Rasterizer<'a> {
+    face: FontRef<'a>,
+    height: u32,
+    width: u32,
+    scale: PxScaleFactor,
+}
+
+impl<'a> Rasterizer<'a> {
+    pub fn new(data: &'a [u8], index: u32) -> Result<Self, InvalidFont> {
+        let face = FontRef::try_from_slice_and_index(data, index)?;
+        Ok(Self {
+            face,
+            height: 0,
+            width: 0,
+            scale: PxScaleFactor { horizontal: 1.0, vertical: 1.0 },
+        })
+    }
+
+    pub fn set_size(&mut self, height: u32, width: u32) {
+        self.height = height;
+        self.width = width;
+    }
+
+    #[allow(dead_code)]
+    pub fn set_scale_factor(&mut self, scale: PxScaleFactor) {
+        self.scale = scale
+    }
+
+    pub fn rasterize(self, gid: u16) -> Option<Bitmap> {
+        let gid = GlyphId(gid);
+        let outline = self.face.outline(gid)?;
+
+        let glyph = gid.with_scale(self.height as f32);
+        let mut scale = self.face.as_scaled(glyph.scale).scale_factor();
+        scale.horizontal *= self.scale.horizontal;
+        scale.vertical *= self.scale.vertical;
+        let curve = OutlinedGlyph::new(glyph, outline, scale);
+
+        Some(Bitmap::new(&curve))
+    }
+}

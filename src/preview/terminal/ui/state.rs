@@ -22,14 +22,15 @@ use std::{
     rc::Rc,
 };
 
+use ab_glyph::PxScaleFactor;
 use tui::widgets::ListState;
 
 use super::cache::{CacheKey, GlyphCache, GlyphCanvasShape, RenderType, CHAR_RENDERS, MONO_RENDER};
 use crate::{
     family::Family,
     loader::{FaceInfo, DATABASE},
-    preview::terminal::ui::cache::GlyphParagraph,
-    rasterizer::{Bitmap, FontFace, PixelFormat},
+    preview::terminal::{render::Render, ui::cache::GlyphParagraph},
+    rasterizer::{Bitmap, Rasterizer},
 };
 
 pub struct State<'a> {
@@ -67,44 +68,56 @@ impl<'a> State<'a> {
         }
     }
 
-    fn cache_key(&self) -> CacheKey {
-        CacheKey {
-            index: self.index(),
-            rt: self.rt,
-            height: self.height.get(),
-            width: self.width.get(),
-        }
+    fn cache_key(&self, width: u32, height: u32) -> CacheKey {
+        CacheKey { index: self.index(), rt: self.rt, width, height }
     }
 
     pub fn render(&self) -> Rc<Result<GlyphCache, &'static str>> {
-        let key = self.cache_key();
-        self.cache.borrow_mut().entry(key).or_insert_with(|| Rc::new(self.real_render())).clone()
+        let (width, height) = match self.rt {
+            RenderType::Mono => self.get_canvas_size_by_pixel(),
+            _ => self.get_canvas_size_by_char(),
+        };
+
+        let key = self.cache_key(width, height);
+        self.cache
+            .borrow_mut()
+            .entry(key)
+            .or_insert_with(|| Rc::new(self.real_render(width, height)))
+            .clone()
     }
 
-    fn rasterize(&self) -> Result<Bitmap, &'static str> {
+    fn rasterize(&self, height: u32, width: u32) -> Result<Bitmap, &'static str> {
         let info = self.font_faces_info[self.index()];
+
+        let scale = if matches!(self.rt, RenderType::AsciiLevel10 | RenderType::AsciiLevel70) {
+            Some(PxScaleFactor { horizontal: 2.0, vertical: 1.0 })
+        } else {
+            None
+        };
 
         DATABASE
             .with_face_data(info.id, |data, index| -> Option<Bitmap> {
-                let mut face = FontFace::new(data, index).ok()?;
-                face.set_size(self.height.get(), self.width.get());
-                face.load_glyph(info.gid.0, match self.rt {
-                    RenderType::Mono => PixelFormat::Monochrome,
-                    _ => PixelFormat::Gray,
-                })
+                let mut r = Rasterizer::new(data, index).ok()?;
+                r.set_size(width, height);
+                if let Some(scale) = scale {
+                    r.set_scale_factor(scale);
+                }
+                r.rasterize(info.gid.0)
             })
             .ok_or("Can't read this font file")?
             .ok_or("Can't get glyph from this font")
     }
 
-    fn real_render(&self) -> Result<GlyphCache, &'static str> {
-        let bitmap = self.rasterize()?;
+    fn real_render(&self, width: u32, height: u32) -> Result<GlyphCache, &'static str> {
+        let bitmap = self.rasterize(width, height)?;
+
+        let (width, height) = self.get_canvas_size_by_pixel();
 
         let cache = match self.rt {
             RenderType::Mono => GlyphCache::Canvas(GlyphCanvasShape::new(
                 MONO_RENDER.render(&bitmap),
-                self.width.get() as f64,
-                self.height.get() as f64,
+                width as f64,
+                height as f64,
             )),
             rt => GlyphCache::Paragraph(GlyphParagraph::new(
                 CHAR_RENDERS.get(&rt).expect("all render must be exist").render(&bitmap),
@@ -169,12 +182,16 @@ impl<'a> State<'a> {
         }
     }
 
-    pub fn update_char_pixel_cell(&self, width: u32, height: u32) {
+    pub fn update_canvas_size_by_char(&self, width: u32, height: u32) {
         self.width.replace(width);
         self.height.replace(height);
     }
 
-    pub fn get_char_pixel_cell(&self) -> (u32, u32) {
+    pub fn get_canvas_size_by_char(&self) -> (u32, u32) {
         (self.width.get(), self.height.get())
+    }
+
+    pub fn get_canvas_size_by_pixel(&self) -> (u32, u32) {
+        (self.width.get() * 2, self.height.get() * 4)
     }
 }

@@ -26,19 +26,13 @@ pub struct Metrics {
     pub width: usize,
 }
 
-#[derive(Copy, Clone)]
-pub enum PixelFormat {
-    Gray,
-    Monochrome,
-}
-
 pub struct Bitmap {
     metrics: Metrics,
     bitmap: Grid<u8>,
 }
 
 impl Bitmap {
-    pub fn new(curves: &OutlinedGlyph, format: PixelFormat) -> Self {
+    pub fn new(curves: &OutlinedGlyph) -> Self {
         let bound = curves.px_bounds();
 
         let metrics = Metrics {
@@ -51,17 +45,7 @@ impl Bitmap {
         let mut bitmap = Grid::new(metrics.height, metrics.width);
 
         curves.draw(|x, y, c| {
-            let value = match format {
-                PixelFormat::Gray => (c * 255.0).round() as u8,
-                PixelFormat::Monochrome => {
-                    if c <= 0.5 {
-                        u8::MIN
-                    } else {
-                        u8::MAX
-                    }
-                }
-            };
-
+            let value = (c * 255.0).round() as u8;
             bitmap[y as usize][x as usize] = value
         });
 

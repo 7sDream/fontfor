@@ -45,14 +45,14 @@ pub static CHAR_RENDERS: Lazy<HashMap<RenderType, BoxedRender<char>>> = Lazy::ne
     renders
 });
 
-pub static MONO_RENDER: Lazy<BoxedRender<bool>> = Lazy::new(|| Box::<MonoRender>::default());
+pub static MONO_RENDER: Lazy<MonoRender> = Lazy::new(MonoRender::default);
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct CacheKey {
     pub index: usize,
     pub rt: RenderType,
-    pub height: u32,
     pub width: u32,
+    pub height: u32,
 }
 
 pub enum GlyphCache {
