@@ -45,10 +45,16 @@ pub struct State<'a> {
 
 impl<'a> State<'a> {
     pub fn new(families: Vec<Family<'a>>) -> Self {
-        let font_faces_info: Vec<_> =
-            families.into_iter().flat_map(|f| f.faces.into_iter()).collect();
+        let font_faces_info: Vec<_> = families
+            .into_iter()
+            .flat_map(|f| f.faces.into_iter())
+            .collect();
         let font_faces_name: Vec<_> = font_faces_info.iter().map(|f| f.name.as_ref()).collect();
-        let name_width_max = font_faces_name.iter().map(|f| f.len()).max().unwrap_or_default();
+        let name_width_max = font_faces_name
+            .iter()
+            .map(|f| f.len())
+            .max()
+            .unwrap_or_default();
 
         let cache = RefCell::default();
 
@@ -68,7 +74,12 @@ impl<'a> State<'a> {
     }
 
     fn cache_key(&self, width: u32, height: u32) -> CacheKey {
-        CacheKey { index: self.index(), rt: self.rt, width, height }
+        CacheKey {
+            index: self.index(),
+            rt: self.rt,
+            width,
+            height,
+        }
     }
 
     pub fn render(&self) -> Rc<Result<GlyphCache, &'static str>> {
@@ -116,7 +127,10 @@ impl<'a> State<'a> {
                 height as f64,
             )),
             rt => GlyphCache::Paragraph(GlyphParagraph::new(
-                CHAR_RENDERS.get(&rt).expect("all render must be exist").render(&bitmap),
+                CHAR_RENDERS
+                    .get(&rt)
+                    .expect("all render must be exist")
+                    .render(&bitmap),
             )),
         };
 
@@ -140,19 +154,27 @@ impl<'a> State<'a> {
     }
 
     pub fn index(&self) -> usize {
-        self.list_state.borrow().selected().expect("always has a selected item")
+        self.list_state
+            .borrow()
+            .selected()
+            .expect("always has a selected item")
     }
 
     pub fn move_up(&mut self) {
-        let changed = self.list_state.borrow().selected().map(|index| index.saturating_sub(1));
+        let changed = self
+            .list_state
+            .borrow()
+            .selected()
+            .map(|index| index.saturating_sub(1));
         self.list_state.borrow_mut().select(changed);
     }
 
     pub fn move_down(&mut self) {
-        let changed =
-            self.list_state.borrow().selected().map(|index| {
-                index.saturating_add(1).min(self.font_faces_name.len().saturating_sub(1))
-            });
+        let changed = self.list_state.borrow().selected().map(|index| {
+            index
+                .saturating_add(1)
+                .min(self.font_faces_name.len().saturating_sub(1))
+        });
         self.list_state.borrow_mut().select(changed);
     }
 

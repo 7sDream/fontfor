@@ -21,6 +21,5 @@ group_imports = "StdExternalCrate"
 reorder_modules = false
 # short_array_element_width_threshold = 20
 use_field_init_shorthand = true
-use_small_heuristics = "Max"
 use_try_shorthand = true
 wrap_comments = true

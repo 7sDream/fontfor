@@ -43,7 +43,10 @@ fn main() {
     let families = family::group_by_family_sort_by_name(&font_set);
 
     if families.is_empty() {
-        eprintln!("No font support this character {}.", argument.char.description());
+        eprintln!(
+            "No font support this character {}.",
+            argument.char.description()
+        );
         return;
     }
 
@@ -59,11 +62,16 @@ fn main() {
             None
         };
 
-        println!("Font(s) support the character {}:", argument.char.description());
+        println!(
+            "Font(s) support the character {}:",
+            argument.char.description()
+        );
         show_font_list(families, argument.verbose);
 
         if let Some(builder) = builder {
-            builder.build_for(argument.char.0).run_until(show_preview_addr_and_wait);
+            builder
+                .build_for(argument.char.0)
+                .run_until(show_preview_addr_and_wait);
         }
     }
 }
@@ -72,17 +80,25 @@ fn show_preview_addr_and_wait(addr: SocketAddr) {
     println!("{}", "-".repeat(40));
     println!("Please visit http://{}/ in your browser for preview", addr);
     print!("And press Enter after your finish...");
-    std::io::stdout().flush().expect("flush stdout should not fail");
+    std::io::stdout()
+        .flush()
+        .expect("flush stdout should not fail");
 
     // Wait until user input any character before stop the server
-    let _ = std::io::stdin().read(&mut [0u8]).expect("read from stdout should not fail");
+    let _ = std::io::stdin()
+        .read(&mut [0u8])
+        .expect("read from stdout should not fail");
 }
 
 fn show_font_list(families: Vec<Family<'_>>, verbose: u8) {
     let max_len = if verbose > 0 {
         0
     } else {
-        families.iter().map(|f| f.default_name_width).max().unwrap_or_default()
+        families
+            .iter()
+            .map(|f| f.default_name_width)
+            .max()
+            .unwrap_or_default()
     };
 
     families.into_iter().for_each(|family| {

@@ -65,8 +65,11 @@ impl SingleThread {
 
     fn response_200(content: &str) -> String {
         let content_length_header = format!("Content-Length: {}\r\n", content.len());
-        let headers =
-            ["Content-Type: text/html\r\n", "Content-Encoding: utf-8\r\n", &content_length_header];
+        let headers = [
+            "Content-Type: text/html\r\n",
+            "Content-Encoding: utf-8\r\n",
+            &content_length_header,
+        ];
 
         Self::response_common(200, "OK", &headers)
     }
@@ -191,7 +194,9 @@ impl SingleThread {
             }
         };
 
-        let addr = server.local_addr().expect("tcp listener must have a local addr");
+        let addr = server
+            .local_addr()
+            .expect("tcp listener must have a local addr");
         if addr_tx.send(addr).is_err() {
             return Ok(());
         }

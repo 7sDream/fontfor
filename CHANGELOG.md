@@ -4,17 +4,18 @@
 
 - Remove dependency of fontconfig and freetype lib
 - Add `-vv` option to show font file location and face index
+- ASCII mode render result now not narrow (Issue [#61](https://github.com/7sDream/fontfor/issues/61), fixed by PR [#63](https://github.com/7sDream/fontfor/pull/63))
 - Now release contains ia32/x64/arm64 binary for Windows
 - Now release contains x64/arm64 binary for macOS
 - Now release contains x64/arm64/armhf binary Linux
 
 ## 0.3.1
 
-- Display help message directly when `char` arg are missing (Issue #11, Pr #12)
+- Display help message directly when `char` arg are missing (Issue [#11](https://github.com/7sDream/fontfor/issue/11), Pr [#12](https://github.com/7sDream/fontfor/pull/12))
 
 ## 0.3.0
 
-- Browser preview page gets a new wonderful UI (Thanks [@Tiierr](https://github.com/Tiierr), PR #5)
+- Browser preview page gets a new wonderful UI (Thanks [@Tiierr](https://github.com/Tiierr), PR [#5](https://github.com/7sDream/fontfor/pull/5))
 
 ## 0.2.2
 

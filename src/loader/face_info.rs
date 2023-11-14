@@ -60,17 +60,29 @@ impl FaceInfo {
             return Ok(None);
         };
 
-        let family =
-            face.families.get(0).map(|(s, _)| s.as_str()).ok_or(Error::MissingFamilyName)?;
+        let family = face
+            .families
+            .get(0)
+            .map(|(s, _)| s.as_str())
+            .ok_or(Error::MissingFamilyName)?;
 
-        let name = name.map(Cow::Owned).unwrap_or_else(|| face.post_script_name.as_str().into());
+        let name = name
+            .map(Cow::Owned)
+            .unwrap_or_else(|| face.post_script_name.as_str().into());
 
         let path = match face.source {
             fontdb::Source::File(ref path) => path,
             _ => unreachable!("we only load font file, so source must be File variant"),
         };
 
-        Ok(Some(FaceInfo { id: face.id, family, name, path, index: face.index, gid }))
+        Ok(Some(FaceInfo {
+            id: face.id,
+            family,
+            name,
+            path,
+            index: face.index,
+            gid,
+        }))
     }
 
     fn parse_full_name(rf: RawFace<'_>) -> Result<Option<String>> {

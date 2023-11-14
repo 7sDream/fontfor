@@ -18,8 +18,13 @@
 
 use super::Render;
 
-static MOON_CHARS: [[char; 2]; 5] =
-    [['🌕', '🌕'], ['🌖', '🌔'], ['🌗', '🌓'], ['🌘', '🌒'], ['🌑', '🌑']];
+static MOON_CHARS: [[char; 2]; 5] = [
+    ['🌕', '🌕'],
+    ['🌖', '🌔'],
+    ['🌗', '🌓'],
+    ['🌘', '🌒'],
+    ['🌑', '🌑'],
+];
 
 pub struct MoonRender {
     multiplier: f64,
@@ -42,6 +47,10 @@ impl Render for MoonRender {
 
         let index = (f64::from(255 - gray) * self.multiplier).floor() as usize;
 
-        if left < right { MOON_CHARS[index][1] } else { MOON_CHARS[index][0] }
+        if left < right {
+            MOON_CHARS[index][1]
+        } else {
+            MOON_CHARS[index][0]
+        }
     }
 }

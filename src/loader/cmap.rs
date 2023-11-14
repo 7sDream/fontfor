@@ -45,6 +45,9 @@ impl<'a> CMapTable<'a> {
     }
 
     pub fn glyph_index(&self, c: char) -> Option<GlyphId> {
-        self.subtables.iter().filter_map(|subtable| subtable.glyph_index(c as u32)).next()
+        self.subtables
+            .iter()
+            .filter_map(|subtable| subtable.glyph_index(c as u32))
+            .next()
     }
 }

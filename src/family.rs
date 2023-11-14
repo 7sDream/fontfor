@@ -28,7 +28,11 @@ pub struct Family<'a> {
 
 impl<'a> Family<'a> {
     pub fn new(name: &'a str) -> Self {
-        Self { name, faces: vec![], default_name_width: name.len() }
+        Self {
+            name,
+            faces: vec![],
+            default_name_width: name.len(),
+        }
     }
 
     pub fn styles_count(&self) -> usize {
@@ -45,7 +49,10 @@ pub fn group_by_family_sort_by_name(faces: &[FaceInfo]) -> Vec<Family<'_>> {
 
     faces.iter().for_each(|face| {
         let family = &face.family;
-        families.entry(family).or_insert_with(|| Family::new(family)).add_face(face);
+        families
+            .entry(family)
+            .or_insert_with(|| Family::new(family))
+            .add_face(face);
     });
 
     let mut families: Vec<Family<'_>> = families.into_values().collect();

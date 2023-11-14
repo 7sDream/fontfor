@@ -28,7 +28,10 @@ impl OneChar {
         let scalar_value = u32::from(self.0);
         let mut utf8 = vec![0; self.0.len_utf8()];
         self.0.encode_utf8(utf8.as_mut_slice());
-        let bytes = utf8.iter().map(|byte| format!("0x{:X}", byte)).collect::<Vec<_>>();
+        let bytes = utf8
+            .iter()
+            .map(|byte| format!("0x{:X}", byte))
+            .collect::<Vec<_>>();
         format!(
             "\"{}\"(U+{:0scalar_value_length$X}, {}, {})",
             self.0,

@@ -45,9 +45,17 @@ pub trait Render {
                 let gray = bm.pixel(row, col);
 
                 let l = if col > 0 { bm.pixel(row, col - 1) } else { 0 };
-                let r = if col < m.width - 1 { bm.pixel(row, col + 1) } else { 0 };
+                let r = if col < m.width - 1 {
+                    bm.pixel(row, col + 1)
+                } else {
+                    0
+                };
                 let u = if row > 0 { bm.pixel(row - 1, col) } else { 0 };
-                let d = if row < m.height - 1 { bm.pixel(row + 1, col) } else { 0 };
+                let d = if row < m.height - 1 {
+                    bm.pixel(row + 1, col)
+                } else {
+                    0
+                };
 
                 result[row][col] = self.render_pixel(u, l, gray, r, d)
             }

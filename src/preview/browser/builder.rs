@@ -44,16 +44,18 @@ impl<'a> Builder<'a> {
 
     fn build_html(self, c: char) -> String {
         let font_previews =
-            self.families.into_iter().fold(String::new(), |mut acc: String, family| {
-                write!(
-                    &mut acc,
-                    include_str!("statics/preview_block_template.html"),
-                    char = c,
-                    family = family,
-                )
-                .expect("write to string should always success");
-                acc
-            });
+            self.families
+                .into_iter()
+                .fold(String::new(), |mut acc: String, family| {
+                    write!(
+                        &mut acc,
+                        include_str!("statics/preview_block_template.html"),
+                        char = c,
+                        family = family,
+                    )
+                    .expect("write to string should always success");
+                    acc
+                });
 
         format!(
             include_str!("statics/template.html"),

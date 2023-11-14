@@ -61,7 +61,10 @@ pub struct UI<'a> {
 impl<'a: 'a> UI<'a> {
     pub fn new(families: Vec<Family<'a>>) -> Option<Self> {
         if !families.is_empty() {
-            Some(Self { state: State::new(families), idle_redraw: 0 })
+            Some(Self {
+                state: State::new(families),
+                idle_redraw: 0,
+            })
         } else {
             None
         }
@@ -72,9 +75,23 @@ impl<'a: 'a> UI<'a> {
         let index = self.state.index();
         let title = format!("Fonts {}/{}", index + 1, families.len());
 
-        let list = List::new(families.iter().copied().map(ListItem::new).collect::<Vec<_>>())
-            .block(Block::default().title(Span::raw(title)).borders(Borders::ALL))
-            .highlight_style(Style::default().fg(Color::LightBlue).add_modifier(Modifier::BOLD));
+        let list = List::new(
+            families
+                .iter()
+                .copied()
+                .map(ListItem::new)
+                .collect::<Vec<_>>(),
+        )
+        .block(
+            Block::default()
+                .title(Span::raw(title))
+                .borders(Borders::ALL),
+        )
+        .highlight_style(
+            Style::default()
+                .fg(Color::LightBlue)
+                .add_modifier(Modifier::BOLD),
+        );
 
         f.render_stateful_widget(list, area, &mut self.state.mut_list_state())
     }
@@ -114,7 +131,11 @@ impl<'a: 'a> UI<'a> {
         let canvas = Paragraph::new(Text::from(lines))
             .block(Block::default().title("Preview").borders(Borders::ALL))
             .alignment(Alignment::Center)
-            .style(Style::default().fg(Color::Reset).add_modifier(Modifier::BOLD));
+            .style(
+                Style::default()
+                    .fg(Color::Reset)
+                    .add_modifier(Modifier::BOLD),
+            );
         f.render_widget(canvas, area);
     }
 
@@ -137,9 +158,19 @@ impl<'a: 'a> UI<'a> {
 
     fn generate_help_text<'x>(key: &'x str, help: &'x str) -> Vec<Span<'x>> {
         vec![
-            Span::styled(key, Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                key,
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(": "),
-            Span::styled(help, Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                help,
+                Style::default()
+                    .fg(Color::Blue)
+                    .add_modifier(Modifier::BOLD),
+            ),
         ]
     }
 
@@ -157,12 +188,18 @@ impl<'a: 'a> UI<'a> {
             Span::raw(": "),
             Span::styled(
                 self.state.current_name(),
-                Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::Blue)
+                    .add_modifier(Modifier::BOLD),
             ),
         ];
         f.render_widget(
             Paragraph::new(Line::from(texts))
-                .block(Block::default().title("Info").borders(Borders::TOP | Borders::LEFT))
+                .block(
+                    Block::default()
+                        .title("Info")
+                        .borders(Borders::TOP | Borders::LEFT),
+                )
                 .alignment(Alignment::Left),
             name,
         );
@@ -172,7 +209,9 @@ impl<'a: 'a> UI<'a> {
             Span::raw(": "),
             Span::styled(
                 format!("{:?}", self.state.get_render_type()),
-                Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::Blue)
+                    .add_modifier(Modifier::BOLD),
             ),
         ];
         f.render_widget(
@@ -187,8 +226,12 @@ impl<'a: 'a> UI<'a> {
         let cols = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(
-                [Constraint::Ratio(2, 5), Constraint::Ratio(2, 5), Constraint::Ratio(1, 5)]
-                    .as_ref(),
+                [
+                    Constraint::Ratio(2, 5),
+                    Constraint::Ratio(2, 5),
+                    Constraint::Ratio(1, 5),
+                ]
+                .as_ref(),
             )
             .split(area);
 

@@ -39,8 +39,14 @@ type BoxedRender<Pixel> = Box<dyn Render<Pixel = Pixel> + Send + Sync>;
 
 pub static CHAR_RENDERS: Lazy<HashMap<RenderType, BoxedRender<char>>> = Lazy::new(|| {
     let mut renders: HashMap<RenderType, BoxedRender<char>> = HashMap::new();
-    renders.insert(RenderType::AsciiLevel10, Box::new(AsciiRender::new(AsciiRenders::Level10)));
-    renders.insert(RenderType::AsciiLevel70, Box::new(AsciiRender::new(AsciiRenders::Level70)));
+    renders.insert(
+        RenderType::AsciiLevel10,
+        Box::new(AsciiRender::new(AsciiRenders::Level10)),
+    );
+    renders.insert(
+        RenderType::AsciiLevel70,
+        Box::new(AsciiRender::new(AsciiRenders::Level70)),
+    );
     renders.insert(RenderType::Moon, Box::new(MoonRender::new()));
     renders
 });
@@ -71,7 +77,12 @@ impl GlyphCanvasShape {
     pub fn new(bitmap: Grid<bool>, canvas_width: f64, canvas_height: f64) -> Self {
         let h_pad = ((canvas_width - bitmap.cols() as f64) / 2.0).floor();
         let v_pad = ((canvas_height - bitmap.rows() as f64) / 2.0).floor();
-        Self { h_pad, v_pad, canvas_height, bitmap }
+        Self {
+            h_pad,
+            v_pad,
+            canvas_height,
+            bitmap,
+        }
     }
 
     fn points(&self) -> GlyphCanvasShapePoints<'_> {
@@ -88,7 +99,12 @@ struct GlyphCanvasShapePoints<'a> {
 
 impl<'a> GlyphCanvasShapePoints<'a> {
     fn new(shape: &'a GlyphCanvasShape) -> Self {
-        Self { shape, start: false, x: 0, y: 0 }
+        Self {
+            shape,
+            start: false,
+            x: 0,
+            y: 0,
+        }
     }
 
     fn next_x_y(&mut self) -> bool {
