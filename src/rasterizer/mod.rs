@@ -18,48 +18,35 @@
 
 mod bitmap;
 
-use ab_glyph::{Font, FontRef, GlyphId, InvalidFont, OutlinedGlyph, PxScaleFactor, ScaleFont};
+use ab_glyph::{Font, FontRef, GlyphId, InvalidFont, PxScale};
 
 pub use self::bitmap::{Bitmap, Metrics};
 
 pub struct Rasterizer<'a> {
     face: FontRef<'a>,
     height: u32,
-    width: u32,
-    scale: PxScaleFactor,
+    hscale: f32,
 }
 
 impl<'a> Rasterizer<'a> {
     pub fn new(data: &'a [u8], index: u32) -> Result<Self, InvalidFont> {
         let face = FontRef::try_from_slice_and_index(data, index)?;
-        Ok(Self {
-            face,
-            height: 0,
-            width: 0,
-            scale: PxScaleFactor { horizontal: 1.0, vertical: 1.0 },
-        })
+        Ok(Self { face, height: 0, hscale: 1.0 })
     }
 
-    pub fn set_size(&mut self, height: u32, width: u32) {
+    pub fn set_pixel_height(&mut self, height: u32) {
         self.height = height;
-        self.width = width;
     }
 
-    #[allow(dead_code)]
-    pub fn set_scale_factor(&mut self, scale: PxScaleFactor) {
-        self.scale = scale
+    pub fn set_hscale(&mut self, scale: f32) {
+        self.hscale = scale
     }
 
     pub fn rasterize(self, gid: u16) -> Option<Bitmap> {
-        let gid = GlyphId(gid);
-        let outline = self.face.outline(gid)?;
-
-        let glyph = gid.with_scale(self.height as f32);
-        let mut scale = self.face.as_scaled(glyph.scale).scale_factor();
-        scale.horizontal *= self.scale.horizontal;
-        scale.vertical *= self.scale.vertical;
-        let curve = OutlinedGlyph::new(glyph, outline, scale);
-
+        let glyph_id = GlyphId(gid);
+        let glyph = glyph_id
+            .with_scale(PxScale { x: self.height as f32 * self.hscale, y: self.height as f32 });
+        let curve = self.face.outline_glyph(glyph)?;
         Some(Bitmap::new(&curve))
     }
 }

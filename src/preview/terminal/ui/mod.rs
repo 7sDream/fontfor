@@ -101,7 +101,10 @@ impl<'a: 'a> UI<'a> {
         let (_, height) = self.state.get_canvas_size_by_char();
 
         let iter = paragraph.into_iter();
-        let padding = (height as usize).saturating_sub(2).saturating_sub(iter.len());
+
+        // saturating_sub here makes padding zero instead of overflow to a huge number
+        // if render result taller then preview area
+        let padding = (height as usize).saturating_sub(iter.len());
         let mut lines = vec![Line::from(""); padding / 2];
 
         for line in iter {

@@ -22,7 +22,6 @@ use std::{
     rc::Rc,
 };
 
-use ab_glyph::PxScaleFactor;
 use tui::widgets::ListState;
 
 use super::cache::{CacheKey, GlyphCache, GlyphCanvasShape, RenderType, CHAR_RENDERS, MONO_RENDER};
@@ -86,11 +85,11 @@ impl<'a> State<'a> {
             .clone()
     }
 
-    fn rasterize(&self, height: u32, width: u32) -> Result<Bitmap, &'static str> {
+    fn rasterize(&self, _width: u32, height: u32) -> Result<Bitmap, &'static str> {
         let info = self.font_faces_info[self.index()];
 
         let scale = if matches!(self.rt, RenderType::AsciiLevel10 | RenderType::AsciiLevel70) {
-            Some(PxScaleFactor { horizontal: 2.0, vertical: 1.0 })
+            Some(2.0)
         } else {
             None
         };
@@ -98,9 +97,9 @@ impl<'a> State<'a> {
         DATABASE
             .with_face_data(info.id, |data, index| -> Option<Bitmap> {
                 let mut r = Rasterizer::new(data, index).ok()?;
-                r.set_size(width, height);
+                r.set_pixel_height(height);
                 if let Some(scale) = scale {
-                    r.set_scale_factor(scale);
+                    r.set_hscale(scale);
                 }
                 r.rasterize(info.gid.0)
             })
@@ -110,9 +109,6 @@ impl<'a> State<'a> {
 
     fn real_render(&self, width: u32, height: u32) -> Result<GlyphCache, &'static str> {
         let bitmap = self.rasterize(width, height)?;
-
-        let (width, height) = self.get_canvas_size_by_pixel();
-
         let cache = match self.rt {
             RenderType::Mono => GlyphCache::Canvas(GlyphCanvasShape::new(
                 MONO_RENDER.render(&bitmap),
