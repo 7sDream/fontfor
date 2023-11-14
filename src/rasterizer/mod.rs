@@ -17,7 +17,36 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 mod bitmap;
-mod font_face;
 
-pub use bitmap::{Bitmap, Metrics, PixelFormat};
-pub use font_face::FontFace;
+use ab_glyph::{Font, FontRef, GlyphId, InvalidFont, PxScale};
+
+pub use self::bitmap::{Bitmap, Metrics};
+
+pub struct Rasterizer<'a> {
+    face: FontRef<'a>,
+    height: u32,
+    hscale: f32,
+}
+
+impl<'a> Rasterizer<'a> {
+    pub fn new(data: &'a [u8], index: u32) -> Result<Self, InvalidFont> {
+        let face = FontRef::try_from_slice_and_index(data, index)?;
+        Ok(Self { face, height: 0, hscale: 1.0 })
+    }
+
+    pub fn set_pixel_height(&mut self, height: u32) {
+        self.height = height;
+    }
+
+    pub fn set_hscale(&mut self, scale: f32) {
+        self.hscale = scale
+    }
+
+    pub fn rasterize(self, gid: u16) -> Option<Bitmap> {
+        let glyph_id = GlyphId(gid);
+        let glyph = glyph_id
+            .with_scale(PxScale { x: self.height as f32 * self.hscale, y: self.height as f32 });
+        let curve = self.face.outline_glyph(glyph)?;
+        Some(Bitmap::new(&curve))
+    }
+}

@@ -40,7 +40,7 @@ use tui::{
 };
 
 use self::{
-    cache::{GlyphCache, GlyphCanvasShape, RenderType},
+    cache::{GlyphCache, GlyphCanvasShape},
     event::{TerminalEvent, TerminalEventStream},
     state::State,
 };
@@ -80,7 +80,7 @@ impl<'a: 'a> UI<'a> {
     }
 
     fn draw_preview_canvas(&self, area: Rect, f: &mut Frame<'_>, shape: &GlyphCanvasShape) {
-        let (canvas_width, canvas_height) = self.state.get_char_pixel_cell();
+        let (canvas_width, canvas_height) = self.state.get_canvas_size_by_pixel();
         let canvas_width = f64::from(canvas_width);
         let canvas_height = f64::from(canvas_height);
         let canvas = Canvas::default()
@@ -98,8 +98,13 @@ impl<'a: 'a> UI<'a> {
         I: IntoIterator<Item = &'s str>,
         I::IntoIter: ExactSizeIterator,
     {
+        let (_, height) = self.state.get_canvas_size_by_char();
+
         let iter = paragraph.into_iter();
-        let padding = (area.height as usize).saturating_sub(2).saturating_sub(iter.len());
+
+        // saturating_sub here makes padding zero instead of overflow to a huge number
+        // if render result taller then preview area
+        let padding = (height as usize).saturating_sub(iter.len());
         let mut lines = vec![Line::from(""); padding / 2];
 
         for line in iter {
@@ -249,17 +254,9 @@ impl<'a: 'a> UI<'a> {
         let list = main[0];
         let canvas = main[1];
 
-        let mut width = u32::from(canvas.width.saturating_sub(2));
-        let mut height = u32::from(canvas.height.saturating_sub(2));
-        let rt = self.state.get_render_type();
-        if rt == &RenderType::Moon {
-            width /= 2;
-        } else if rt == &RenderType::Mono {
-            width = width.saturating_mul(2);
-            height = height.saturating_mul(4);
-        }
-
-        self.state.update_char_pixel_cell(width, height);
+        let width = u32::from(canvas.width.saturating_sub(2));
+        let height = u32::from(canvas.height.saturating_sub(2));
+        self.state.update_canvas_size_by_char(width, height);
 
         self.draw_list(list, f);
         self.draw_preview(canvas, f);

@@ -25,6 +25,6 @@ impl Render for MonoRender {
     type Pixel = bool;
 
     fn render_pixel(&self, _up: u8, _left: u8, gray: u8, _right: u8, _down: u8) -> Self::Pixel {
-        gray == u8::MAX
+        gray >= 128
     }
 }
