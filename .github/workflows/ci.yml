@@ -4,12 +4,11 @@ on:
   push:
     branches:
       - master
-      - staging
-      - trying
   pull_request:
     branches:
       - master
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   style:
@@ -40,5 +39,6 @@ jobs:
 
   build:
     uses: ./.github/workflows/build.yml
+    needs: [style]
     with:
       name: fontfor
