@@ -38,6 +38,10 @@ pub struct Args {
     #[arg(short, long)]
     pub tui: bool,
 
+    /// Do not load system fonts
+    #[arg(long = "no-system")]
+    pub no_system: bool,
+
     /// Also load fonts in a custom path.
     /// This arg can be provided multiple times.
     #[arg(short = 'I', long = "include", name = "PATH", action = clap::ArgAction::Append)]
