@@ -109,9 +109,9 @@ See [COPYING][COPYING-file].
 [which_fonts_support-github]: https://github.com/7sDream/which_fonts_support
 [verbose-mode-screenshot]: https://rikka.7sdre.am/files/22ea7500-525b-47ba-9c4e-6ef963999983.png
 [browser-preview-screenshot]: https://rikka.7sdre.am/files/8f27f97b-a9b5-4fac-b922-594d188f648c.png
-[tui-mono-mode]: https://rikka.7sdre.am/files/c7a7a685-3966-4fb4-8e9e-0cc53636e406.png
-[tui-ascii-10-mode]: https://rikka.7sdre.am/files/77d4b267-00e4-4ab2-abe3-dc0569769566.png
-[tui-ascii-70-mode]: https://rikka.7sdre.am/files/59262531-7d4c-4228-be2f-3149c14c86d2.png
-[tui-moon-mode]: https://rikka.7sdre.am/files/8128a291-27a7-42bd-813e-1136f971cdb3.png
+[tui-ascii-10-mode]: https://rikka.7sdre.am/files/34340b12-f554-4a08-9f2a-3c97ba1c2bd4.png
+[tui-ascii-70-mode]: https://rikka.7sdre.am/files/bab9bc92-88fd-4be0-b9dc-e138723bb125.png
+[tui-mono-mode]: https://rikka.7sdre.am/files/ee09bac8-ad1c-434d-8ec1-2b71411aac71.png
+[tui-moon-mode]: https://rikka.7sdre.am/files/d8b690c7-ac0a-42e5-9b91-7c7e134100e6.png
 [moon-render-github]: https://github.com/7sDream/moon-render
 [COPYING-file]: https://github.com/7sDream/fontfor/blob/master/COPYING
