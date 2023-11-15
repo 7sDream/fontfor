@@ -18,16 +18,18 @@
 
 use std::{borrow::Cow, path::Path};
 
+use fontdb::Source;
 use ttf_parser::{
     name::{name_id, Table as NameTable},
-    GlyphId, Language, RawFace,
+    Language, RawFace,
 };
 
 use super::{
     cmap::CMapTable,
     error::{BROKEN_NAME_TABLE, MISSING_NAME_TABLE, NAME_TAG},
-    Error, Result, DATABASE,
+    Error, Result,
 };
+use crate::loader::database;
 
 /// FaceInfo contains basic font face info like family and name,
 /// and pre-located glyph id for target character.
@@ -40,12 +42,12 @@ pub struct FaceInfo {
     pub path: &'static Path,
     pub index: u32,
 
-    pub gid: GlyphId,
+    pub gid: u16,
 }
 
 impl FaceInfo {
     pub fn parse_if_contains(face: &'static fontdb::FaceInfo, c: char) -> Result<Option<Self>> {
-        let Some((gid, name)) = DATABASE
+        let Some((gid, name)) = database()
             .with_face_data(face.id, |data, index| -> Result<_> {
                 let rf = RawFace::parse(data, index)?;
                 let Some(gid) = CMapTable::parse(rf)?.glyph_index(c) else {
@@ -53,7 +55,7 @@ impl FaceInfo {
                 };
 
                 let name = Self::parse_full_name(rf)?;
-                Ok(Some((gid, name)))
+                Ok(Some((gid.0, name)))
             })
             .expect("we only load font from database so it must not None")?
         else {
@@ -71,7 +73,7 @@ impl FaceInfo {
             .unwrap_or_else(|| face.post_script_name.as_str().into());
 
         let path = match face.source {
-            fontdb::Source::File(ref path) => path,
+            Source::File(ref path) => path,
             _ => unreachable!("we only load font file, so source must be File variant"),
         };
 

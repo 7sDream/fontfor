@@ -27,7 +27,7 @@ use tui::widgets::ListState;
 use super::cache::{CacheKey, GlyphCache, GlyphCanvasShape, RenderType, CHAR_RENDERS, MONO_RENDER};
 use crate::{
     family::Family,
-    loader::{FaceInfo, DATABASE},
+    loader::{self, FaceInfo},
     preview::terminal::{render::Render, ui::cache::GlyphParagraph},
     rasterizer::{Bitmap, Rasterizer},
 };
@@ -105,14 +105,14 @@ impl<'a> State<'a> {
             None
         };
 
-        DATABASE
+        loader::database()
             .with_face_data(info.id, |data, index| -> Option<Bitmap> {
                 let mut r = Rasterizer::new(data, index).ok()?;
                 r.set_pixel_height(height);
                 if let Some(scale) = scale {
                     r.set_hscale(scale);
                 }
-                r.rasterize(info.gid.0)
+                r.rasterize(info.gid)
             })
             .ok_or("Can't read this font file")?
             .ok_or("Can't get glyph from this font")
