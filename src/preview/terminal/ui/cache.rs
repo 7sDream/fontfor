@@ -20,7 +20,7 @@ use std::{collections::HashMap, iter::Iterator};
 
 use grid::Grid;
 use once_cell::sync::Lazy;
-use tui::{
+use ratatui::{
     style::Color,
     widgets::canvas::{Painter, Shape},
 };

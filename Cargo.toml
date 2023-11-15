@@ -12,21 +12,34 @@ keywords = ["font", "character", "cli", "utilities"]
 categories = ["command-line-utilities", "text-processing", "visualization"]
 
 [dependencies]
+# Global values
 once_cell = "1"
-httparse = "1"
-crossterm = "0.27"
-fontdb = "0.16"
-ttf-parser = "0.20"
-ab_glyph = "0.2"
+
+# Define error type
 thiserror = "1"
+
+# 2D array
 grid = "0.11"
 
-[dependencies.clap]
-version = "4"
-features = ["derive", "unicode", "wrap_help"]
+# CLI argument parser
+clap = { version = "4", features = ["derive", "unicode", "wrap_help"] }
 
-[dependencies.tui]
-package = "ratatui"
-version = "0.24"
-default-features = false
-features = ["crossterm"]
+# Font loader
+fontdb = "0.16"
+
+# Font parser
+ttf-parser = "0.20"
+
+# Font rasterizer
+# see https://gist.github.com/7sDream/0bb194be42b8cb1f1926ca12151c8d76 for alternatives.
+ab_glyph = "0.2"
+
+# Termianal UI
+ratatui = "0.24"
+
+# Terminal events
+crossterm = "0.27"
+
+# Home-made singel thread HTTP server for preview fonts in browser.
+# Alternative: output a html file into temp dir and open it
+httparse = "1"

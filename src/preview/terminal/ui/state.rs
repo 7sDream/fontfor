@@ -22,7 +22,7 @@ use std::{
     rc::Rc,
 };
 
-use tui::widgets::ListState;
+use ratatui::widgets::ListState;
 
 use super::cache::{CacheKey, GlyphCache, GlyphCanvasShape, RenderType, CHAR_RENDERS, MONO_RENDER};
 use crate::{
