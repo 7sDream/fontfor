@@ -16,6 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::path::PathBuf;
+
 use clap::Parser;
 
 use super::one_char::OneChar;
@@ -35,6 +37,11 @@ pub struct Args {
     /// enable this mode will disable the --preview/-p and ignore --verbose/-v option
     #[arg(short, long)]
     pub tui: bool,
+
+    /// Also load fonts in a custom path.
+    /// This arg can be provided multiple times.
+    #[arg(short = 'I', long = "include", name = "PATH", action = clap::ArgAction::Append)]
+    pub custom_font_paths: Vec<PathBuf>,
 
     /// The character
     #[arg(name = "CHAR")]

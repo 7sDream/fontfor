@@ -20,19 +20,40 @@ mod face_info;
 mod cmap;
 mod error;
 
-use once_cell::sync::Lazy;
+use std::path::Path;
+
+use fontdb::Database;
+use once_cell::sync::OnceCell;
 
 pub use self::{error::Error, face_info::FaceInfo};
 pub type Result<T> = std::result::Result<T, Error>;
 
-pub static DATABASE: Lazy<fontdb::Database> = Lazy::new(|| {
-    let mut db = fontdb::Database::default();
-    db.load_system_fonts();
-    db
-});
+static DATABASE: OnceCell<Database> = OnceCell::new();
 
-pub fn faces_contains(c: char) -> Vec<FaceInfo> {
-    DATABASE
+pub fn init<I, P>(paths: I)
+where
+    I: IntoIterator<Item = P>,
+    P: AsRef<Path>,
+{
+    let mut db = Database::default();
+
+    db.load_system_fonts();
+
+    for path in paths.into_iter() {
+        db.load_fonts_dir(path)
+    }
+
+    if DATABASE.set(db).is_err() {
+        panic!("call init more then once")
+    }
+}
+
+pub fn database() -> &'static Database {
+    DATABASE.get().expect("initialized")
+}
+
+pub fn query(c: char) -> Vec<FaceInfo> {
+    database()
         .faces()
         .filter_map(|info| {
             let face = FaceInfo::parse_if_contains(info, c);

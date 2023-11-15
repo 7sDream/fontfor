@@ -38,8 +38,9 @@ use preview::{browser::ServerBuilder as PreviewServerBuilder, terminal::ui::UI};
 fn main() {
     let argument = args::get();
 
-    let font_set = loader::faces_contains(argument.char.0);
+    loader::init(&argument.custom_font_paths);
 
+    let font_set = loader::query(argument.char.0);
     let families = family::group_by_family_sort_by_name(&font_set);
 
     if families.is_empty() {
