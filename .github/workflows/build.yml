@@ -90,7 +90,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install gcc-arm-linux-gnueabihf
-          UPPER_TARGET=(echo ${{ matrix.rust-target }} | tr '[a-z]-' '[A-Z]_')
+          UPPER_TARGET=$(echo ${{ matrix.rust-target }} | tr '[a-z]-' '[A-Z]_')
           echo "CARGO_TARGET_${UPPER_TARGET}_LINKER=arm-linux-gnueabihf-gcc" >> "$GITHUB_ENV"
       - name: Install musl toolchain
         if: matrix.platform == 'linux' && matrix.libc == 'musl'
