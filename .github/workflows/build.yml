@@ -17,34 +17,57 @@ jobs:
             rust-target: x86_64-pc-windows-msvc
             platform: win32
             arch: x64
+            libc: msvc
           - os: windows-latest
             rust-target: i686-pc-windows-msvc
             platform: win32
             arch: ia32
+            libc: msvc
           - os: windows-latest
             rust-target: aarch64-pc-windows-msvc
             platform: win32
             arch: arm64
+            libc: msvc
           - os: ubuntu-20.04
             rust-target: x86_64-unknown-linux-gnu
             platform: linux
             arch: x64
+            libc: glibc
           - os: ubuntu-20.04
             rust-target: aarch64-unknown-linux-gnu
             platform: linux
             arch: arm64
+            libc: glibc
           - os: ubuntu-20.04
             rust-target: arm-unknown-linux-gnueabihf
             platform: linux
             arch: armhf
+            libc: glibc
+          - os: ubuntu-20.04
+            rust-target: x86_64-unknown-linux-musl
+            platform: linux
+            arch: x64
+            libc: musl
+          - os: ubuntu-20.04
+            rust-target: aarch64-unknown-linux-musl
+            platform: linux
+            arch: arm64
+            libc: musl
+          - os: ubuntu-20.04
+            rust-target: arm-unknown-linux-musleabihf
+            platform: linux
+            arch: armhf
+            libc: musl
           - os: macos-11
             rust-target: x86_64-apple-darwin
             platform: darwin
             arch: x64
+            libc: system
           - os: macos-11
             rust-target: aarch64-apple-darwin
             platform: darwin
             arch: arm64
+            libc: system
     name: Build for ${{ matrix.platform }}-${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     steps:
@@ -55,15 +78,20 @@ jobs:
         with:
           target: ${{ matrix.rust-target }}
       - name: Install AArch64 target toolchain
-        if: matrix.rust-target == 'aarch64-unknown-linux-gnu'
+        if: matrix.platform == 'linux' && matrix.arch == 'arm64'
         run: |
           sudo apt-get update
           sudo apt-get install gcc-aarch64-linux-gnu
       - name: Install ARM target toolchain
-        if: matrix.rust-target == 'arm-unknown-linux-gnueabihf'
+        if: matrix.platform == 'linux' && matrix.arch == 'armhf'
         run: |
           sudo apt-get update
           sudo apt-get install gcc-arm-linux-gnueabihf
+      - name: Install musl toolchain
+        if: matrix.platform == 'linux' && martix.libc == 'musl'
+        run: |
+          sudo apt-get update
+          sudo apt-get install musl-tools
       - name: Cache cargo registry and index
         uses: actions/cache@v3
         with:
@@ -75,12 +103,14 @@ jobs:
         run: |
           cargo clean
           cargo build --release --all-targets --all-features -vv
+        env:
+          RUSTFLAGS: -C target-feature=+crt-static
       - name: Move and rename binary
         shell: bash
         run: |
-          mv target/release/${{ inputs.name }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }} ${{ inputs.name }}-${{ matrix.platform }}-${{ matrix.arch }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
+          mv target/release/${{ inputs.name }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }} ${{ inputs.name }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.libc }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
       - name: Upload binary
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ inputs.name }}-${{ matrix.platform }}-${{ matrix.arch }}
-          path: ${{ inputs.name }}-${{ matrix.platform }}-${{ matrix.arch }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
+          name: ${{ inputs.name }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.libc }}
+          path: ${{ inputs.name }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.libc }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
