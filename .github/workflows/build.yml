@@ -103,9 +103,9 @@ jobs:
       - name: Build
         run: |
           cargo clean
-          cargo build --release --all-targets --all-features -vv
+          cargo build --target ${{ matrix.rust-target }} --release --all-targets --all-features -vv
         env:
-          RUSTFLAGS: -C target-feature=+crt-static
+          RUSTFLAGS: ${{ fromJSON('["", "-C target-features=+crt-static"]')[matrix.platform == 'win32'] }}
       - name: Move and rename binary
         shell: bash
         run: |
