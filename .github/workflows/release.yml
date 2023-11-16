@@ -34,7 +34,6 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          token: ${{ secrets.release_token }}
           body: ${{ steps.tag.outputs.message }}
           draft: false
           prerelease: false
