@@ -1,6 +1,6 @@
 [package]
 name = "fontfor"
-version = "0.4.0"
+version = "0.4.1-alpha1"
 authors = ["7sDream <i@7sdre.am>"]
 edition = "2021"
 description = "find fonts which can show a specified character and preview them in terminal or browser"
@@ -43,3 +43,9 @@ crossterm = "0.27"
 # Home-made singel thread HTTP server for preview fonts in browser.
 # Alternative: output a html file into temp dir and open it
 httparse = "1"
+
+[profile.release]
+strip = true
+lto = true
+panic = "abort"
+codegen-units = 1
