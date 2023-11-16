@@ -2,10 +2,12 @@
 
 ## Unreleased
 
+## 0.4.0
+
 - Remove dependency of fontconfig and freetype lib
 - Add `-vv` option to show font file location and face index
 - ASCII mode render result now not narrow (Issue [#61](https://github.com/7sDream/fontfor/issues/61), fixed by PR [#63](https://github.com/7sDream/fontfor/pull/63))
-- Support custom font paths (Issue [#62](https://github.com/7sDream/fontfor/issues/62), fixed by PR [#65](https://github.com/7sDream/fontfor/pull/65)), and load system fonts can be skipped.
+- Support custom font paths `-I/--include <PATH>` (Issue [#62](https://github.com/7sDream/fontfor/issues/62), fixed by PR [#65](https://github.com/7sDream/fontfor/pull/65)), and load system fonts can be skipped by `--no-system`.
 - Now release contains ia32/x64/arm64 binary for Windows
 - Now release contains x64/arm64 binary for macOS
 - Now release contains x64/arm64/armhf binary Linux
