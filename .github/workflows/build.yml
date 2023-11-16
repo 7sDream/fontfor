@@ -83,7 +83,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install gcc-aarch64-linux-gnu
-          UPPER_TARGET=(echo ${{ matrix.rust-target }} | tr '[a-z]-' '[A-Z]_')
+          UPPER_TARGET=$(echo ${{ matrix.rust-target }} | tr '[a-z]-' '[A-Z]_')
           echo "CARGO_TARGET_${UPPER_TARGET}_LINKER=aarch64-linux-gnu-gcc" >> "$GITHUB_ENV"
       - name: Install ARM target toolchain
         if: matrix.platform == 'linux' && matrix.arch == 'armhf'
