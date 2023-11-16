@@ -111,7 +111,7 @@ jobs:
       - name: Move and rename binary
         shell: bash
         run: |
-          mv target/release/${{ matrix.rust-target }}/${{ inputs.name }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }} ${{ inputs.name }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.libc }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
+          mv target/${{ matrix.rust-target }}/release/${{ inputs.name }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }} ${{ inputs.name }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.libc }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
       - name: Upload binary
         uses: actions/upload-artifact@v3
         with:
