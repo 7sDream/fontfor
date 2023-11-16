@@ -69,7 +69,7 @@ jobs:
             platform: darwin
             arch: arm64
             libc: system
-    name: Build for ${{ matrix.platform }}-${{ matrix.arch }}
+    name: Build for ${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.libc }}
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
@@ -83,13 +83,15 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install gcc-aarch64-linux-gnu
-          echo "CARGO_TARGET_${{ matrix.rust-target }}_LINKER=aarch64-linux-gnu-gcc" >> "$GITHUB_ENV"
+          UPPER_TARGET=(echo ${{ matrix.rust-target }} | tr '[a-z]-' '[A-Z]_')
+          echo "CARGO_TARGET_${UPPER_TARGET}_LINKER=aarch64-linux-gnu-gcc" >> "$GITHUB_ENV"
       - name: Install ARM target toolchain
         if: matrix.platform == 'linux' && matrix.arch == 'armhf'
         run: |
           sudo apt-get update
           sudo apt-get install gcc-arm-linux-gnueabihf
-          echo "CARGO_TARGET_${{ matrix.rust-target }}_LINKER=arm-linux-gnueabihf-gcc" >> "$GITHUB_ENV"
+          UPPER_TARGET=(echo ${{ matrix.rust-target }} | tr '[a-z]-' '[A-Z]_')
+          echo "CARGO_TARGET_${UPPER_TARGET}_LINKER=arm-linux-gnueabihf-gcc" >> "$GITHUB_ENV"
       - name: Install musl toolchain
         if: matrix.platform == 'linux' && matrix.libc == 'musl'
         run: |
