@@ -60,10 +60,8 @@ pub fn query(c: char) -> Vec<FaceInfo> {
         .filter_map(|info| {
             let face = FaceInfo::parse_if_contains(info, c);
 
-            if cfg!(debug_assertions) {
-                if let Err(ref err) = face {
-                    eprintln!("Parse {:?}: {}", info.source, err)
-                }
+            if let Err(ref err) = face {
+                log::warn!("Fail to get font face name of {:?}: {}", info.source, err)
             }
 
             face.transpose()

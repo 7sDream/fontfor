@@ -44,6 +44,14 @@ crossterm = "0.27"
 # Alternative: output a html file into temp dir and open it
 httparse = "1"
 
+# Logger
+log = { version = "0.4", features = ["release_max_level_off"] }
+env_logger = { version = "0.10", optional = true }
+
+[features]
+default = []
+log-output = ["dep:env_logger"]
+
 [profile.release]
 strip = true
 lto = true
