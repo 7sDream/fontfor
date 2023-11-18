@@ -107,7 +107,7 @@ jobs:
       - name: Build
         run: |
           cargo clean
-          cargo build --target ${{ matrix.rust-target }} --release --all-targets --all-features -vv
+          cargo build --target ${{ matrix.rust-target }} --release -vv
         env:
           RUSTFLAGS: ${{ fromJSON('["", "-C target-feature=+crt-static"]')[matrix.libc == 'msvc'] }}
       - name: Move and rename binary
