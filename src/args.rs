@@ -22,7 +22,7 @@ use clap::Parser;
 
 use super::one_char::OneChar;
 
-#[derive(clap::Parser)]
+#[derive(Debug, clap::Parser)]
 #[command(author, version, about, arg_required_else_help(true))]
 pub struct Args {
     /// Verbose mode, -v show all font styles, -vv adds font file and face index

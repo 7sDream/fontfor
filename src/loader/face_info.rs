@@ -45,8 +45,21 @@ pub struct FaceInfo {
     pub gid: u16,
 }
 
+enum FontFaceFullName {
+    Full(String),
+    SubFamily(String),
+    None,
+}
+
 impl FaceInfo {
     pub fn parse_if_contains(face: &'static fontdb::FaceInfo, c: char) -> Result<Option<Self>> {
+        let path = match face.source {
+            Source::File(ref path) => path,
+            _ => unreachable!("we only load font file, so source must be File variant"),
+        };
+
+        let index = face.index;
+
         let Some((gid, name)) = database()
             .with_face_data(face.id, |data, index| -> Result<_> {
                 let rf = RawFace::parse(data, index)?;
@@ -68,13 +81,34 @@ impl FaceInfo {
             .map(|(s, _)| s.as_str())
             .ok_or(Error::MissingFamilyName)?;
 
-        let name = name
-            .map(Cow::Owned)
-            .unwrap_or_else(|| face.post_script_name.as_str().into());
+        let name: Cow<'static, str> = match name {
+            FontFaceFullName::Full(full) => full.into(),
+            FontFaceFullName::SubFamily(sub) => {
+                log::info!(
+                    "Font face {}:{} do not have a full name, uses family({}) + subfamily({})",
+                    path.to_string_lossy(),
+                    index,
+                    family,
+                    sub,
+                );
 
-        let path = match face.source {
-            Source::File(ref path) => path,
-            _ => unreachable!("we only load font file, so source must be File variant"),
+                if sub.is_empty() {
+                    Cow::Borrowed(family)
+                } else {
+                    format!("{} {}", family, sub).into()
+                }
+            }
+            FontFaceFullName::None => {
+                log::info!(
+                    "Font face {}:{} do not have a full name and subfamily, uses postscript \
+                     name({})",
+                    path.to_string_lossy(),
+                    index,
+                    face.post_script_name,
+                );
+
+                Cow::Borrowed(&face.post_script_name)
+            }
         };
 
         Ok(Some(FaceInfo {
@@ -87,22 +121,33 @@ impl FaceInfo {
         }))
     }
 
-    fn parse_full_name(rf: RawFace<'_>) -> Result<Option<String>> {
+    fn parse_full_name(rf: RawFace<'_>) -> Result<FontFaceFullName> {
         let name_data = rf.table(NAME_TAG).ok_or(MISSING_NAME_TABLE)?;
         let name_table = NameTable::parse(name_data).ok_or(BROKEN_NAME_TABLE)?;
 
+        let mut sub_family: Option<String> = None;
+
         for i in 0..name_table.names.len() {
             let name = name_table.names.get(i).ok_or(BROKEN_NAME_TABLE)?;
-            if name.name_id == name_id::FULL_NAME
-                && name.is_unicode()
-                && name.language() == Language::English_UnitedStates
-            {
-                if let Some(name) = name.to_string() {
-                    return Ok(Some(name));
+
+            if name.language() == Language::English_UnitedStates && name.is_unicode() {
+                if name.name_id == name_id::FULL_NAME {
+                    if let Some(name) = name.to_string() {
+                        return Ok(FontFaceFullName::Full(name));
+                    }
+                }
+                if name.name_id == name_id::SUBFAMILY {
+                    if let Some(name) = name.to_string() {
+                        sub_family.replace(name);
+                    }
                 }
             }
         }
 
-        Ok(None)
+        if let Some(sub) = sub_family {
+            Ok(FontFaceFullName::SubFamily(sub))
+        } else {
+            Ok(FontFaceFullName::None)
+        }
     }
 }

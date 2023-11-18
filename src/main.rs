@@ -32,13 +32,29 @@ use std::{
     net::SocketAddr,
 };
 
+use args::Args;
 use family::Family;
 use preview::{browser::ServerBuilder as PreviewServerBuilder, terminal::ui::UI};
+
+fn init(arg: &Args) {
+    #[cfg(feature = "log-output")]
+    {
+        env_logger::Builder::from_env(
+            env_logger::Env::default().default_filter_or(env!("CARGO_PKG_NAME")),
+        )
+        .format_timestamp_micros()
+        .init();
+    }
+
+    log::info!("Start with argument: {:?}", arg);
+
+    loader::init(!arg.no_system, &arg.custom_font_paths);
+}
 
 fn main() {
     let argument = args::get();
 
-    loader::init(!argument.no_system, &argument.custom_font_paths);
+    init(&argument);
 
     let font_set = loader::query(argument.char.0);
     let families = family::group_by_family_sort_by_name(&font_set);
