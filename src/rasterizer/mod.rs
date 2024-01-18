@@ -20,7 +20,7 @@ mod bitmap;
 
 use ab_glyph::{Font, FontRef, GlyphId, InvalidFont, PxScale};
 
-pub use self::bitmap::{Bitmap, Metrics};
+pub use self::bitmap::Bitmap;
 
 pub struct Rasterizer<'a> {
     face: FontRef<'a>,
