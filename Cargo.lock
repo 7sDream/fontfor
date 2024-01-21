@@ -261,7 +261,7 @@ dependencies = [
 
 [[package]]
 name = "fontfor"
-version = "0.4.2-alpha1"
+version = "0.4.2"
 dependencies = [
  "ab_glyph",
  "clap",
