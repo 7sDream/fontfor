@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Fix build for Rust 1.75. (by PR [#69](https://github.com/7sDream/fontfor/pull/69), thanks [@mfrischknecht].)
+- Update deps
+
 ## 0.4.1
 
 - Use family + subfamily as a fallback of missing full name, instead of postscript name (Issue [[#67](https://github.com/7sDream/fontfor/issues/67)], fixed by PR [#68](https://github.com/7sDream/fontfor/pull/68))
@@ -59,3 +62,4 @@
 - Init release, has same features as [which_fonts_support][which_fonts_support-github] script
 
 [which_fonts_support-github]: https://github.com/7sDream/which_fonts_support
+[@mfrischknecht]: https://github.com/mfrischknecht

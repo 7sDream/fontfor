@@ -19,7 +19,7 @@ once_cell = "1"
 thiserror = "1"
 
 # 2D array
-grid = "0.11"
+grid = "0.13"
 
 # CLI argument parser
 clap = { version = "4", features = ["derive", "unicode", "wrap_help"] }
@@ -35,7 +35,7 @@ ttf-parser = "0.20"
 ab_glyph = "0.2"
 
 # Termianal UI
-ratatui = "0.24"
+ratatui = "0.25"
 
 # Terminal events
 crossterm = "0.27"
@@ -46,7 +46,7 @@ httparse = "1"
 
 # Logger
 log = { version = "0.4", features = ["release_max_level_off"] }
-env_logger = { version = "0.10", optional = true }
+env_logger = { version = "0.11", optional = true }
 
 [features]
 default = []

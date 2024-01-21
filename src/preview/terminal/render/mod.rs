@@ -57,7 +57,7 @@ pub trait Render {
                     0
                 };
 
-                result[row][col] = self.render_pixel(u, l, gray, r, d)
+                result[(row, col)] = self.render_pixel(u, l, gray, r, d)
             }
         }
 

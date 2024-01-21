@@ -46,7 +46,7 @@ impl Bitmap {
 
         curves.draw(|x, y, c| {
             let value = (c * 255.0).round() as u8;
-            bitmap[y as usize][x as usize] = value
+            bitmap[(y as usize, x as usize)] = value
         });
 
         Self { metrics, bitmap }
@@ -57,6 +57,6 @@ impl Bitmap {
     }
 
     pub fn pixel(&self, row: usize, col: usize) -> u8 {
-        self.bitmap[row][col]
+        self.bitmap[(row, col)]
     }
 }

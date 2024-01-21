@@ -129,7 +129,7 @@ impl<'a> Iterator for GlyphCanvasShapePoints<'a> {
             if !self.next_x_y() {
                 return None;
             }
-            if self.shape.bitmap[self.y][self.x] {
+            if self.shape.bitmap[(self.y, self.x)] {
                 // tui canvas origin point at left bottom but chars' at left top
                 // so we need do some math to flip it and add padding
                 let result = (
