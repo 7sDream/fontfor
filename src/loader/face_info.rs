@@ -77,7 +77,7 @@ impl FaceInfo {
 
         let family = face
             .families
-            .get(0)
+            .first()
             .map(|(s, _)| s.as_str())
             .ok_or(Error::MissingFamilyName)?;
 
