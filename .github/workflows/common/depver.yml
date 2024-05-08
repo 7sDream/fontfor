@@ -1,0 +1,26 @@
+name: Dependencies version
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  deps_version:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        run: |
+          rustup install stable --profile default
+          rustup show
+      - name: Install cargo-outdated
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-outdated
+      - name: Check deps crates version
+        run: |
+          cargo outdated -R --exit-code 1 --verbose

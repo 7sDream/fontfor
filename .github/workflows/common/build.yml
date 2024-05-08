@@ -11,7 +11,7 @@ on:
 jobs:
   build:
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
           - os: windows-latest
@@ -64,7 +64,7 @@ jobs:
             platform: darwin
             arch: x64
             libc: system
-          - os: macos-11
+          - os: macos-12
             rust-target: aarch64-apple-darwin
             platform: darwin
             arch: arm64
@@ -75,9 +75,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Install Rust toolchains
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          target: ${{ matrix.rust-target }}
+        run: |
+          rustup toolchain install stable --profile default -t ${{ matrix.rust-target }}
+          rustup show
       - name: Install AArch64 target toolchain
         if: matrix.platform == 'linux' && matrix.arch == 'arm64'
         run: |

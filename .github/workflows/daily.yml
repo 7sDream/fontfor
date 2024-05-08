@@ -2,39 +2,13 @@ name: Daily check
 
 on:
   schedule:
-    - cron: '0 23 * * *' # CST 7:00 = UTC prev day 23:00
+    - cron: "0 23 * * *" # CST 7:00 = UTC prev day 23:00
   workflow_dispatch:
   workflow_call:
 
 jobs:
-  deps_version:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  lint:
+    uses: ./.github/workflows/common/lint.yml
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install cargo-outdated
-        uses: actions-rs/install@v0.1
-        with:
-          crate: cargo-outdated
-          version: latest
-          use-tool-cache: true
-
-      - name: Check deps crates version
-        uses: actions-rs/cargo@v1
-        with:
-          command: outdated
-          args: -R --exit-code 1 --verbose
-
-  security_audit:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Security audit
-        uses: actions-rs/audit-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+  audit:
+    uses: ./.github/workflows/common/audit.yml

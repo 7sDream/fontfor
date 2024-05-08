@@ -1,0 +1,27 @@
+name: Lint
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  lint:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        run: |
+          rustup install stable --profile default
+          rustup install nightly --profile default
+          rustup show
+      - name: Check code style
+        run: |
+          cargo +nightly fmt --all -- --check
+      - name: Lint code by clippy
+        uses: clechasseur/rs-clippy-check@v3
+        with:
+          args: --all-targets --all-features -- -D warnings

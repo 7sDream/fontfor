@@ -8,37 +8,17 @@ on:
     branches:
       - master
   workflow_dispatch:
-  workflow_call:
 
 jobs:
-  style:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  depver:
+    if: "contains(github.event.head_commit.message, '(release)')"
+    uses: ./.github/workflows/common/depver.yml
 
-      - name: Install Rust nightly toolchains
-        uses: dtolnay/rust-toolchain@nightly
-        with:
-          components: rustfmt
-      - name: Check code style
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
-
-      - name: Install Rust stable toolchains
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-      - name: Lint code by clippy
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-targets --all-features -- -D warnings'
+  daily:
+    uses: ./.github/workflows/common/daily.yaml
 
   build:
-    uses: ./.github/workflows/build.yml
-    needs: [style]
+    uses: ./.github/workflows/common/build.yml
+    needs: [daily]
     with:
       name: fontfor
