@@ -1,11 +1,11 @@
-name: Dependencies version
+name: Action Lint
 
 on:
   workflow_dispatch:
   workflow_call:
 
 jobs:
-  deps_version:
+  lint:
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
@@ -15,12 +15,14 @@ jobs:
         uses: actions/checkout@v4
       - name: Install Rust toolchain
         run: |
+          rustup set auto-self-update disable
           rustup install stable --profile default
+          rustup install nightly --profile default
           rustup show
-      - name: Install cargo-outdated
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-outdated
-      - name: Check deps crates version
+      - name: Check code style
         run: |
-          cargo outdated -R --exit-code 1 --verbose
+          cargo +nightly fmt --all -- --check
+      - name: Lint code by clippy
+        uses: clechasseur/rs-clippy-check@v3
+        with:
+          args: --all-targets --all-features -- -D warnings

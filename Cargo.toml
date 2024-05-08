@@ -13,16 +13,16 @@ categories = ["command-line-utilities", "text-processing", "visualization"]
 
 [dependencies]
 # Global values
-once_cell = "1"
+once_cell = "1.0"
 
 # Define error type
-thiserror = "1"
+thiserror = "1.0"
 
 # 2D array
 grid = "0.13"
 
 # CLI argument parser
-clap = { version = "4", features = ["derive", "unicode", "wrap_help"] }
+clap = { version = "4.4", features = ["derive", "unicode", "wrap_help"] }
 
 # Font loader
 fontdb = "0.16"
@@ -35,14 +35,14 @@ ttf-parser = "0.20"
 ab_glyph = "0.2"
 
 # Termianal UI
-ratatui = "0.25"
+ratatui = "0.26"
 
 # Terminal events
 crossterm = "0.27"
 
 # Home-made singel thread HTTP server for preview fonts in browser.
 # Alternative: output a html file into temp dir and open it
-httparse = "1"
+httparse = "1.8"
 
 # Logger
 log = { version = "0.4", features = ["release_max_level_off"] }

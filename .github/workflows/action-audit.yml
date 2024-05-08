@@ -1,4 +1,4 @@
-name: Audit
+name: Action Audit
 
 on:
   workflow_dispatch:
@@ -6,7 +6,10 @@ on:
 
 jobs:
   audit:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
