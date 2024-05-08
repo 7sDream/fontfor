@@ -8,7 +8,7 @@ on:
 
 jobs:
   lint:
-    uses: ./.github/workflows/common/lint.yml
+    uses: ./.github/workflows/lint.yml
 
   audit:
-    uses: ./.github/workflows/common/audit.yml
+    uses: ./.github/workflows/audit.yml

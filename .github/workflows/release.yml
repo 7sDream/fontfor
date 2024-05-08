@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    uses: ./.github/workflows/common/build.yml
+    uses: ./.github/workflows/build.yml
     with:
       name: fontfor
 

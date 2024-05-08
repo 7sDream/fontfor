@@ -12,13 +12,13 @@ on:
 jobs:
   depver:
     if: "contains(github.event.head_commit.message, '(release)')"
-    uses: ./.github/workflows/common/depver.yml
+    uses: ./.github/workflows/depver.yml
 
   daily:
-    uses: ./.github/workflows/common/daily.yaml
+    uses: ./.github/workflows/daily.yaml
 
   build:
-    uses: ./.github/workflows/common/build.yml
+    uses: ./.github/workflows/build.yml
     needs: [daily]
     with:
       name: fontfor
