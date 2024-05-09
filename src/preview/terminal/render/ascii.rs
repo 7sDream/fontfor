@@ -41,7 +41,7 @@ impl AsciiRender {
         };
         let ramp: Vec<_> = s.chars().collect();
         let level = ramp.len();
-        let multiplier = (level as f64) / (f64::from(u8::max_value()) + 1.0);
+        let multiplier = (level as f64) / (f64::from(u8::MAX) + 1.0);
         Self { ramp, multiplier }
     }
 }

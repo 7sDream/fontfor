@@ -20,8 +20,6 @@ use ab_glyph::OutlinedGlyph;
 use grid::Grid;
 
 pub struct Metrics {
-    pub left: usize,
-    pub top: usize,
     pub height: usize,
     pub width: usize,
 }
@@ -36,8 +34,6 @@ impl Bitmap {
         let bound = curves.px_bounds();
 
         let metrics = Metrics {
-            left: bound.min.x as usize,
-            top: bound.min.y as usize,
             height: bound.height() as usize,
             width: bound.width() as usize,
         };

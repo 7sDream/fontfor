@@ -3,6 +3,11 @@ name: Action Lint
 on:
   workflow_dispatch:
   workflow_call:
+    inputs:
+      beta:
+        type: boolean
+        required: true
+        default: false
 
 jobs:
   lint:
@@ -17,7 +22,6 @@ jobs:
         run: |
           rustup set auto-self-update disable
           rustup toolchain install stable --profile minimal -c clippy
-          rustup toolchain install beta --profile minimal -c clippy
           rustup toolchain install nightly --profile minimal -c rustfmt
           rustup show
       - name: Check code style
@@ -28,7 +32,13 @@ jobs:
         with:
           toolchain: stable
           args: --all-targets --all-features -- -D warnings
+      - name: Install Rust toolchains beta channel
+        if: ${{ inputs.beta }}
+        run: |
+          rustup toolchain install beta --profile minimal -c clippy
+          rustup show
       - name: Lint code by clippy(beta)
+        if: ${{ inputs.beta }}
         uses: clechasseur/rs-clippy-check@v3
         with:
           toolchain: beta

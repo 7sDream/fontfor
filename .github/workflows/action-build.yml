@@ -9,7 +9,7 @@ on:
         type: string
       channel:
         required: true
-        type: choose
+        type: choice
         default: stable
         options:
           - stable
