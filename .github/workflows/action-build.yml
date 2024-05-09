@@ -9,12 +9,12 @@ on:
         type: string
       channel:
         required: true
-        type: choice
+        type: string
         default: stable
-        options:
-          - stable
-          - beta
-          - nightly
+      artifict:
+        required: true
+        type: bool
+        default: true
 
 jobs:
   build:

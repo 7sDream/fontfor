@@ -13,3 +13,11 @@ jobs:
 
   audit:
     uses: ./.github/workflows/action-audit.yml
+
+  build:
+    uses: ./.github/workflows/action-build.yml
+    needs: [depver, lint, audit]
+    with:
+      name: fontfor
+      channel: beta
+      artifict: false
