@@ -25,5 +25,6 @@ jobs:
   build:
     uses: ./.github/workflows/action-build.yml
     needs: [depver, lint, audit]
+    if: ${{ always() && contains(fromJSON('["success", "skipped"]'), step.lint.depver) && step.lint.outcome == "success" && step.audit.outcome == "success" }}
     with:
       name: fontfor
