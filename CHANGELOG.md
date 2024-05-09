@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Remove `#[deny(warnings)]` in source code, add it in CI
+- Fix build for comming Rust 1.79 new lints
+- Update deps
+
 ## 0.4.2
 
 - Fix build for Rust 1.75. (by PR [#69](https://github.com/7sDream/fontfor/pull/69), thanks [@mfrischknecht].)

@@ -5,7 +5,7 @@ on:
   workflow_call:
 
 jobs:
-  deps_version:
+  depver:
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
