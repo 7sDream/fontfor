@@ -6,7 +6,6 @@ on:
     inputs:
       beta:
         type: boolean
-        required: true
         default: false
 
 jobs:

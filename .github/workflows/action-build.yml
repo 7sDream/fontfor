@@ -8,11 +8,9 @@ on:
         required: true
         type: string
       channel:
-        required: true
         type: string
         default: stable
       artifict:
-        required: true
         type: boolean
         default: true
 
