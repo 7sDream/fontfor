@@ -7,6 +7,14 @@ on:
       name:
         required: true
         type: string
+      channel:
+        required: true
+        type: choose
+        default: stable
+        options:
+          - stable
+          - beta
+          - nightly
 
 jobs:
   build:
@@ -77,7 +85,7 @@ jobs:
       - name: Install Rust toolchains
         run: |
           rustup set auto-self-update disable
-          rustup toolchain install stable --profile default -t ${{ matrix.rust-target }}
+          rustup toolchain install ${{ inputs.channel }} --profile minimal -t ${{ matrix.rust-target }}
           rustup show
       - name: Install AArch64 target toolchain
         if: matrix.platform == 'linux' && matrix.arch == 'arm64'

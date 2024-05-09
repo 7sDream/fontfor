@@ -16,13 +16,20 @@ jobs:
       - name: Install Rust toolchain
         run: |
           rustup set auto-self-update disable
-          rustup install stable --profile default
-          rustup install nightly --profile default
+          rustup toolchain install stable --profile minimal -c clippy
+          rustup toolchain install beta --profile minimal -c clippy
+          rustup toolchain install nightly --profile minimal -c rustfmt
           rustup show
       - name: Check code style
         run: |
           cargo +nightly fmt --all -- --check
-      - name: Lint code by clippy
+      - name: Lint code by clippy(stable)
         uses: clechasseur/rs-clippy-check@v3
         with:
+          toolchain: stable
+          args: --all-targets --all-features -- -D warnings
+      - name: Lint code by clippy(beta)
+        uses: clechasseur/rs-clippy-check@v3
+        with:
+          toolchain: beta
           args: --all-targets --all-features -- -D warnings
