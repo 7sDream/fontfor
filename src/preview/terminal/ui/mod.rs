@@ -395,6 +395,14 @@ impl<'a> UI<'a> {
                     self.state.next_render_type();
                     OnEventResult::ReDraw
                 }
+                CtKeyCode::Char('j') => {
+                    self.state.move_down();
+                    OnEventResult::ReDraw
+                }
+                CtKeyCode::Char('k') => {
+                    self.state.move_up();
+                    OnEventResult::ReDraw
+                }
                 CtKeyCode::Char('s') | CtKeyCode::Char('/') => {
                     self.editing = Some(WhichInput::Search);
                     OnEventResult::ReDraw
@@ -415,11 +423,11 @@ impl<'a> UI<'a> {
                 })
             }
             TerminalEvent::Key(key) => match key.code {
-                CtKeyCode::Up | CtKeyCode::Char('k') => {
+                CtKeyCode::Up => {
                     self.state.move_up();
                     Ok(OnEventResult::ReDraw)
                 }
-                CtKeyCode::Down | CtKeyCode::Char('j') => {
+                CtKeyCode::Down => {
                     self.state.move_down();
                     Ok(OnEventResult::ReDraw)
                 }
