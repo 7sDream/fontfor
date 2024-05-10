@@ -117,7 +117,7 @@ jobs:
       - name: Build
         run: |
           cargo clean
-          cargo build --target ${{ matrix.rust-target }}  --profile ${{ inputs.profile }} --frozen -vv
+          cargo build --target ${{ matrix.rust-target }} --profile ${{ inputs.profile }} -vv
         env:
           RUSTFLAGS: ${{ fromJSON('["", "-C target-feature=+crt-static"]')[matrix.libc == 'msvc'] }}
       - name: Move and rename binary
