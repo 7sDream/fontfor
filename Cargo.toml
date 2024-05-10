@@ -46,7 +46,7 @@ crossterm = "0.27"
 # Input widget for filter in TUI
 tui-input = "0.8.0"
 
-# Home-made singel thread HTTP server for preview fonts in browser.
+# Home-made single thread HTTP server for preview fonts in browser.
 # Alternative: output a html file into temp dir and open it
 httparse = "1.8"
 

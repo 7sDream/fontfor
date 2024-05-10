@@ -13,7 +13,7 @@ on:
       channel:
         type: string
         default: stable
-      artifict:
+      artifact:
         type: boolean
         default: true
 
