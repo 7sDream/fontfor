@@ -22,6 +22,11 @@ jobs:
       - name: Generate release note
         id: tag
         uses: ffurrer2/extract-release-notes@v2
+        with:
+          release_notes_file: RELEASE_NOTES.md
+      - name: Check release note
+        run: |
+          cat RELEASE_NOTES.md
       - name: Download Linux binary from artifact
         uses: actions/download-artifact@v3
       - name: Release
