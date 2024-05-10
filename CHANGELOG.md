@@ -2,8 +2,10 @@
 
 ## Unreleased
 
+- Add `-f` option to filter font list by family name
+- Add a search box in TUI mode to change filter word
 - Remove `#[deny(warnings)]` in source code, add it in CI
-- Fix build for comming Rust 1.79 new lints
+- Fix build for upcomming Rust 1.79 new lints
 - Update deps
 
 ## 0.4.2
