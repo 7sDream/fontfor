@@ -31,7 +31,7 @@ use std::{
 };
 
 use args::Args;
-use family::Family;
+use family::{Family, FilteredFamilies};
 use preview::{browser::ServerBuilder as PreviewServerBuilder, terminal::ui::UI};
 
 fn init(arg: &Args) {
@@ -56,7 +56,6 @@ fn main() {
 
     let font_set = loader::query(argument.char.0);
     let families = family::group_by_family_sort_by_name(&font_set);
-
     if families.is_empty() {
         eprintln!(
             "No font support this character {}.",
@@ -65,14 +64,16 @@ fn main() {
         return;
     }
 
+    let filtered = FilteredFamilies::new(families, argument.filter.unwrap_or_default());
+
     if argument.tui {
-        let ui = UI::new(families).expect("family length checked before, must not empty");
+        let ui = UI::new(filtered).expect("family length checked before, must not empty");
         if let Err(err) = ui.show() {
             eprintln!("{:?}", err);
         };
     } else {
         let builder = if argument.preview {
-            Some(PreviewServerBuilder::from_iter(families.iter()))
+            Some(PreviewServerBuilder::from_iter(filtered.matched()))
         } else {
             None
         };
@@ -81,7 +82,7 @@ fn main() {
             "Font(s) support the character {}:",
             argument.char.description()
         );
-        show_font_list(families, argument.verbose);
+        show_font_list(filtered.matched(), argument.verbose);
 
         if let Some(builder) = builder {
             builder
@@ -105,21 +106,24 @@ fn show_preview_addr_and_wait(addr: SocketAddr) {
         .expect("read from stdout should not fail");
 }
 
-fn show_font_list(families: Vec<Family<'_>>, verbose: u8) {
+fn show_font_list<'f, 'a: 'f, F>(families: F, verbose: u8)
+where
+    F: Iterator<Item = &'f Family<'a>> + Clone,
+{
     let max_len = if verbose > 0 {
         0
     } else {
         families
-            .iter()
+            .clone()
             .map(|f| f.default_name_width)
             .max()
             .unwrap_or_default()
     };
 
-    families.into_iter().for_each(|family| {
+    families.for_each(|family| {
         if verbose > 0 {
             println!("{}", family.name);
-            for face in family.faces {
+            for face in family.faces.iter() {
                 print!("\t{}", face.name);
                 if verbose > 1 {
                     print!("\t{}:{}", face.path.to_string_lossy(), face.index)

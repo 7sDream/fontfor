@@ -26,15 +26,15 @@ use ratatui::widgets::ListState;
 
 use super::cache::{CacheKey, GlyphCache, GlyphCanvasShape, RenderType, CHAR_RENDERS, MONO_RENDER};
 use crate::{
-    family::Family,
+    family::FilteredFamilies,
     loader::{self, FaceInfo},
     preview::terminal::{render::Render, ui::cache::GlyphParagraph},
     rasterizer::{Bitmap, Rasterizer},
 };
 
 pub struct State<'a> {
-    font_faces_info: Vec<&'a FaceInfo>,
-    font_faces_name: Vec<&'a str>,
+    filtered: FilteredFamilies<'a>,
+    index_map: Vec<(usize, usize)>,
     name_width_max: usize,
     list_state: RefCell<ListState>,
     height: Cell<u32>,
@@ -44,60 +44,90 @@ pub struct State<'a> {
 }
 
 impl<'a> State<'a> {
-    pub fn new(families: Vec<Family<'a>>) -> Self {
-        let font_faces_info: Vec<_> = families
-            .into_iter()
-            .flat_map(|f| f.faces.into_iter())
-            .collect();
-        let font_faces_name: Vec<_> = font_faces_info.iter().map(|f| f.name.as_ref()).collect();
-        let name_width_max = font_faces_name
-            .iter()
-            .map(|f| f.len())
-            .max()
-            .unwrap_or_default();
-
-        let cache = RefCell::default();
-
-        let mut list_state = ListState::default();
-        list_state.select(Some(0));
-
-        Self {
-            font_faces_info,
-            font_faces_name,
-            name_width_max,
-            list_state: RefCell::new(list_state),
+    pub fn new(filtered: FilteredFamilies<'a>) -> Self {
+        let mut ret = Self {
+            filtered,
+            index_map: Vec::new(),
+            name_width_max: 0,
+            list_state: RefCell::default(),
             height: Cell::new(0),
             width: Cell::new(0),
             rt: RenderType::Mono,
-            cache,
+            cache: RefCell::default(),
+        };
+
+        ret.update_search_box(None);
+
+        ret
+    }
+
+    pub fn update_search_box(&mut self, keyword: Option<&str>) {
+        if let Some(keyword) = keyword {
+            self.filtered.change_keyword(keyword);
+        }
+
+        self.index_map = self
+            .filtered
+            .matched()
+            .with_index()
+            .flat_map(|(i, f)| (0..f.faces.len()).map(move |x| (i, x)))
+            .collect();
+
+        self.name_width_max = self
+            .font_face_names()
+            .map(|n| n.len())
+            .max()
+            .unwrap_or_default();
+
+        if self.len() > 0 {
+            self.list_state.borrow_mut().select(Some(0));
+        } else {
+            self.list_state.borrow_mut().select(None);
         }
     }
 
-    fn cache_key(&self, width: u32, height: u32) -> CacheKey {
-        CacheKey {
-            index: self.index(),
+    fn cache_index(&self) -> Option<(usize, usize)> {
+        Some(self.index_map[self.index()?])
+    }
+
+    fn cache_key(&self, width: u32, height: u32) -> Option<CacheKey> {
+        Some(CacheKey {
+            index: self.cache_index()?,
             rt: self.rt,
             width,
             height,
-        }
+        })
     }
 
-    pub fn render(&self) -> Rc<Result<GlyphCache, &'static str>> {
+    pub fn len(&self) -> usize {
+        self.index_map.len()
+    }
+
+    pub fn render(&self) -> Option<Rc<Result<GlyphCache, &'static str>>> {
         let (width, height) = match self.rt {
             RenderType::Mono => self.get_canvas_size_by_pixel(),
             _ => self.get_canvas_size_by_char(),
         };
 
-        let key = self.cache_key(width, height);
-        self.cache
+        let key = self.cache_key(width, height)?;
+
+        let glyph = self
+            .cache
             .borrow_mut()
             .entry(key)
-            .or_insert_with(|| Rc::new(self.real_render(width, height)))
-            .clone()
+            .or_insert_with(|| {
+                Rc::new(
+                    self.real_render(width, height)
+                        .expect("render can't be null because cache key exist"),
+                )
+            })
+            .clone();
+
+        Some(glyph)
     }
 
-    fn rasterize(&self, _width: u32, height: u32) -> Result<Bitmap, &'static str> {
-        let info = self.font_faces_info[self.index()];
+    fn rasterize(&self, _width: u32, height: u32) -> Option<Result<Bitmap, &'static str>> {
+        let info = self.current_font_face()?;
 
         let scale = if matches!(self.rt, RenderType::AsciiLevel10 | RenderType::AsciiLevel70) {
             Some(2.0)
@@ -105,22 +135,25 @@ impl<'a> State<'a> {
             None
         };
 
-        loader::database()
-            .with_face_data(info.id, |data, index| -> Option<Bitmap> {
-                let mut r = Rasterizer::new(data, index).ok()?;
+        let bitmap: Result<Bitmap, &'static str> = loader::database()
+            .with_face_data(info.id, |data, index| -> Result<Bitmap, &'static str> {
+                let mut r = Rasterizer::new(data, index).map_err(|_| "Can't pare font file")?;
                 r.set_pixel_height(height);
                 if let Some(scale) = scale {
                     r.set_hscale(scale);
                 }
                 r.rasterize(info.gid)
+                    .ok_or("Can't get target glyph from this font")
             })
-            .ok_or("Can't read this font file")?
-            .ok_or("Can't get glyph from this font")
+            .unwrap_or(Err("Can't read font file"));
+
+        Some(bitmap)
     }
 
-    fn real_render(&self, width: u32, height: u32) -> Result<GlyphCache, &'static str> {
+    fn real_render(&self, width: u32, height: u32) -> Option<Result<GlyphCache, &'static str>> {
         let bitmap = self.rasterize(width, height)?;
-        let cache = match self.rt {
+
+        let cache = bitmap.map(|bitmap| match self.rt {
             RenderType::Mono => GlyphCache::Canvas(GlyphCanvasShape::new(
                 MONO_RENDER.render(&bitmap),
                 width as f64,
@@ -132,32 +165,40 @@ impl<'a> State<'a> {
                     .expect("all render must be exist")
                     .render(&bitmap),
             )),
-        };
+        });
 
-        Ok(cache)
+        Some(cache)
     }
 
-    pub fn current_name(&self) -> &'a str {
-        self.font_faces_name[self.index()]
+    fn get_font_face(&self, (i, x): (usize, usize)) -> &'a FaceInfo {
+        self.filtered.data()[i].faces[x]
+    }
+
+    fn current_font_face(&self) -> Option<&'a FaceInfo> {
+        Some(self.get_font_face(self.cache_index()?))
+    }
+
+    pub fn current_name(&self) -> Option<&str> {
+        Some(&self.current_font_face()?.name)
     }
 
     pub fn name_width_max(&self) -> usize {
         self.name_width_max
     }
 
-    pub fn family_names(&self) -> &Vec<&'a str> {
-        &self.font_faces_name
+    pub fn font_face_names(&self) -> impl Iterator<Item = &str> {
+        self.index_map
+            .iter()
+            .copied()
+            .map(|index| self.get_font_face(index).name.as_ref())
     }
 
     pub fn mut_list_state(&self) -> RefMut<'_, ListState> {
         self.list_state.borrow_mut()
     }
 
-    pub fn index(&self) -> usize {
-        self.list_state
-            .borrow()
-            .selected()
-            .expect("always has a selected item")
+    pub fn index(&self) -> Option<usize> {
+        self.list_state.borrow().selected()
     }
 
     pub fn move_up(&mut self) {
@@ -170,11 +211,11 @@ impl<'a> State<'a> {
     }
 
     pub fn move_down(&mut self) {
-        let changed = self.list_state.borrow().selected().map(|index| {
-            index
-                .saturating_add(1)
-                .min(self.font_faces_name.len().saturating_sub(1))
-        });
+        let changed = self
+            .list_state
+            .borrow()
+            .selected()
+            .map(|index| index.saturating_add(1).min(self.len().saturating_sub(1)));
         self.list_state.borrow_mut().select(changed);
     }
 

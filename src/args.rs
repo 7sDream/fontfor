@@ -18,11 +18,18 @@
 
 use std::path::PathBuf;
 
-use clap::Parser;
+use clap::{
+    builder::{NonEmptyStringValueParser, TypedValueParser},
+    Parser,
+};
 
 use super::one_char::OneChar;
 
-#[derive(Debug, clap::Parser)]
+fn no_newline_string_parser() -> impl TypedValueParser {
+    NonEmptyStringValueParser::new().map(|s| s.replace(['\r', '\n'], ""))
+}
+
+#[derive(Debug, Parser)]
 #[command(author, version, about, arg_required_else_help(true))]
 pub struct Args {
     /// Verbose mode, -v show all font styles, -vv adds font file and face index
@@ -46,6 +53,10 @@ pub struct Args {
     /// This arg can be provided multiple times.
     #[arg(short = 'I', long = "include", name = "PATH", action = clap::ArgAction::Append)]
     pub custom_font_paths: Vec<PathBuf>,
+
+    /// Only show fonts whose family name contains the filter string
+    #[arg(short = 'f', long = "filter", name = "FILTER", value_parser = no_newline_string_parser())]
+    pub filter: Option<String>,
 
     /// The character
     #[arg(name = "CHAR")]

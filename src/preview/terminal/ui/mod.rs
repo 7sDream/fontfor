@@ -26,7 +26,7 @@ use std::{
 };
 
 use crossterm::{
-    event::{KeyCode as CtKeyCode, KeyModifiers as CtKM},
+    event::{Event, KeyCode as CtKeyCode, KeyEvent, KeyModifiers as CtKM},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -38,13 +38,14 @@ use ratatui::{
     text::{Line, Span, Text},
     widgets::{canvas::Canvas, Block, Borders, List, ListItem, Paragraph},
 };
+use tui_input::backend::crossterm::EventHandler;
 
 use self::{
     cache::{GlyphCache, GlyphCanvasShape},
     event::{TerminalEvent, TerminalEventStream},
     state::State,
 };
-use crate::family::Family;
+use crate::family::FilteredFamilies;
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 enum OnEventResult {
@@ -53,17 +54,25 @@ enum OnEventResult {
     Exit,
 }
 
+enum WhichInput {
+    Search,
+}
+
 pub struct UI<'a> {
     idle_redraw: u8,
+    filter_input: tui_input::Input,
+    editing: Option<WhichInput>,
     state: State<'a>,
 }
 
-impl<'a: 'a> UI<'a> {
-    pub fn new(families: Vec<Family<'a>>) -> Option<Self> {
-        if !families.is_empty() {
+impl<'a> UI<'a> {
+    pub fn new(filtered: FilteredFamilies<'a>) -> Option<Self> {
+        if !filtered.is_empty() {
             Some(Self {
-                state: State::new(families),
                 idle_redraw: 0,
+                filter_input: tui_input::Input::new(filtered.keyword().to_string()),
+                editing: None,
+                state: State::new(filtered),
             })
         } else {
             None
@@ -71,29 +80,48 @@ impl<'a: 'a> UI<'a> {
     }
 
     fn draw_list(&self, area: Rect, f: &mut Frame<'_>) {
-        let families = self.state.family_names();
+        let families = self.state.font_face_names();
         let index = self.state.index();
-        let title = format!("Fonts {}/{}", index + 1, families.len());
-
-        let list = List::new(
-            families
-                .iter()
-                .copied()
-                .map(ListItem::new)
-                .collect::<Vec<_>>(),
-        )
-        .block(
-            Block::default()
-                .title(Span::raw(title))
-                .borders(Borders::ALL),
-        )
-        .highlight_style(
-            Style::default()
-                .fg(Color::LightBlue)
-                .add_modifier(Modifier::BOLD),
+        let title = format!(
+            "Fonts {}/{}",
+            index.map(|x| x + 1).unwrap_or_default(),
+            self.state.len()
         );
 
+        let list = List::new(families.map(ListItem::new).collect::<Vec<_>>())
+            .block(
+                Block::default()
+                    .title(Span::raw(title))
+                    .borders(Borders::ALL),
+            )
+            .highlight_style(
+                Style::default()
+                    .fg(Color::LightBlue)
+                    .add_modifier(Modifier::BOLD),
+            );
+
         f.render_stateful_widget(list, area, &mut self.state.mut_list_state())
+    }
+
+    fn draw_filter_input(&self, area: Rect, f: &mut Frame<'_>) {
+        let searchbox = &self.filter_input;
+        let scroll = searchbox.visual_scroll(area.width as usize - 3);
+
+        let style = if let Some(WhichInput::Search) = self.editing {
+            let x = searchbox.visual_cursor().max(scroll) - scroll;
+            f.set_cursor(area.x + 1 + x as u16, area.y + 1);
+
+            Style::default().fg(Color::Yellow)
+        } else {
+            Style::default()
+        };
+
+        let input = Paragraph::new(searchbox.value())
+            .scroll((0, scroll as u16))
+            .style(style)
+            .block(Block::default().borders(Borders::ALL).title("Filter"));
+
+        f.render_widget(input, area);
     }
 
     fn draw_preview_canvas(&self, area: Rect, f: &mut Frame<'_>, shape: &GlyphCanvasShape) {
@@ -142,17 +170,21 @@ impl<'a: 'a> UI<'a> {
     fn draw_preview(&self, area: Rect, f: &mut Frame<'_>) {
         let result = self.state.render();
 
-        match result.as_ref().as_ref() {
-            Ok(GlyphCache::Canvas(ref shape)) => {
-                self.draw_preview_canvas(area, f, shape);
+        if let Some(result) = result {
+            match result.as_ref().as_ref() {
+                Ok(GlyphCache::Canvas(ref shape)) => {
+                    self.draw_preview_canvas(area, f, shape);
+                }
+                Ok(GlyphCache::Paragraph(ref s)) => {
+                    self.draw_preview_paragraph(area, f, s.lines.iter().map(|s| s.as_str()))
+                }
+                Err(s) => {
+                    let paragraph: [&str; 1] = [s];
+                    self.draw_preview_paragraph(area, f, paragraph)
+                }
             }
-            Ok(GlyphCache::Paragraph(ref s)) => {
-                self.draw_preview_paragraph(area, f, s.lines.iter().map(|s| s.as_str()))
-            }
-            Err(s) => {
-                let paragraph: [&str; 1] = [s];
-                self.draw_preview_paragraph(area, f, paragraph)
-            }
+        } else {
+            self.draw_preview_paragraph(area, f, [])
         }
     }
 
@@ -187,7 +219,7 @@ impl<'a: 'a> UI<'a> {
             Span::styled("Font Face", Style::default().fg(Color::Green)),
             Span::raw(": "),
             Span::styled(
-                self.state.current_name(),
+                self.state.current_name().unwrap_or_default(),
                 Style::default()
                     .fg(Color::Blue)
                     .add_modifier(Modifier::BOLD),
@@ -205,7 +237,7 @@ impl<'a: 'a> UI<'a> {
         );
 
         let texts = vec![
-            Span::styled("Render Mode", Style::default().fg(Color::Green)),
+            Span::styled("Render", Style::default().fg(Color::Green)),
             Span::raw(": "),
             Span::styled(
                 format!("{:?}", self.state.get_render_type()),
@@ -222,46 +254,63 @@ impl<'a: 'a> UI<'a> {
         );
     }
 
-    fn draw_status_bar_help(area: Rect, f: &mut Frame<'_>) {
+    fn draw_status_bar_help(&self, area: Rect, f: &mut Frame<'_>) {
         let cols = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints(
-                [
-                    Constraint::Ratio(2, 5),
-                    Constraint::Ratio(2, 5),
-                    Constraint::Ratio(1, 5),
-                ]
-                .as_ref(),
-            )
+            .constraints([
+                Constraint::Fill(1),
+                Constraint::Fill(1),
+                Constraint::Fill(1),
+                Constraint::Fill(1),
+            ])
             .split(area);
 
-        let mut list_help = Self::generate_help_text("[Up]", "Prev Font ");
-        list_help.append(&mut Self::generate_help_text("[Down]", "Next Font"));
-
-        let mut mode_help = Self::generate_help_text("[Left]", "Prev Mode ");
-        mode_help.append(&mut Self::generate_help_text("[Right]", "Next Mode"));
-
-        let quit_help = Self::generate_help_text("[Q]", "Quit");
+        let filter_help = if self.editing.is_none() {
+            Self::generate_help_text("[S/Slash]", "Filter Box")
+        } else {
+            Self::generate_help_text("[ESC/Enter]", "Exit Edit")
+        };
+        let list_help = Self::generate_help_text("[Up/Down]", "Select Font");
+        let mode_help = Self::generate_help_text(
+            "[Left/Right]",
+            if self.editing.is_none() {
+                "Change Render"
+            } else {
+                "Move Cursor"
+            },
+        );
+        let quit_help = if self.editing.is_none() {
+            Self::generate_help_text("[Q]", "Quit")
+        } else {
+            filter_help.clone()
+        };
 
         f.render_widget(
-            Paragraph::new(Line::from(list_help))
+            Paragraph::new(Line::from(filter_help))
                 .block(Block::default().borders(Borders::BOTTOM | Borders::LEFT))
                 .alignment(Alignment::Left),
             cols[0],
         );
 
         f.render_widget(
-            Paragraph::new(Line::from(mode_help))
+            Paragraph::new(Line::from(list_help))
                 .block(Block::default().borders(Borders::BOTTOM))
                 .alignment(Alignment::Center),
             cols[1],
         );
 
         f.render_widget(
+            Paragraph::new(Line::from(mode_help))
+                .block(Block::default().borders(Borders::BOTTOM))
+                .alignment(Alignment::Center),
+            cols[2],
+        );
+
+        f.render_widget(
             Paragraph::new(Line::from(quit_help))
                 .block(Block::default().borders(Borders::BOTTOM | Borders::RIGHT))
                 .alignment(Alignment::Right),
-            cols[2],
+            cols[3],
         );
     }
 
@@ -275,35 +324,84 @@ impl<'a: 'a> UI<'a> {
         let help = rows[1];
 
         self.draw_status_bar_info(info, f);
-        Self::draw_status_bar_help(help, f);
+        self.draw_status_bar_help(help, f);
     }
 
     fn draw(&self, f: &mut Frame<'_>) {
         let layout = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Min(3), Constraint::Length(4)].as_ref())
+            .constraints([Constraint::Fill(1), Constraint::Length(4)].as_ref())
             .split(f.size());
 
         let main = layout[0];
         let status_bar = layout[1];
 
-        let list_width = self.state.name_width_max().min(32) as u16;
+        let list_width = self.state.name_width_max().clamp(24, 64) as u16;
 
         let main = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Length(list_width), Constraint::Min(24)].as_ref())
             .split(main);
 
-        let list = main[0];
+        let side_pannel = main[0];
         let canvas = main[1];
+
+        let side_pannel = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Fill(1), Constraint::Length(3)])
+            .split(side_pannel);
+
+        let list = side_pannel[0];
+        let searchbox = side_pannel[1];
 
         let width = u32::from(canvas.width.saturating_sub(2));
         let height = u32::from(canvas.height.saturating_sub(2));
         self.state.update_canvas_size_by_char(width, height);
 
         self.draw_list(list, f);
+        self.draw_filter_input(searchbox, f);
         self.draw_preview(canvas, f);
         self.draw_status_bar(status_bar, f);
+    }
+
+    fn on_event_edit_filter(&mut self, key: KeyEvent) -> OnEventResult {
+        if matches!(key.code, CtKeyCode::Enter | CtKeyCode::Esc) {
+            self.editing = None;
+            return OnEventResult::ReDraw;
+        }
+
+        if let Some(change) = self.filter_input.handle_event(&Event::Key(key)) {
+            if change.value {
+                self.state
+                    .update_search_box(Some(self.filter_input.value()));
+            }
+            OnEventResult::ReDraw
+        } else {
+            OnEventResult::Continue
+        }
+    }
+
+    fn on_event_normal(&mut self, key: KeyEvent) -> OnEventResult {
+        if key.modifiers.contains(CtKM::ALT) || key.modifiers.contains(CtKM::CONTROL) {
+            OnEventResult::Continue
+        } else {
+            match key.code {
+                CtKeyCode::Char('q') => OnEventResult::Exit,
+                CtKeyCode::Left | CtKeyCode::Char('h') => {
+                    self.state.prev_render_type();
+                    OnEventResult::ReDraw
+                }
+                CtKeyCode::Right | CtKeyCode::Char('l') => {
+                    self.state.next_render_type();
+                    OnEventResult::ReDraw
+                }
+                CtKeyCode::Char('s') | CtKeyCode::Char('/') => {
+                    self.editing = Some(WhichInput::Search);
+                    OnEventResult::ReDraw
+                }
+                _ => OnEventResult::Continue,
+            }
+        }
     }
 
     fn on_event(&mut self, event: IoResult<TerminalEvent>) -> IoResult<OnEventResult> {
@@ -316,32 +414,20 @@ impl<'a: 'a> UI<'a> {
                     OnEventResult::Continue
                 })
             }
-            TerminalEvent::Key(key) => {
-                if key.modifiers.contains(CtKM::ALT) || key.modifiers.contains(CtKM::CONTROL) {
-                    Ok(OnEventResult::Continue)
-                } else {
-                    match key.code {
-                        CtKeyCode::Char('q') => Ok(OnEventResult::Exit),
-                        CtKeyCode::Up | CtKeyCode::Char('k') => {
-                            self.state.move_up();
-                            Ok(OnEventResult::ReDraw)
-                        }
-                        CtKeyCode::Down | CtKeyCode::Char('j') => {
-                            self.state.move_down();
-                            Ok(OnEventResult::ReDraw)
-                        }
-                        CtKeyCode::Left | CtKeyCode::Char('h') => {
-                            self.state.prev_render_type();
-                            Ok(OnEventResult::ReDraw)
-                        }
-                        CtKeyCode::Right | CtKeyCode::Char('l') => {
-                            self.state.next_render_type();
-                            Ok(OnEventResult::ReDraw)
-                        }
-                        _ => Ok(OnEventResult::Continue),
-                    }
+            TerminalEvent::Key(key) => match key.code {
+                CtKeyCode::Up | CtKeyCode::Char('k') => {
+                    self.state.move_up();
+                    Ok(OnEventResult::ReDraw)
                 }
-            }
+                CtKeyCode::Down | CtKeyCode::Char('j') => {
+                    self.state.move_down();
+                    Ok(OnEventResult::ReDraw)
+                }
+                _ => match self.editing {
+                    Some(WhichInput::Search) => Ok(self.on_event_edit_filter(key)),
+                    None => Ok(self.on_event_normal(key)),
+                },
+            },
         }
     }
 

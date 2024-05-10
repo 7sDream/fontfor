@@ -55,7 +55,7 @@ pub static MONO_RENDER: Lazy<MonoRender> = Lazy::new(MonoRender::default);
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct CacheKey {
-    pub index: usize,
+    pub index: (usize, usize),
     pub rt: RenderType,
     pub width: u32,
     pub height: u32,
