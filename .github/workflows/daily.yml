@@ -9,7 +9,7 @@ jobs:
   lint:
     uses: ./.github/workflows/action-lint.yml
     with:
-      beta: true
+      channel: beta
 
   audit:
     uses: ./.github/workflows/action-audit.yml

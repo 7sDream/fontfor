@@ -2,9 +2,10 @@
 
 ## Unreleased
 
-- Add `-f` option to filter font list by family name
-- Add a search box in TUI mode to change filter word
-- Remove `#[deny(warnings)]` in source code, add it in CI
+## 0.4.3
+
+- Add `-f` option to filter font list by family name, and a search box in TUI mode to change the filter word (Issue [#64](https://github.com/7sDream/fontfor/issues/64), PR [#71](https://github.com/7sDream/fontfor/pull/71))
+- Remove `#[deny(warnings)]` in source code, add it in CI (Issue [#70](https://github.com/7sDream/fontfor/issues/70))
 - Fix build for upcomming Rust 1.79 new lints
 - Update deps
 

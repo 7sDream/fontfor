@@ -7,6 +7,9 @@ on:
       name:
         required: true
         type: string
+      profile:
+        type: string
+        default: dev
       channel:
         type: string
         default: stable
@@ -114,7 +117,7 @@ jobs:
       - name: Build
         run: |
           cargo clean
-          cargo build --target ${{ matrix.rust-target }} --release -vv
+          cargo build --target ${{ matrix.rust-target }}  --profile ${{ inputs.profile }} --frozen -vv
         env:
           RUSTFLAGS: ${{ fromJSON('["", "-C target-feature=+crt-static"]')[matrix.libc == 'msvc'] }}
       - name: Move and rename binary

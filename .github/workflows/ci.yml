@@ -16,8 +16,6 @@ jobs:
 
   lint:
     uses: ./.github/workflows/action-lint.yml
-    with:
-      beta: false
 
   audit:
     uses: ./.github/workflows/action-audit.yml
