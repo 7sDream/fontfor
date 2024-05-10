@@ -123,7 +123,7 @@ jobs:
       - name: Move and rename binary
         shell: bash
         run: |
-          mv target/${{ matrix.rust-target }}/${{ inputs.profile == "dev" && "debug" || inputs.profile }}/${{ inputs.name }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }} ${{ inputs.name }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.libc }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
+          mv target/${{ matrix.rust-target }}/${{ inputs.profile == 'dev' && 'debug' || inputs.profile }}/${{ inputs.name }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }} ${{ inputs.name }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.libc }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
       - name: Upload binary
         uses: actions/upload-artifact@v3
         with:
