@@ -20,4 +20,4 @@ jobs:
     with:
       name: fontfor
       channel: beta
-      artifict: false
+      artifact: false
