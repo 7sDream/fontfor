@@ -16,7 +16,7 @@ jobs:
 
   build:
     uses: ./.github/workflows/action-build.yml
-    needs: [depver, lint, audit]
+    needs: [lint, audit]
     with:
       name: fontfor
       channel: beta
