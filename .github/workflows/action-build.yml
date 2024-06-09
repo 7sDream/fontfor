@@ -68,7 +68,7 @@ jobs:
             platform: linux
             arch: armhf
             libc: musl
-          - os: macos-11
+          - os: macos-12
             rust-target: x86_64-apple-darwin
             platform: darwin
             arch: x64
@@ -86,23 +86,24 @@ jobs:
       - name: Install Rust toolchains
         run: |
           rustup set auto-self-update disable
-          rustup toolchain install ${{ inputs.channel }} --profile minimal -t ${{ matrix.rust-target }}
+          rustup toolchain install ${{ inputs.channel }} -t ${{ matrix.rust-target }} --profile minimal
+          rustup default ${{ inputs.channel }}-${{ matrix.rust-target }}
           rustup show
-      - name: Install AArch64 target toolchain
+      - name: Install AArch64 target toolchain for Linux
         if: matrix.platform == 'linux' && matrix.arch == 'arm64'
         run: |
           sudo apt-get update
           sudo apt-get install gcc-aarch64-linux-gnu
           UPPER_TARGET=$(echo ${{ matrix.rust-target }} | tr '[a-z]-' '[A-Z]_')
           echo "CARGO_TARGET_${UPPER_TARGET}_LINKER=aarch64-linux-gnu-gcc" >> "$GITHUB_ENV"
-      - name: Install ARM target toolchain
+      - name: Install ARM target toolchain for Linux
         if: matrix.platform == 'linux' && matrix.arch == 'armhf'
         run: |
           sudo apt-get update
           sudo apt-get install gcc-arm-linux-gnueabihf
           UPPER_TARGET=$(echo ${{ matrix.rust-target }} | tr '[a-z]-' '[A-Z]_')
           echo "CARGO_TARGET_${UPPER_TARGET}_LINKER=arm-linux-gnueabihf-gcc" >> "$GITHUB_ENV"
-      - name: Install musl toolchain
+      - name: Install musl toolchain for Linux
         if: matrix.platform == 'linux' && matrix.libc == 'musl'
         run: |
           sudo apt-get update
