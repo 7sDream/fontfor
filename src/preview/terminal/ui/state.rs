@@ -24,7 +24,7 @@ use std::{
 
 use ratatui::widgets::ListState;
 
-use super::cache::{CacheKey, GlyphCache, GlyphCanvasShape, RenderType, CHAR_RENDERS, MONO_RENDER};
+use super::cache::{CHAR_RENDERS, CacheKey, GlyphCache, GlyphCanvasShape, MONO_RENDER, RenderType};
 use crate::{
     family::FilteredFamilies,
     loader::{self, FaceInfo},

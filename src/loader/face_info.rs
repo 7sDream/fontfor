@@ -20,14 +20,14 @@ use std::{borrow::Cow, path::Path};
 
 use fontdb::Source;
 use ttf_parser::{
-    name::{name_id, Table as NameTable},
     Language, RawFace,
+    name::{Table as NameTable, name_id},
 };
 
 use super::{
+    Error, Result,
     cmap::CMapTable,
     error::{BROKEN_NAME_TABLE, MISSING_NAME_TABLE, NAME_TAG},
-    Error, Result,
 };
 use crate::loader::database;
 

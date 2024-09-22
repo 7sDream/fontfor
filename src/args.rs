@@ -19,8 +19,8 @@
 use std::path::PathBuf;
 
 use clap::{
-    builder::{NonEmptyStringValueParser, TypedValueParser},
     Parser,
+    builder::{NonEmptyStringValueParser, TypedValueParser},
 };
 
 use super::one_char::OneChar;

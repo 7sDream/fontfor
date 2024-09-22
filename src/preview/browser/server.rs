@@ -20,7 +20,7 @@ use std::{
     cell::RefCell,
     io::{Error as IOError, ErrorKind as IOErrorKind, Read, Write},
     net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream},
-    sync::mpsc::{channel, Receiver, Sender, TryRecvError},
+    sync::mpsc::{Receiver, Sender, TryRecvError, channel},
     thread,
     time::Duration,
 };

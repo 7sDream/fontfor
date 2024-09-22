@@ -16,11 +16,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use ttf_parser::{cmap, GlyphId, RawFace};
+use ttf_parser::{GlyphId, RawFace, cmap};
 
 use super::{
-    error::{BROKEN_CMAP_TABLE, CMAP_TAG, MISSING_CMAP_TABLE},
     Result,
+    error::{BROKEN_CMAP_TABLE, CMAP_TAG, MISSING_CMAP_TABLE},
 };
 
 pub struct CMapTable<'a> {

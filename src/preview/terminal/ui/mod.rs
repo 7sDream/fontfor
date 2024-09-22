@@ -28,7 +28,7 @@ use std::{
 use crossterm::{
     event::{Event, KeyCode as CtKeyCode, KeyEvent, KeyModifiers as CtKM},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use ratatui::{
     backend::CrosstermBackend,
@@ -36,7 +36,7 @@ use ratatui::{
     style::{Color, Modifier, Style},
     terminal::{Frame, Terminal},
     text::{Line, Span, Text},
-    widgets::{canvas::Canvas, Block, Borders, List, ListItem, Paragraph},
+    widgets::{Block, Borders, List, ListItem, Paragraph, canvas::Canvas},
 };
 use tui_input::backend::crossterm::EventHandler;
 
