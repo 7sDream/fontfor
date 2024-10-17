@@ -121,7 +121,7 @@ impl<'a> GlyphCanvasShapePoints<'a> {
     }
 }
 
-impl<'a> Iterator for GlyphCanvasShapePoints<'a> {
+impl Iterator for GlyphCanvasShapePoints<'_> {
     type Item = (f64, f64);
 
     fn next(&mut self) -> Option<Self::Item> {
