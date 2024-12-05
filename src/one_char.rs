@@ -93,9 +93,7 @@ impl OneChar {
     pub fn from_utf8_bytes(s: &str) -> Result<Self, ParseError> {
         let mut digits = s.chars();
 
-        let bytes = std::iter::from_fn(|| {
-                Some((digits.next(), digits.next()))
-            })
+        let bytes = std::iter::from_fn(|| Some((digits.next(), digits.next())))
             .take_while(|(c1, _)| c1.is_some())
             .map(|(c1, c2)| -> Result<u8, ParseError> {
                 let c1 = c1.expect("at least one char because of the take_while");
