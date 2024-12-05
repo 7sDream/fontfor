@@ -243,8 +243,8 @@ impl SingleThread {
             stop(addr);
         }
 
-        exit_tx.send(()).ok();
+        exit_tx.send(()).expect("server hold exit_rx forever");
 
-        handler.join().ok();
+        handler.join().unwrap().unwrap();
     }
 }

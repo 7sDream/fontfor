@@ -45,13 +45,11 @@ where
         db.load_fonts_dir(path)
     }
 
-    if DATABASE.set(db).is_err() {
-        panic!("call init more then once")
-    }
+    DATABASE.set(db).expect("call init only once")
 }
 
 pub fn database() -> &'static Database {
-    DATABASE.get().expect("initialized")
+    DATABASE.get().expect("use after init")
 }
 
 pub fn query(c: char) -> Vec<FaceInfo> {

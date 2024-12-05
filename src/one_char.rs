@@ -93,10 +93,8 @@ impl OneChar {
     pub fn from_utf8_bytes(s: &str) -> Result<Self, ParseError> {
         let mut digits = s.chars();
 
-        let bytes = (0..)
-            .map(|_| {
-                let mut byte = digits.by_ref().take(2);
-                (byte.next(), byte.next())
+        let bytes = std::iter::from_fn(|| {
+                Some((digits.next(), digits.next()))
             })
             .take_while(|(c1, _)| c1.is_some())
             .map(|(c1, c2)| -> Result<u8, ParseError> {
@@ -113,13 +111,13 @@ impl OneChar {
 
         let utf8 = String::from_utf8(bytes).map_err(|_| ParseError::UTF8BytesInvalid)?;
 
-        let mut iter = utf8.chars();
+        let mut iter = utf8.chars().fuse();
 
         match (iter.next(), iter.next()) {
             (Some(c), None) => Ok(Self(c)),
             (None, None) => Err(ParseError::UTF8BytesEmpty),
             (Some(_), Some(_)) => Err(ParseError::UTF8BytesParseResultMoreThenOneChar),
-            (None, Some(_)) => unreachable!("iterator can not produce value after returning None"),
+            (None, Some(_)) => unreachable!("fused iterator can't produce value after None"),
         }
     }
 }
