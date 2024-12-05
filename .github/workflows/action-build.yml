@@ -68,12 +68,12 @@ jobs:
             platform: linux
             arch: armhf
             libc: musl
-          - os: macos-12
+          - os: macos-14
             rust-target: x86_64-apple-darwin
             platform: darwin
             arch: x64
             libc: system
-          - os: macos-12
+          - os: macos-14
             rust-target: aarch64-apple-darwin
             platform: darwin
             arch: arm64
@@ -126,7 +126,7 @@ jobs:
         run: |
           mv target/${{ matrix.rust-target }}/${{ inputs.profile == 'dev' && 'debug' || inputs.profile }}/${{ inputs.name }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }} ${{ inputs.name }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.libc }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
       - name: Upload binary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.name }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.libc }}
           path: ${{ inputs.name }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.libc }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
