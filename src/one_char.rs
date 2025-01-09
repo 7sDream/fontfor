@@ -99,7 +99,7 @@ impl OneChar {
                 let c1 = c1.expect("at least one char because of the take_while");
                 let c2 = c2.ok_or(ParseError::UTF8BytesStrCantAlignToBytes)?;
                 if c1.is_ascii_hexdigit() && c2.is_ascii_hexdigit() {
-                    Ok((c1.to_digit(16).expect("hexdigit") << 4
+                    Ok(((c1.to_digit(16).expect("hexdigit") << 4)
                         | c2.to_digit(16).expect("hexdigit")) as u8)
                 } else {
                     Err(ParseError::InvalidDigitInRadix(16))

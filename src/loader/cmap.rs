@@ -24,7 +24,7 @@ use super::{
 };
 
 pub struct CMapTable<'a> {
-    subtables: Vec<cmap::Subtable<'a>>,
+    sub_tables: Vec<cmap::Subtable<'a>>,
 }
 
 impl<'a> CMapTable<'a> {
@@ -32,22 +32,22 @@ impl<'a> CMapTable<'a> {
         let cmap_data = rf.table(CMAP_TAG).ok_or(MISSING_CMAP_TABLE)?;
         let table = cmap::Table::parse(cmap_data).ok_or(BROKEN_CMAP_TABLE)?;
 
-        let mut subtables = vec![];
+        let mut sub_tables = vec![];
 
         for i in 0..table.subtables.len() {
-            let subtable = table.subtables.get(i).ok_or(BROKEN_CMAP_TABLE)?;
-            if subtable.is_unicode() {
-                subtables.push(subtable)
+            let sub_table = table.subtables.get(i).ok_or(BROKEN_CMAP_TABLE)?;
+            if sub_table.is_unicode() {
+                sub_tables.push(sub_table)
             }
         }
 
-        Ok(Self { subtables })
+        Ok(Self { sub_tables })
     }
 
     pub fn glyph_index(&self, c: char) -> Option<GlyphId> {
-        self.subtables
+        self.sub_tables
             .iter()
-            .filter_map(|subtable| subtable.glyph_index(c as u32))
+            .filter_map(|sub_table| sub_table.glyph_index(c as u32))
             .next()
     }
 }

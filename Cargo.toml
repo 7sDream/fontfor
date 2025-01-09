@@ -25,10 +25,10 @@ grid = "0.13"
 clap = { version = "4.4", features = ["derive", "unicode", "wrap_help"] }
 
 # Font loader
-fontdb = "0.16"
+fontdb = "0.23"
 
 # Font parser
-ttf-parser = "0.21"
+ttf-parser = "0.25"
 
 # Filter fonts
 range-set-blaze = "0.1.16"
@@ -38,17 +38,14 @@ range-set-blaze = "0.1.16"
 ab_glyph = "0.2"
 
 # Termianal UI
-ratatui = "0.26"
-
-# Terminal events
-crossterm = "0.27"
+ratatui = "0.29"
 
 # Input widget for filter in TUI
-tui-input = "0.8.0"
+tui-input = "0.11"
 
 # Home-made single thread HTTP server for preview fonts in browser.
 # Alternative: output a html file into temp dir and open it
-httparse = "1.8"
+httparse = "1.9"
 
 # Logger
 log = { version = "0.4", features = ["release_max_level_off"] }

@@ -18,7 +18,7 @@
 
 use std::{io::Result as IoResult, ops::Deref, sync::mpsc, thread, time::Duration};
 
-use crossterm::event::{self, Event, KeyEvent, KeyEventKind};
+use ratatui::crossterm::event::{self, Event, KeyEvent, KeyEventKind};
 
 #[derive(Copy, Clone)]
 pub enum TerminalEvent {

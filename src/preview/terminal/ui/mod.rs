@@ -25,16 +25,16 @@ use std::{
     time::Duration,
 };
 
-use crossterm::{
-    event::{Event, KeyCode as CtKeyCode, KeyEvent, KeyModifiers as CtKM},
-    execute,
-    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
-};
 use ratatui::{
+    Frame, Terminal,
     backend::CrosstermBackend,
+    crossterm::{
+        event::{Event, KeyCode as CtKeyCode, KeyEvent, KeyModifiers as CtKM},
+        execute,
+        terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
+    },
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    terminal::{Frame, Terminal},
     text::{Line, Span, Text},
     widgets::{Block, Borders, List, ListItem, Paragraph, canvas::Canvas},
 };
@@ -109,7 +109,7 @@ impl<'a> UI<'a> {
 
         let style = if let Some(WhichInput::Search) = self.editing {
             let x = searchbox.visual_cursor().max(scroll) - scroll;
-            f.set_cursor(area.x + 1 + x as u16, area.y + 1);
+            f.set_cursor_position((area.x + 1 + x as u16, area.y + 1));
 
             Style::default().fg(Color::Yellow)
         } else {
@@ -331,7 +331,7 @@ impl<'a> UI<'a> {
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Fill(1), Constraint::Length(4)].as_ref())
-            .split(f.size());
+            .split(f.area());
 
         let main = layout[0];
         let status_bar = layout[1];
@@ -343,16 +343,16 @@ impl<'a> UI<'a> {
             .constraints([Constraint::Length(list_width), Constraint::Min(24)].as_ref())
             .split(main);
 
-        let side_pannel = main[0];
+        let side_panel = main[0];
         let canvas = main[1];
 
-        let side_pannel = Layout::default()
+        let side_panel = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Fill(1), Constraint::Length(3)])
-            .split(side_pannel);
+            .split(side_panel);
 
-        let list = side_pannel[0];
-        let searchbox = side_pannel[1];
+        let list = side_panel[0];
+        let searchbox = side_panel[1];
 
         let width = u32::from(canvas.width.saturating_sub(2));
         let height = u32::from(canvas.height.saturating_sub(2));
