@@ -20,10 +20,9 @@ mod face_info;
 mod cmap;
 mod error;
 
-use std::path::Path;
+use std::{path::Path, sync::OnceLock};
 
 use fontdb::Database;
-use std::sync::OnceLock;
 
 pub use self::{error::Error, face_info::FaceInfo};
 pub type Result<T> = std::result::Result<T, Error>;

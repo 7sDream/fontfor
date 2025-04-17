@@ -16,14 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::{collections::HashMap, iter::Iterator};
+use std::{collections::HashMap, iter::Iterator, sync::LazyLock};
 
 use grid::Grid;
 use ratatui::{
     style::Color,
     widgets::canvas::{Painter, Shape},
 };
-use std::sync::LazyLock;
 
 use crate::preview::terminal::render::{AsciiRender, AsciiRenders, MonoRender, MoonRender, Render};
 
