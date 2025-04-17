@@ -23,12 +23,12 @@ mod error;
 use std::path::Path;
 
 use fontdb::Database;
-use once_cell::sync::OnceCell;
+use std::sync::OnceLock;
 
 pub use self::{error::Error, face_info::FaceInfo};
 pub type Result<T> = std::result::Result<T, Error>;
 
-static DATABASE: OnceCell<Database> = OnceCell::new();
+static DATABASE: OnceLock<Database> = OnceLock::new();
 
 pub fn init<I, P>(system: bool, paths: I)
 where

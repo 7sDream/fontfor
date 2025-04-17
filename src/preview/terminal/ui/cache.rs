@@ -19,11 +19,11 @@
 use std::{collections::HashMap, iter::Iterator};
 
 use grid::Grid;
-use once_cell::sync::Lazy;
 use ratatui::{
     style::Color,
     widgets::canvas::{Painter, Shape},
 };
+use std::sync::LazyLock;
 
 use crate::preview::terminal::render::{AsciiRender, AsciiRenders, MonoRender, MoonRender, Render};
 
@@ -37,7 +37,7 @@ pub enum RenderType {
 
 type BoxedRender<Pixel> = Box<dyn Render<Pixel = Pixel> + Send + Sync>;
 
-pub static CHAR_RENDERS: Lazy<HashMap<RenderType, BoxedRender<char>>> = Lazy::new(|| {
+pub static CHAR_RENDERS: LazyLock<HashMap<RenderType, BoxedRender<char>>> = LazyLock::new(|| {
     let mut renders: HashMap<RenderType, BoxedRender<char>> = HashMap::new();
     renders.insert(
         RenderType::AsciiLevel10,
@@ -51,7 +51,7 @@ pub static CHAR_RENDERS: Lazy<HashMap<RenderType, BoxedRender<char>>> = Lazy::ne
     renders
 });
 
-pub static MONO_RENDER: Lazy<MonoRender> = Lazy::new(MonoRender::default);
+pub static MONO_RENDER: LazyLock<MonoRender> = LazyLock::new(MonoRender::default);
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct CacheKey {
