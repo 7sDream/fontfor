@@ -52,7 +52,7 @@ impl SingleThread {
     }
 
     fn response_status_line(code: u16, reason: &str) -> String {
-        format!("HTTP/1.1 {} {}\r\n", code, reason)
+        format!("HTTP/1.1 {code} {reason}\r\n")
     }
 
     fn response_common(code: u16, reason: &str, headers: &[&str]) -> String {
@@ -189,7 +189,7 @@ impl SingleThread {
         let server = match TcpListener::bind((loopback, 0)) {
             Ok(server) => server,
             Err(err) => {
-                eprintln!("Error when start http server: {:?}", err);
+                eprintln!("Error when start http server: {err:?}");
                 std::process::exit(-1)
             }
         };
@@ -210,14 +210,14 @@ impl SingleThread {
                     Ok(true) => {}
                     Ok(false) => break,
                     Err(err) => {
-                        eprintln!("Error when process request: {:?}", err);
+                        eprintln!("Error when process request: {err:?}");
                     }
                 },
                 Err(err) if err.kind() == IOErrorKind::WouldBlock => {
                     thread::sleep(Duration::from_millis(100));
                 }
                 Err(err) => {
-                    eprintln!("Error when listening: {:?}", err);
+                    eprintln!("Error when listening: {err:?}");
                 }
             }
 

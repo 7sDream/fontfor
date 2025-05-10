@@ -30,7 +30,7 @@ impl OneChar {
         self.0.encode_utf8(utf8.as_mut_slice());
         let bytes = utf8
             .iter()
-            .map(|byte| format!("0x{:X}", byte))
+            .map(|byte| format!("0x{byte:X}"))
             .collect::<Vec<_>>();
         format!(
             "\"{}\"(U+{:0scalar_value_length$X}, {}, {})",

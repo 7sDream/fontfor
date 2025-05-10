@@ -95,7 +95,7 @@ impl FaceInfo {
                 if sub.is_empty() {
                     Cow::Borrowed(family)
                 } else {
-                    format!("{} {}", family, sub).into()
+                    format!("{family} {sub}").into()
                 }
             }
             FontFaceFullName::None => {

@@ -44,7 +44,7 @@ fn init(arg: &Args) {
         .init();
     }
 
-    log::info!("Start with argument: {:?}", arg);
+    log::info!("Start with argument: {arg:?}");
 
     loader::init(!arg.no_system, &arg.custom_font_paths);
 }
@@ -69,7 +69,7 @@ fn main() {
     if argument.tui {
         let ui = UI::new(filtered).expect("family length checked before, must not empty");
         if let Err(err) = ui.show() {
-            eprintln!("{:?}", err);
+            eprintln!("{err:?}");
         };
     } else {
         let builder = if argument.preview {
@@ -94,7 +94,7 @@ fn main() {
 
 fn show_preview_addr_and_wait(addr: SocketAddr) {
     println!("{}", "-".repeat(40));
-    println!("Please visit http://{}/ in your browser for preview", addr);
+    println!("Please visit http://{addr}/ in your browser for preview");
     print!("And press Enter after your finish...");
     std::io::stdout()
         .flush()

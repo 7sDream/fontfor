@@ -172,10 +172,10 @@ impl<'a> UI<'a> {
 
         if let Some(result) = result {
             match result.as_ref().as_ref() {
-                Ok(GlyphCache::Canvas(ref shape)) => {
+                Ok(GlyphCache::Canvas(shape)) => {
                     self.draw_preview_canvas(area, f, shape);
                 }
-                Ok(GlyphCache::Paragraph(ref s)) => {
+                Ok(GlyphCache::Paragraph(s)) => {
                     self.draw_preview_paragraph(area, f, s.lines.iter().map(|s| s.as_str()))
                 }
                 Err(s) => {
