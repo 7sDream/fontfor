@@ -27,7 +27,7 @@ jobs:
         run: |
           cargo +nightly fmt --all -- --check
       - name: Lint code by clippy(stable)
-        uses: clechasseur/rs-clippy-check@v3
+        uses: clechasseur/rs-clippy-check@v4
         with:
           toolchain: ${{ inputs.channel }}
           args: --all-targets --all-features -- -D warnings
