@@ -131,16 +131,15 @@ impl FaceInfo {
             let name = name_table.names.get(i).ok_or(BROKEN_NAME_TABLE)?;
 
             if name.language() == Language::English_UnitedStates && name.is_unicode() {
-                if name.name_id == name_id::FULL_NAME
-                    && let Some(name) = name.to_string()
-                {
-                    return Ok(FontFaceFullName::Full(name));
+                if name.name_id == name_id::FULL_NAME {
+                    if let Some(name) = name.to_string() {
+                        return Ok(FontFaceFullName::Full(name));
+                    }
                 }
-
-                if name.name_id == name_id::SUBFAMILY
-                    && let Some(name) = name.to_string()
-                {
-                    sub_family.replace(name);
+                if name.name_id == name_id::SUBFAMILY {
+                    if let Some(name) = name.to_string() {
+                        sub_family.replace(name);
+                    }
                 }
             }
         }
