@@ -17,6 +17,8 @@ This is port from my early python script called [which_fonts_support][which_font
 cargo install -f fontfor
 ```
 
+Only guaranteed to compile with the latest stable Rust version.
+
 Or download binary from release page.
 
 ## Usage
