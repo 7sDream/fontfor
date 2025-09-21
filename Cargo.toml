@@ -16,7 +16,7 @@ categories = ["command-line-utilities", "text-processing", "visualization"]
 thiserror = "2.0"
 
 # 2D array
-grid = "0.16"
+grid = "1.0"
 
 # CLI argument parser
 clap = { version = "4.5", features = ["derive", "unicode", "wrap_help"] }
@@ -28,7 +28,7 @@ fontdb = "0.23"
 ttf-parser = "0.25"
 
 # Filter fonts
-range-set-blaze = "0.1.16"
+range-set-blaze = "0.3"
 
 # Font rasterizer
 # see https://gist.github.com/7sDream/0bb194be42b8cb1f1926ca12151c8d76 for alternatives.
@@ -38,7 +38,7 @@ ab_glyph = "0.2"
 ratatui = "0.29"
 
 # Input widget for filter in TUI
-tui-input = "0.12"
+tui-input = "0.14"
 
 # Home-made single thread HTTP server for preview fonts in browser.
 # Alternative: output a html file into temp dir and open it
