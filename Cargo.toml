@@ -52,6 +52,14 @@ env_logger = { version = "0.11", optional = true }
 default = []
 log-output = ["dep:env_logger"]
 
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+# Can't understand in what situation this lint would be useful. 
+# If I need a [number] but am given a [range], the compilation won't even pass anyway...
+single_range_in_vec_init = "allow"
+
 [profile.release]
 strip = true
 lto = true
