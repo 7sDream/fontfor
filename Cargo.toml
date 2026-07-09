@@ -13,40 +13,40 @@ categories = ["command-line-utilities", "text-processing", "visualization"]
 
 [dependencies]
 # Define error type
-thiserror = "2.0"
+thiserror = "2.0.18"
 
 # 2D array
-grid = "1.0"
+grid = "1.0.1"
 
 # CLI argument parser
-clap = { version = "4.6", features = ["derive", "unicode", "wrap_help"] }
+clap = { version = "4.6.1", features = ["derive", "unicode", "wrap_help"] }
 
 # Font loader
-fontdb = "0.23"
-
-# Font parser
-ttf-parser = "0.25"
+fontique = "0.11.0"
+skrifa = "0.43.2" # use non-latest version to match with fontique's read-fonts version
 
 # Filter fonts
-range-set-blaze = "0.5"
+range-set-blaze = "0.6.0"
 
 # Font rasterizer
 # see https://gist.github.com/7sDream/0bb194be42b8cb1f1926ca12151c8d76 for alternatives.
-ab_glyph = "0.2"
+ab_glyph_rasterizer = "0.1.10"
 
 # Terminal UI
-ratatui = "0.30"
+ratatui = { version = "0.30.2", default-features = false, features = [
+    "crossterm",
+] }
 
 # Input widget for filter in TUI
-tui-input = "0.15"
+tui-input = "0.15.3"
 
 # Home-made single thread HTTP server for preview fonts in browser.
 # Alternative: output a html file into temp dir and open it
-httparse = "1.10"
+httparse = "1.10.1"
 
 # Logger
-log = { version = "0.4", features = ["release_max_level_off"] }
-env_logger = { version = "0.11", optional = true }
+log = { version = "0.4.33", features = ["release_max_level_off"] }
+env_logger = { version = "0.11.11", optional = true }
 
 [features]
 default = []

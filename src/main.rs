@@ -43,8 +43,6 @@ fn init(arg: &Args) {
     }
 
     log::info!("Start with argument: {arg:?}");
-
-    loader::init(!arg.no_system, &arg.custom_font_paths);
 }
 
 fn main() {
@@ -52,7 +50,9 @@ fn main() {
 
     init(&argument);
 
-    let font_set = loader::query(argument.char.0);
+    let database = loader::Database::new(!argument.no_system, argument.custom_font_paths);
+
+    let font_set = database.query(argument.char.0);
     let families = family::group_by_family_sort_by_name(&font_set);
     if families.is_empty() {
         eprintln!(
@@ -65,7 +65,7 @@ fn main() {
     let filtered = FilteredFamilies::new(families, argument.filter.unwrap_or_default());
 
     if argument.tui {
-        let ui = UI::new(filtered).expect("family length checked before, must not empty");
+        let ui = UI::new(database, filtered).expect("family length checked before, must not empty");
         if let Err(err) = ui.show() {
             eprintln!("{err:?}");
         };

@@ -16,53 +16,113 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::{cell::RefCell, fmt::Debug, path::Path};
+
+use fontique::{
+    Blob, Collection, CollectionOptions, FamilyId, GenericFamily, SourceCache, SourceCacheOptions,
+};
+use skrifa::FontRef;
+
 mod face_info;
-mod cmap;
 mod error;
-
-use std::{path::Path, sync::OnceLock};
-
-use fontdb::Database;
 
 pub use self::{error::Error, face_info::FaceInfo};
 pub type Result<T> = std::result::Result<T, Error>;
 
-static DATABASE: OnceLock<Database> = OnceLock::new();
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct FontId(FamilyId, usize);
 
-pub fn init<I, P>(system: bool, paths: I)
-where
-    I: IntoIterator<Item = P>,
-    P: AsRef<Path>,
-{
-    let mut db = Database::default();
-
-    if system {
-        db.load_system_fonts();
-    }
-
-    for path in paths.into_iter() {
-        db.load_fonts_dir(path)
-    }
-
-    DATABASE.set(db).expect("call init only once")
+pub struct Database {
+    collection: RefCell<Collection>,
+    cache: RefCell<SourceCache>,
 }
 
-pub fn database() -> &'static Database {
-    DATABASE.get().expect("use after init")
+impl Debug for Database {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("Database").finish()
+    }
 }
 
-pub fn query(c: char) -> Vec<FaceInfo> {
-    database()
-        .faces()
-        .filter_map(|info| {
-            let face = FaceInfo::parse_if_contains(info, c);
+impl Database {
+    pub fn new<I, P>(system: bool, paths: I) -> Self
+    where
+        I: IntoIterator<Item = P>,
+        P: AsRef<Path>,
+    {
+        let mut collection = Collection::new(CollectionOptions {
+            system_fonts: system,
+            shared: false,
+        });
+        collection.load_fonts_from_paths(paths);
 
-            if let Err(ref err) = face {
-                log::warn!("Fail to get font face name of {:?}: {}", info.source, err)
+        let cache = SourceCache::new(SourceCacheOptions { shared: false });
+
+        Self {
+            collection: RefCell::new(collection),
+            cache: RefCell::new(cache),
+        }
+    }
+
+    fn ids(&self) -> Vec<FamilyId> {
+        let mut collection = self.collection.borrow_mut();
+        let mut result = Vec::with_capacity(128);
+
+        for gf in GenericFamily::all() {
+            result.extend(collection.generic_families(*gf));
+        }
+
+        result
+    }
+
+    pub fn data(&self, FontId(id, index): FontId) -> Option<Blob<u8>> {
+        let mut collection = self.collection.borrow_mut();
+        let mut cache = self.cache.borrow_mut();
+
+        let family = collection.family(id)?;
+        let font = family.fonts().get(index)?;
+        font.load(Some(&mut cache))
+    }
+
+    pub fn query(&self, c: char) -> Vec<FaceInfo> {
+        let ids = self.ids();
+        let mut result = Vec::new();
+
+        let mut collection = self.collection.borrow_mut();
+        let mut cache = self.cache.borrow_mut();
+
+        for id in ids {
+            let Some(family) = collection.family(id) else {
+                continue;
+            };
+            for (i, font) in family.fonts().iter().enumerate() {
+                let Some(blob) = font.load(Some(&mut cache)) else {
+                    continue;
+                };
+                let rf = match FontRef::from_index(blob.data(), font.index()) {
+                    Ok(rf) => rf,
+                    Err(err) => {
+                        log::warn!(
+                            "Fail to parse font header of {:?}:{}: {}",
+                            font.source(),
+                            font.index(),
+                            err,
+                        );
+                        continue;
+                    }
+                };
+
+                let id = FontId(family.id(), i);
+
+                match FaceInfo::parse_if_contains(id, &family, font, rf, c) {
+                    Ok(Some(face)) => result.push(face),
+                    Ok(None) => continue,
+                    Err(err) => {
+                        log::warn!("Fail to parse font tables of {:?}: {}", font.source(), err)
+                    }
+                }
             }
+        }
 
-            face.transpose()
-        })
-        .filter_map(|f| f.ok())
-        .collect()
+        result
+    }
 }
