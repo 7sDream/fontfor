@@ -25,10 +25,9 @@ use skrifa::{
     outline::DrawSettings,
 };
 
+pub use self::bitmap::Bitmap;
 use self::pen::Pen;
 use crate::error::Error;
-
-pub use self::bitmap::Bitmap;
 
 pub struct Rasterizer<'a> {
     font: FontRef<'a>,

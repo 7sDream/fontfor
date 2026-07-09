@@ -23,9 +23,9 @@ use std::{cell::RefCell, fmt::Debug, path::Path};
 use fontique::{Blob, Collection, CollectionOptions, FamilyId, SourceCache, SourceCacheOptions};
 use skrifa::FontRef;
 
+pub use self::face_info::FaceInfo;
 use crate::error::Error;
 
-pub use self::face_info::FaceInfo;
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -106,7 +106,8 @@ impl Database {
                     Ok(rf) => rf,
                     Err(err) => {
                         log::warn!(
-                            "family {} font {} skipped due to fail to parse font header of file {:?}:{}: {}",
+                            "family {} font {} skipped due to fail to parse font header of file \
+                             {:?}:{}: {}",
                             name,
                             i,
                             font.source(),
@@ -124,7 +125,8 @@ impl Database {
                     Ok(None) => continue,
                     Err(err) => {
                         log::warn!(
-                            "family {} font {} skipped due to fail to parse font tables of file {:?}: {}",
+                            "family {} font {} skipped due to fail to parse font tables of file \
+                             {:?}: {}",
                             name,
                             i,
                             font.source(),
