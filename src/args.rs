@@ -46,8 +46,9 @@ pub struct Args {
     pub tui: bool,
 
     /// Do not load system fonts
+    #[cfg(not(any(target_os = "linux", target_os = "freebsd")))]
     #[arg(long = "no-system")]
-    pub no_system: bool,
+    no_system: bool,
 
     /// Also load fonts in a custom path.
     /// This arg can be provided multiple times.
@@ -61,6 +62,20 @@ pub struct Args {
     /// The character
     #[arg(name = "CHAR")]
     pub char: OneChar,
+}
+
+impl Args {
+    pub fn system(&self) -> bool {
+        #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+        {
+            false
+        }
+
+        #[cfg(not(any(target_os = "linux", target_os = "freebsd")))]
+        {
+            self.no_system
+        }
+    }
 }
 
 pub fn get() -> Args {

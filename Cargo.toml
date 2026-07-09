@@ -22,7 +22,7 @@ grid = "1.0.1"
 clap = { version = "4.6.1", features = ["derive", "unicode", "wrap_help"] }
 
 # Font loader
-fontique = "0.11.0"
+fontique = { version = "0.11.0", default-features = false }
 skrifa = "0.43.2" # use non-latest version to match with fontique's read-fonts version
 
 # Filter fonts
@@ -47,6 +47,10 @@ httparse = "1.10.1"
 # Logger
 log = { version = "0.4.33", features = ["release_max_level_off"] }
 env_logger = { version = "0.11.11", optional = true }
+
+# Disable system feature for linux/freebsd
+[target.'cfg(not(any(target_os = "linux", target_os="freebsd")))'.dependencies]
+fontique = { version = "0.11.0", features = ["system"] }
 
 [features]
 default = []

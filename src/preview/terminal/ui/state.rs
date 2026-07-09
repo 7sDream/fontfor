@@ -137,18 +137,6 @@ impl<'a> State<'a> {
             None
         };
 
-        // let bitmap: Result<Bitmap, &'static str> = loader::database()
-        //     .with_face_data(info.id, |data, index| -> Result<Bitmap, &'static str> {
-        //         let mut r = Rasterizer::new(data, index).map_err(|_| "Can't pare font file")?;
-        //         r.set_pixel_height(height);
-        //         if let Some(scale) = scale {
-        //             r.set_hscale(scale);
-        //         }
-        //         r.rasterize(info.glyph)
-        //             .ok_or("Can't get target glyph from this font")
-        //     })
-        //     .unwrap_or(Err("Can't read font file"));
-
         let blob = self.database.data(info.id)?;
         let bitmap = Rasterizer::new(blob.data(), info.index, height).and_then(|mut r| {
             if let Some(scale) = scale {

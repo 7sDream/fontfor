@@ -50,7 +50,7 @@ fn main() {
 
     init(&argument);
 
-    let database = loader::Database::new(!argument.no_system, argument.custom_font_paths);
+    let database = loader::Database::new(argument.system(), argument.custom_font_paths);
 
     let font_set = database.query(argument.char.0);
     let families = family::group_by_family_sort_by_name(&font_set);
