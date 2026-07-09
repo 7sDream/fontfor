@@ -22,7 +22,7 @@ grid = "1.0.1"
 clap = { version = "4.6.1", features = ["derive", "unicode", "wrap_help"] }
 
 # Font loader
-fontique = { version = "0.11.0", default-features = false }
+fontique = { version = "0.11.0", default-features = false, features = ["std"] }
 skrifa = "0.43.2" # use non-latest version to match with fontique's read-fonts version
 
 # Filter fonts
