@@ -17,6 +17,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 mod args;
+mod error;
 mod loader;
 mod family;
 mod rasterizer;
@@ -30,6 +31,7 @@ use std::{
 
 use args::Args;
 use family::{Family, FilteredFamilies};
+use loader::Database;
 use preview::{browser::ServerBuilder as PreviewServerBuilder, terminal::ui::UI};
 
 fn init(arg: &Args) {
@@ -50,7 +52,7 @@ fn main() {
 
     init(&argument);
 
-    let database = loader::Database::new(argument.system(), argument.custom_font_paths);
+    let database = Database::new(argument.system(), argument.custom_font_paths);
 
     let font_set = database.query(argument.char.0);
     let families = family::group_by_family_sort_by_name(&font_set);

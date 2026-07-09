@@ -26,8 +26,9 @@ use ratatui::widgets::ListState;
 
 use super::cache::{CHAR_RENDERS, CacheKey, GlyphCache, GlyphCanvasShape, MONO_RENDER, RenderType};
 use crate::{
+    error::Error,
     family::FilteredFamilies,
-    loader::{Database, Error, FaceInfo},
+    loader::{Database, FaceInfo},
     preview::terminal::{render::Render, ui::cache::GlyphParagraph},
     rasterizer::{Bitmap, Rasterizer},
 };

@@ -73,7 +73,7 @@ impl Args {
 
         #[cfg(not(any(target_os = "linux", target_os = "freebsd")))]
         {
-            self.no_system
+            !self.no_system
         }
     }
 }

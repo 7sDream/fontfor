@@ -16,17 +16,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+mod face_info;
+
 use std::{cell::RefCell, fmt::Debug, path::Path};
 
-use fontique::{
-    Blob, Collection, CollectionOptions, FamilyId, GenericFamily, SourceCache, SourceCacheOptions,
-};
+use fontique::{Blob, Collection, CollectionOptions, FamilyId, SourceCache, SourceCacheOptions};
 use skrifa::FontRef;
 
-mod face_info;
-mod error;
+use crate::error::Error;
 
-pub use self::{error::Error, face_info::FaceInfo};
+pub use self::face_info::FaceInfo;
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -63,15 +62,9 @@ impl Database {
         }
     }
 
-    fn ids(&self) -> Vec<FamilyId> {
+    fn names(&self) -> Vec<String> {
         let mut collection = self.collection.borrow_mut();
-        let mut result = Vec::with_capacity(128);
-
-        for gf in GenericFamily::all() {
-            result.extend(collection.generic_families(*gf));
-        }
-
-        result
+        collection.family_names().map(|s| s.to_string()).collect()
     }
 
     pub fn data(&self, FontId(id, index): FontId) -> Option<Blob<u8>> {
@@ -84,25 +77,38 @@ impl Database {
     }
 
     pub fn query(&self, c: char) -> Vec<FaceInfo> {
-        let ids = self.ids();
+        let names = self.names();
+        log::info!("family count: {}", names.len());
         let mut result = Vec::new();
 
         let mut collection = self.collection.borrow_mut();
         let mut cache = self.cache.borrow_mut();
 
-        for id in ids {
+        for name in names {
+            let Some(id) = collection.family_id(&name) else {
+                log::warn!("family '{}' skipped due to can't find family info", name);
+                continue;
+            };
             let Some(family) = collection.family(id) else {
+                log::warn!("family '{}' skipped due to can't find family info", name);
                 continue;
             };
             for (i, font) in family.fonts().iter().enumerate() {
                 let Some(blob) = font.load(Some(&mut cache)) else {
+                    log::warn!(
+                        "family {} font {} skipped due to can't load font data",
+                        name,
+                        i
+                    );
                     continue;
                 };
                 let rf = match FontRef::from_index(blob.data(), font.index()) {
                     Ok(rf) => rf,
                     Err(err) => {
                         log::warn!(
-                            "Fail to parse font header of {:?}:{}: {}",
+                            "family {} font {} skipped due to fail to parse font header of file {:?}:{}: {}",
+                            name,
+                            i,
                             font.source(),
                             font.index(),
                             err,
@@ -111,13 +117,19 @@ impl Database {
                     }
                 };
 
-                let id = FontId(family.id(), i);
+                let font_id = FontId(id, i);
 
-                match FaceInfo::parse_if_contains(id, &family, font, rf, c) {
+                match FaceInfo::parse_if_contains(font_id, &family, font, rf, c) {
                     Ok(Some(face)) => result.push(face),
                     Ok(None) => continue,
                     Err(err) => {
-                        log::warn!("Fail to parse font tables of {:?}: {}", font.source(), err)
+                        log::warn!(
+                            "family {} font {} skipped due to fail to parse font tables of file {:?}: {}",
+                            name,
+                            i,
+                            font.source(),
+                            err
+                        )
                     }
                 }
             }
