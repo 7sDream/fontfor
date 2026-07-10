@@ -85,8 +85,9 @@ impl Database {
         let mut cache = self.cache.borrow_mut();
 
         for name in names {
+            log::debug!("processing family '{}'", name);
             let Some(id) = collection.family_id(&name) else {
-                log::warn!("family '{}' skipped due to can't find family info", name);
+                log::warn!("family '{}' skipped due to can't find family id", name);
                 continue;
             };
             let Some(family) = collection.family(id) else {
@@ -94,9 +95,16 @@ impl Database {
                 continue;
             };
             for (i, font) in family.fonts().iter().enumerate() {
+                log::debug!(
+                    "parsing family '{}' font {} '{:?}:{}'",
+                    name,
+                    i,
+                    font.source().kind(),
+                    font.index()
+                );
                 let Some(blob) = font.load(Some(&mut cache)) else {
                     log::warn!(
-                        "family {} font {} skipped due to can't load font data",
+                        "family '{}' font {} skipped due to can't load font data",
                         name,
                         i
                     );
@@ -106,12 +114,9 @@ impl Database {
                     Ok(rf) => rf,
                     Err(err) => {
                         log::warn!(
-                            "family {} font {} skipped due to fail to parse font header of file \
-                             {:?}:{}: {}",
+                            "family {} font {} skipped due to fail to parse font header of file: {}",
                             name,
                             i,
-                            font.source(),
-                            font.index(),
                             err,
                         );
                         continue;
@@ -125,11 +130,9 @@ impl Database {
                     Ok(None) => continue,
                     Err(err) => {
                         log::warn!(
-                            "family {} font {} skipped due to fail to parse font tables of file \
-                             {:?}: {}",
+                            "family {} font {} skipped due to fail to parse font tables of file: {}",
                             name,
                             i,
-                            font.source(),
                             err
                         )
                     }
