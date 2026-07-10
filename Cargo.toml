@@ -1,6 +1,6 @@
 [package]
 name = "fontfor"
-version = "0.4.4-alpha.1"
+version = "0.5.0-alpha.1"
 authors = ["7sDream <i@7sdre.am>"]
 edition = "2024"
 description = "find fonts which can show a specified character and preview them in terminal or browser"
@@ -63,6 +63,10 @@ unsafe_code = "forbid"
 # Can't understand in what situation this lint would be useful. 
 # If I need a [number] but am given a [range], the compilation won't even pass anyway...
 single_range_in_vec_init = "allow"
+
+[profile.dev.package]
+read-fonts = { opt-level = 3 }
+grid = { opt-level = 3 }
 
 [profile.release]
 strip = true
