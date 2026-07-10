@@ -46,7 +46,6 @@ pub struct Args {
     pub tui: bool,
 
     /// Do not load system fonts
-    #[cfg(not(any(target_os = "linux", target_os = "freebsd")))]
     #[arg(long = "no-system")]
     no_system: bool,
 
@@ -66,15 +65,7 @@ pub struct Args {
 
 impl Args {
     pub fn system(&self) -> bool {
-        #[cfg(any(target_os = "linux", target_os = "freebsd"))]
-        {
-            false
-        }
-
-        #[cfg(not(any(target_os = "linux", target_os = "freebsd")))]
-        {
-            !self.no_system
-        }
+        !self.no_system
     }
 }
 
