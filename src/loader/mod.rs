@@ -17,52 +17,132 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 mod face_info;
-mod cmap;
-mod error;
 
-use std::{path::Path, sync::OnceLock};
+use std::{cell::RefCell, collections::HashSet, fmt::Debug, path::Path, sync::Arc};
 
-use fontdb::Database;
+use fontique::{
+    Collection, CollectionOptions, FamilyId, SourceCache, SourceCacheOptions, SourceKind,
+};
+use skrifa::FontRef;
 
-pub use self::{error::Error, face_info::FaceInfo};
-pub type Result<T> = std::result::Result<T, Error>;
+pub use self::face_info::FaceInfo;
 
-static DATABASE: OnceLock<Database> = OnceLock::new();
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct FontId(FamilyId, usize);
 
-pub fn init<I, P>(system: bool, paths: I)
-where
-    I: IntoIterator<Item = P>,
-    P: AsRef<Path>,
-{
-    let mut db = Database::default();
-
-    if system {
-        db.load_system_fonts();
-    }
-
-    for path in paths.into_iter() {
-        db.load_fonts_dir(path)
-    }
-
-    DATABASE.set(db).expect("call init only once")
+pub struct Database {
+    collection: RefCell<Collection>,
+    cache: RefCell<SourceCache>,
 }
 
-pub fn database() -> &'static Database {
-    DATABASE.get().expect("use after init")
+impl Debug for Database {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("Database").finish()
+    }
 }
 
-pub fn query(c: char) -> Vec<FaceInfo> {
-    database()
-        .faces()
-        .filter_map(|info| {
-            let face = FaceInfo::parse_if_contains(info, c);
+impl Database {
+    pub fn new<I, P>(system: bool, paths: I) -> Self
+    where
+        I: IntoIterator<Item = P>,
+        P: AsRef<Path>,
+    {
+        let mut collection = Collection::new(CollectionOptions {
+            system_fonts: system,
+            shared: false,
+        });
+        collection.load_fonts_from_paths(paths);
 
-            if let Err(ref err) = face {
-                log::warn!("Fail to get font face name of {:?}: {}", info.source, err)
+        let cache = SourceCache::new(SourceCacheOptions { shared: false });
+
+        Self {
+            collection: RefCell::new(collection),
+            cache: RefCell::new(cache),
+        }
+    }
+
+    fn names(&self) -> Vec<String> {
+        let mut collection = self.collection.borrow_mut();
+        collection.family_names().map(|s| s.to_string()).collect()
+    }
+
+    pub fn data(&self, FontId(id, index): FontId) -> Option<impl AsRef<[u8]> + use<>> {
+        let mut collection = self.collection.borrow_mut();
+        let mut cache = self.cache.borrow_mut();
+
+        let family = collection.family(id)?;
+        let font = family.fonts().get(index)?;
+        font.load(Some(&mut cache))
+    }
+
+    pub fn query(&self, c: char, dedup: bool) -> Vec<FaceInfo> {
+        let names = self.names();
+        log::info!("family count: {}", names.len());
+
+        let mut collection = self.collection.borrow_mut();
+        let mut cache = self.cache.borrow_mut();
+
+        let mut dedup = dedup.then(HashSet::new);
+        let mut result = Vec::new();
+
+        for name in names {
+            log::debug!("processing family '{name}'");
+            let Some(id) = collection.family_id(&name) else {
+                log::warn!("family '{name}' skipped due to can't find family id");
+                continue;
+            };
+            let Some(family) = collection.family(id) else {
+                log::warn!("family '{name}' skipped due to can't find family info");
+                continue;
+            };
+            for (i, font) in family.fonts().iter().enumerate() {
+                if let Some(ref mut dedup) = dedup
+                    && let SourceKind::Path(path) = font.source().kind()
+                {
+                    let k = (Arc::clone(path), font.index());
+                    if dedup.contains(&k) {
+                        log::debug!("family '{name}' font {i} skipped due to dedup");
+                        continue;
+                    }
+                    dedup.insert(k);
+                }
+
+                log::debug!(
+                    "processing family '{name}' font {i} '{:?}:{}'",
+                    font.source().kind(),
+                    font.index()
+                );
+
+                let Some(blob) = font.load(Some(&mut cache)) else {
+                    log::warn!("family '{name}' font {i} skipped due to can't load font data");
+                    continue;
+                };
+                let rf = match FontRef::from_index(blob.data(), font.index()) {
+                    Ok(rf) => rf,
+                    Err(err) => {
+                        log::warn!(
+                            "family {name} font {i} skipped due to fail to parse font header of \
+                             file: {err}"
+                        );
+                        continue;
+                    }
+                };
+
+                let font_id = FontId(id, i);
+
+                match FaceInfo::parse_if_contains(font_id, &family, font, rf, c) {
+                    Ok(Some(face)) => result.push(face),
+                    Ok(None) => continue,
+                    Err(err) => {
+                        log::warn!(
+                            "family {name} font {i} skipped due to fail to parse font tables of \
+                             file: {err}"
+                        )
+                    }
+                }
             }
+        }
 
-            face.transpose()
-        })
-        .filter_map(|f| f.ok())
-        .collect()
+        result
+    }
 }

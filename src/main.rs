@@ -17,6 +17,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 mod args;
+mod error;
 mod loader;
 mod family;
 mod rasterizer;
@@ -30,45 +31,44 @@ use std::{
 
 use args::Args;
 use family::{Family, FilteredFamilies};
+use loader::Database;
 use preview::{browser::ServerBuilder as PreviewServerBuilder, terminal::ui::UI};
 
 fn init(arg: &Args) {
     #[cfg(feature = "log-output")]
     {
         env_logger::Builder::from_env(
-            env_logger::Env::default().default_filter_or(env!("CARGO_PKG_NAME")),
+            env_logger::Env::default().default_filter_or(concat!(env!("CARGO_PKG_NAME"), "=info")),
         )
         .format_timestamp_micros()
         .init();
     }
 
     log::info!("Start with argument: {arg:?}");
-
-    loader::init(!arg.no_system, &arg.custom_font_paths);
 }
 
-fn main() {
+fn main() -> Result<(), String> {
     let argument = args::get();
 
     init(&argument);
 
-    let font_set = loader::query(argument.char.0);
+    let database = Database::new(argument.system(), argument.custom_font_paths.iter());
+
+    let font_set = database.query(argument.char.0, argument.dedup());
     let families = family::group_by_family_sort_by_name(&font_set);
     if families.is_empty() {
-        eprintln!(
+        println!(
             "No font support this character {}.",
             argument.char.description()
         );
-        return;
+        return Ok(());
     }
 
     let filtered = FilteredFamilies::new(families, argument.filter.unwrap_or_default());
 
     if argument.tui {
-        let ui = UI::new(filtered).expect("family length checked before, must not empty");
-        if let Err(err) = ui.show() {
-            eprintln!("{err:?}");
-        };
+        let ui = UI::new(database, filtered).expect("family length checked before, must not empty");
+        ui.show().map_err(|e| e.to_string())
     } else {
         let builder = if argument.preview {
             Some(PreviewServerBuilder::from_iter(filtered.matched()))
@@ -87,6 +87,8 @@ fn main() {
                 .build_for(argument.char.0)
                 .run_until(show_preview_addr_and_wait);
         }
+
+        Ok(())
     }
 }
 

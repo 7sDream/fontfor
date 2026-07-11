@@ -16,12 +16,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use ab_glyph::OutlinedGlyph;
+use ab_glyph_rasterizer::Rasterizer;
 use grid::Grid;
 
 pub struct Metrics {
-    pub height: usize,
     pub width: usize,
+    pub height: usize,
 }
 
 pub struct Bitmap {
@@ -30,17 +30,13 @@ pub struct Bitmap {
 }
 
 impl Bitmap {
-    pub fn new(curves: &OutlinedGlyph) -> Self {
-        let bound = curves.px_bounds();
-
-        let metrics = Metrics {
-            height: bound.height() as usize,
-            width: bound.width() as usize,
-        };
+    pub fn new(r: Rasterizer) -> Self {
+        let (width, height) = r.dimensions();
+        let metrics = Metrics { width, height };
 
         let mut bitmap = Grid::new(metrics.height, metrics.width);
 
-        curves.draw(|x, y, c| {
+        r.for_each_pixel_2d(|x, y, c| {
             let value = (c * 255.0).round() as u8;
             bitmap[(y as usize, x as usize)] = value
         });

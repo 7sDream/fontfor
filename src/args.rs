@@ -47,12 +47,16 @@ pub struct Args {
 
     /// Do not load system fonts
     #[arg(long = "no-system")]
-    pub no_system: bool,
+    no_system: bool,
 
     /// Also load fonts in a custom path.
     /// This arg can be provided multiple times.
     #[arg(short = 'I', long = "include", name = "PATH", action = clap::ArgAction::Append)]
     pub custom_font_paths: Vec<PathBuf>,
+
+    /// Do not deduplicate fonts
+    #[arg(long = "no-dedup")]
+    no_dedup: bool,
 
     /// Only show fonts whose family name contains the filter string
     #[arg(short = 'f', long = "filter", name = "FILTER", value_parser = no_newline_string_parser())]
@@ -61,6 +65,16 @@ pub struct Args {
     /// The character
     #[arg(name = "CHAR")]
     pub char: OneChar,
+}
+
+impl Args {
+    pub fn system(&self) -> bool {
+        !self.no_system
+    }
+
+    pub fn dedup(&self) -> bool {
+        !self.no_dedup
+    }
 }
 
 pub fn get() -> Args {

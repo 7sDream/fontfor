@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Migrate to `googlefonts/fondation` font tech stack
+- Utilize system font API, `--no-system` still disable this
+- Auto deduplicate fonts (by file path and collection index), use `--no-dedup` to disable
+
 ## 0.4.3
 
 - Add `-f` option to filter font list by family name, and a search box in TUI mode to change the filter word (Issue [#64](https://github.com/7sDream/fontfor/issues/64), PR [#71](https://github.com/7sDream/fontfor/pull/71))

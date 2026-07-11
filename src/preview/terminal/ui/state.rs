@@ -26,8 +26,9 @@ use ratatui::widgets::ListState;
 
 use super::cache::{CHAR_RENDERS, CacheKey, GlyphCache, GlyphCanvasShape, MONO_RENDER, RenderType};
 use crate::{
+    error::Error,
     family::FilteredFamilies,
-    loader::{self, FaceInfo},
+    loader::{Database, FaceInfo},
     preview::terminal::{render::Render, ui::cache::GlyphParagraph},
     rasterizer::{Bitmap, Rasterizer},
 };
@@ -40,11 +41,12 @@ pub struct State<'a> {
     height: Cell<u32>,
     width: Cell<u32>,
     rt: RenderType,
-    cache: RefCell<HashMap<CacheKey, Rc<Result<GlyphCache, &'static str>>>>,
+    database: Database,
+    cache: RefCell<HashMap<CacheKey, Rc<Result<GlyphCache, Error>>>>,
 }
 
 impl<'a> State<'a> {
-    pub fn new(filtered: FilteredFamilies<'a>) -> Self {
+    pub fn new(database: Database, filtered: FilteredFamilies<'a>) -> Self {
         let mut ret = Self {
             filtered,
             index_map: Vec::new(),
@@ -53,6 +55,7 @@ impl<'a> State<'a> {
             height: Cell::new(0),
             width: Cell::new(0),
             rt: RenderType::Mono,
+            database,
             cache: RefCell::default(),
         };
 
@@ -103,7 +106,7 @@ impl<'a> State<'a> {
         self.index_map.len()
     }
 
-    pub fn render(&self) -> Option<Rc<Result<GlyphCache, &'static str>>> {
+    pub fn render(&self) -> Option<Rc<Result<GlyphCache, Error>>> {
         let (width, height) = match self.rt {
             RenderType::Mono => self.get_canvas_size_by_pixel(),
             _ => self.get_canvas_size_by_char(),
@@ -126,7 +129,7 @@ impl<'a> State<'a> {
         Some(glyph)
     }
 
-    fn rasterize(&self, _width: u32, height: u32) -> Option<Result<Bitmap, &'static str>> {
+    fn rasterize(&self, _width: u32, height: u32) -> Option<Result<Bitmap, Error>> {
         let info = self.current_font_face()?;
 
         let scale = if matches!(self.rt, RenderType::AsciiLevel10 | RenderType::AsciiLevel70) {
@@ -135,22 +138,18 @@ impl<'a> State<'a> {
             None
         };
 
-        let bitmap: Result<Bitmap, &'static str> = loader::database()
-            .with_face_data(info.id, |data, index| -> Result<Bitmap, &'static str> {
-                let mut r = Rasterizer::new(data, index).map_err(|_| "Can't pare font file")?;
-                r.set_pixel_height(height);
-                if let Some(scale) = scale {
-                    r.set_hscale(scale);
-                }
-                r.rasterize(info.gid)
-                    .ok_or("Can't get target glyph from this font")
-            })
-            .unwrap_or(Err("Can't read font file"));
+        let blob = self.database.data(info.id)?;
+        let bitmap = Rasterizer::new(blob.as_ref(), info.index, height).and_then(|mut r| {
+            if let Some(scale) = scale {
+                r.set_hscale(scale);
+            }
+            r.rasterize(info.gid)
+        });
 
         Some(bitmap)
     }
 
-    fn real_render(&self, width: u32, height: u32) -> Option<Result<GlyphCache, &'static str>> {
+    fn real_render(&self, width: u32, height: u32) -> Option<Result<GlyphCache, Error>> {
         let bitmap = self.rasterize(width, height)?;
 
         let cache = bitmap.map(|bitmap| match self.rt {

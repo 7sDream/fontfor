@@ -17,42 +17,54 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 mod bitmap;
+mod pen;
 
-use ab_glyph::{Font, FontRef, GlyphId, InvalidFont, PxScale};
+use skrifa::{
+    FontRef, GlyphId, MetadataProvider,
+    instance::{LocationRef, Size},
+    outline::DrawSettings,
+};
 
 pub use self::bitmap::Bitmap;
+use self::pen::Pen;
+use crate::error::Error;
 
 pub struct Rasterizer<'a> {
-    face: FontRef<'a>,
+    font: FontRef<'a>,
     height: u32,
     hscale: f32,
 }
 
 impl<'a> Rasterizer<'a> {
-    pub fn new(data: &'a [u8], index: u32) -> Result<Self, InvalidFont> {
-        let face = FontRef::try_from_slice_and_index(data, index)?;
+    pub fn new(data: &'a [u8], index: u32, height: u32) -> Result<Self, Error> {
+        let font = FontRef::from_index(data, index)?;
         Ok(Self {
-            face,
-            height: 0,
+            font,
+            height,
             hscale: 1.0,
         })
-    }
-
-    pub fn set_pixel_height(&mut self, height: u32) {
-        self.height = height;
     }
 
     pub fn set_hscale(&mut self, scale: f32) {
         self.hscale = scale
     }
 
-    pub fn rasterize(self, gid: u16) -> Option<Bitmap> {
-        let glyph_id = GlyphId(gid);
-        let glyph = glyph_id.with_scale(PxScale {
-            x: self.height as f32 * self.hscale,
-            y: self.height as f32,
-        });
-        let curve = self.face.outline_glyph(glyph)?;
-        Some(Bitmap::new(&curve))
+    pub fn rasterize(self, gid: GlyphId) -> Result<Bitmap, Error> {
+        let size = Size::new(self.height as f32);
+        let location = LocationRef::default();
+
+        let metrics = self.font.glyph_metrics(size, location);
+        let outlines = self.font.outline_glyphs();
+        let glyph = outlines.get(gid).ok_or(Error::MissingGlyphData)?;
+        let bound = metrics.bounds(gid).ok_or(Error::MissingGlyphData)?;
+
+        let settings =
+            DrawSettings::unhinted(Size::new(self.height as f32), LocationRef::default());
+
+        let mut pen = Pen::new(bound, self.hscale);
+
+        glyph.draw(settings, &mut pen.adapter())?;
+
+        Ok(pen.bitmap())
     }
 }

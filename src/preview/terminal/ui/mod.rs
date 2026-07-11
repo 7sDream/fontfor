@@ -45,7 +45,7 @@ use self::{
     event::{TerminalEvent, TerminalEventStream},
     state::State,
 };
-use crate::family::FilteredFamilies;
+use crate::{family::FilteredFamilies, loader::Database};
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 enum OnEventResult {
@@ -66,13 +66,13 @@ pub struct UI<'a> {
 }
 
 impl<'a> UI<'a> {
-    pub fn new(filtered: FilteredFamilies<'a>) -> Option<Self> {
+    pub fn new(database: Database, filtered: FilteredFamilies<'a>) -> Option<Self> {
         if !filtered.is_empty() {
             Some(Self {
                 idle_redraw: 0,
                 filter_input: tui_input::Input::new(filtered.keyword().to_string()),
                 editing: None,
-                state: State::new(filtered),
+                state: State::new(database, filtered),
             })
         } else {
             None
@@ -178,8 +178,9 @@ impl<'a> UI<'a> {
                 Ok(GlyphCache::Paragraph(s)) => {
                     self.draw_preview_paragraph(area, f, s.lines.iter().map(|s| s.as_str()))
                 }
-                Err(s) => {
-                    let paragraph: [&str; 1] = [s];
+                Err(err) => {
+                    let msg = err.to_string();
+                    let paragraph: [&str; 1] = [&msg];
                     self.draw_preview_paragraph(area, f, paragraph)
                 }
             }
