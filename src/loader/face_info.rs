@@ -83,16 +83,16 @@ impl FaceInfo {
         for rec in table.name_record().iter().filter(|rec| rec.name_id() == id) {
             let is_english = Self::record_is_english(rec);
 
-            if result.is_none() || is_english {
-                if let Ok(s) = rec.string(table.string_data()) {
-                    result = Some(s);
-                    if is_english {
-                        break;
-                    }
+            if (result.is_none() || is_english)
+                && let Ok(s) = rec.string(table.string_data())
+            {
+                result = Some(s);
+                if is_english {
+                    break;
                 }
             }
         }
-        return result.ok_or(Error::MissingName);
+        result.ok_or(Error::MissingName)
     }
 
     fn get_full_name(rf: FontRef<'_>, path: &Path, index: u32) -> Result<String> {

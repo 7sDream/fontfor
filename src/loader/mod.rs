@@ -18,9 +18,11 @@
 
 mod face_info;
 
-use std::{cell::RefCell, fmt::Debug, path::Path};
+use std::{cell::RefCell, collections::HashSet, fmt::Debug, path::Path, sync::Arc};
 
-use fontique::{Collection, CollectionOptions, FamilyId, SourceCache, SourceCacheOptions};
+use fontique::{
+    Collection, CollectionOptions, FamilyId, SourceCache, SourceCacheOptions, SourceKind,
+};
 use skrifa::FontRef;
 
 pub use self::face_info::FaceInfo;
@@ -76,10 +78,12 @@ impl Database {
     pub fn query(&self, c: char) -> Vec<FaceInfo> {
         let names = self.names();
         log::info!("family count: {}", names.len());
-        let mut result = Vec::new();
 
         let mut collection = self.collection.borrow_mut();
         let mut cache = self.cache.borrow_mut();
+
+        let mut dedup = HashSet::new();
+        let mut result = Vec::new();
 
         for name in names {
             log::debug!("processing family '{name}'");
@@ -92,11 +96,21 @@ impl Database {
                 continue;
             };
             for (i, font) in family.fonts().iter().enumerate() {
+                if let SourceKind::Path(path) = font.source().kind() {
+                    let k = (Arc::clone(path), font.index());
+                    if dedup.contains(&k) {
+                        log::debug!("family '{name}' font {i} skipped due to dedup");
+                        continue;
+                    }
+                    dedup.insert(k);
+                }
+
                 log::debug!(
                     "processing family '{name}' font {i} '{:?}:{}'",
                     font.source().kind(),
                     font.index()
                 );
+
                 let Some(blob) = font.load(Some(&mut cache)) else {
                     log::warn!("family '{name}' font {i} skipped due to can't load font data");
                     continue;
