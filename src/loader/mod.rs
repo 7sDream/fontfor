@@ -82,39 +82,31 @@ impl Database {
         let mut cache = self.cache.borrow_mut();
 
         for name in names {
-            log::debug!("processing family '{}'", name);
+            log::debug!("processing family '{name}'");
             let Some(id) = collection.family_id(&name) else {
-                log::warn!("family '{}' skipped due to can't find family id", name);
+                log::warn!("family '{name}' skipped due to can't find family id");
                 continue;
             };
             let Some(family) = collection.family(id) else {
-                log::warn!("family '{}' skipped due to can't find family info", name);
+                log::warn!("family '{name}' skipped due to can't find family info");
                 continue;
             };
             for (i, font) in family.fonts().iter().enumerate() {
                 log::debug!(
-                    "processing family '{}' font {} '{:?}:{}'",
-                    name,
-                    i,
+                    "processing family '{name}' font {i} '{:?}:{}'",
                     font.source().kind(),
                     font.index()
                 );
                 let Some(blob) = font.load(Some(&mut cache)) else {
-                    log::warn!(
-                        "family '{}' font {} skipped due to can't load font data",
-                        name,
-                        i
-                    );
+                    log::warn!("family '{name}' font {i} skipped due to can't load font data");
                     continue;
                 };
                 let rf = match FontRef::from_index(blob.data(), font.index()) {
                     Ok(rf) => rf,
                     Err(err) => {
                         log::warn!(
-                            "family {} font {} skipped due to fail to parse font header of file: {}",
-                            name,
-                            i,
-                            err,
+                            "family {name} font {i} skipped due to fail to parse font header of \
+                             file: {err}"
                         );
                         continue;
                     }
@@ -127,10 +119,8 @@ impl Database {
                     Ok(None) => continue,
                     Err(err) => {
                         log::warn!(
-                            "family {} font {} skipped due to fail to parse font tables of file: {}",
-                            name,
-                            i,
-                            err
+                            "family {name} font {i} skipped due to fail to parse font tables of \
+                             file: {err}"
                         )
                     }
                 }
