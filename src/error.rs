@@ -23,8 +23,8 @@ use thiserror::Error;
 pub enum Error {
     // #[error("Can't load font data")]
     // CantLoadFontData,
-    #[error("Font face has no family name")]
-    MissingFamilyName,
+    #[error("Font face has no name record")]
+    MissingName,
     #[error("Missing glyph data")]
     MissingGlyphData,
     #[error("Render target glyph failed: {0}")]
@@ -40,3 +40,5 @@ pub enum Error {
         ReadError,
     ),
 }
+
+pub type Result<T> = std::result::Result<T, Error>;

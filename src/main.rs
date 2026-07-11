@@ -38,7 +38,7 @@ fn init(arg: &Args) {
     #[cfg(feature = "log-output")]
     {
         env_logger::Builder::from_env(
-            env_logger::Env::default().default_filter_or(env!("CARGO_PKG_NAME")),
+            env_logger::Env::default().default_filter_or(concat!(env!("CARGO_PKG_NAME"), "=info")),
         )
         .format_timestamp_micros()
         .init();

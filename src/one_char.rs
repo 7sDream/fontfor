@@ -124,22 +124,17 @@ impl FromStr for OneChar {
     type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, ParseError> {
-        let mut chars = s.chars();
+        let mut chars = s.chars().fuse();
         match (chars.next(), chars.next()) {
-            (None, None) => Err(ParseError::EmptyInput),
+            (None, _) => Err(ParseError::EmptyInput),
             (Some(c), None) => Ok(Self(c)),
-            (Some(c1), Some(c2)) => {
-                let c1 = c1.to_ascii_lowercase();
-                let c2 = c2.to_ascii_lowercase();
-                match (c1, c2) {
-                    ('0', 'b') => Self::from_scalar_value_str_bin(&s[2..]),
-                    ('0', 'o') => Self::from_scalar_value_str_oct(&s[2..]),
-                    ('u', '+') => Self::from_scalar_value_str_hex(&s[2..]),
-                    ('0', 'x') => Self::from_utf8_bytes(&s[2..]),
-                    _ => Self::from_scalar_value_str_dec(s),
-                }
-            }
-            (None, Some(_)) => unreachable!("iterator can not produce value after returning None"),
+            (Some(c1), Some(c2)) => match (c1, c2) {
+                ('0', 'b' | 'B') => Self::from_scalar_value_str_bin(&s[2..]),
+                ('0', 'o' | 'O') => Self::from_scalar_value_str_oct(&s[2..]),
+                ('u' | 'U', '+') => Self::from_scalar_value_str_hex(&s[2..]),
+                ('0', 'x' | 'X') => Self::from_utf8_bytes(&s[2..]),
+                _ => Self::from_scalar_value_str_dec(s),
+            },
         }
     }
 }

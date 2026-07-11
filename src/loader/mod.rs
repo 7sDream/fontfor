@@ -20,13 +20,10 @@ mod face_info;
 
 use std::{cell::RefCell, fmt::Debug, path::Path};
 
-use fontique::{Blob, Collection, CollectionOptions, FamilyId, SourceCache, SourceCacheOptions};
+use fontique::{Collection, CollectionOptions, FamilyId, SourceCache, SourceCacheOptions};
 use skrifa::FontRef;
 
 pub use self::face_info::FaceInfo;
-use crate::error::Error;
-
-pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct FontId(FamilyId, usize);
@@ -67,7 +64,7 @@ impl Database {
         collection.family_names().map(|s| s.to_string()).collect()
     }
 
-    pub fn data(&self, FontId(id, index): FontId) -> Option<Blob<u8>> {
+    pub fn data(&self, FontId(id, index): FontId) -> Option<impl AsRef<[u8]> + use<>> {
         let mut collection = self.collection.borrow_mut();
         let mut cache = self.cache.borrow_mut();
 
@@ -96,7 +93,7 @@ impl Database {
             };
             for (i, font) in family.fonts().iter().enumerate() {
                 log::debug!(
-                    "parsing family '{}' font {} '{:?}:{}'",
+                    "processing family '{}' font {} '{:?}:{}'",
                     name,
                     i,
                     font.source().kind(),

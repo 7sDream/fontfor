@@ -39,7 +39,7 @@ impl Pen {
     fn transform(&self, p: Point) -> Point {
         Point {
             x: (p.x - self.bound.x_min) * self.hscale,
-            y: (self.bound.y_max - self.bound.y_min) - (p.y - self.bound.y_min),
+            y: self.bound.y_max - p.y,
         }
     }
 

@@ -16,17 +16,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::{path::Path, sync::Arc};
+use std::{fmt::Write, path::Path, sync::Arc};
 
 use fontique::{FamilyInfo, FontInfo, SourceKind};
 use skrifa::raw::{
     FontRef, TableProvider,
-    tables::name::{NameId, NameRecord, NameString},
+    tables::name::{Name, NameId, NameRecord, NameString},
     types::GlyphId,
 };
 
-use super::{Error, Result};
-use crate::loader::FontId;
+use crate::{
+    error::{Error, Result},
+    loader::FontId,
+};
 
 /// FaceInfo contains basic font face info like family and name,
 /// and pre-located glyph id for target character.
@@ -49,40 +51,17 @@ impl FaceInfo {
         };
 
         // get font name
-        let (kind, name) = Self::parse_full_name(rf)?;
-
-        let family = f.name().to_string();
         let index = font.index();
         let path = match font.source().kind() {
             SourceKind::Memory(_) => return Ok(None),
             SourceKind::Path(path) => Arc::clone(path),
         };
 
-        // build final font name
-        let name = match kind {
-            NameId::FULL_NAME => name.to_string(),
-            NameId::SUBFAMILY_NAME => {
-                log::debug!(
-                    "Font face {path:?}:{index} do not have a full name, uses family({family}) + \
-                     subfamily({name})"
-                );
-                format!("{} {}", f.name(), name)
-            }
-            NameId::POSTSCRIPT_NAME => {
-                log::debug!(
-                    "Font face {path:?}:{index} do not have a full name and subfamily, uses \
-                     postscript name({name})"
-                );
-                name.to_string()
-            }
-            _ => {
-                unreachable!()
-            }
-        };
+        let name = Self::get_full_name(rf, path.as_ref(), index)?;
 
         Ok(Some(FaceInfo {
             id,
-            family,
+            family: f.name().to_string(),
             path,
             name,
             index,
@@ -90,47 +69,77 @@ impl FaceInfo {
         }))
     }
 
-    fn parse_full_name(rf: FontRef) -> Result<(NameId, NameString)> {
-        let is_english = |rec: &NameRecord| -> bool {
-            // Unicode
-            rec.platform_id() == 0 ||
-            /* Mac     */
-            rec.platform_id() == 1 && rec.language_id() == 0 ||
-            /* Windows */
-            rec.platform_id() == 3 && (rec.language_id() == 0x0009 || rec.language_id() == 0x0409)
-        };
+    fn record_is_english(rec: &NameRecord) -> bool {
+        // Unicode
+        rec.platform_id() == 0 ||
+        /* Mac     */
+        rec.platform_id() == 1 && rec.language_id() == 0 ||
+        /* Windows */
+        rec.platform_id() == 3 && (rec.language_id() == 0x0009 || rec.language_id() == 0x0409)
+    }
+
+    fn get_record<'d>(table: &Name<'d>, id: NameId) -> Result<NameString<'d>> {
+        let mut result = None;
+        for rec in table.name_record().iter().filter(|rec| rec.name_id() == id) {
+            let is_english = Self::record_is_english(rec);
+
+            if result.is_none() || is_english {
+                if let Ok(s) = rec.string(table.string_data()) {
+                    result = Some(s);
+                    if is_english {
+                        break;
+                    }
+                }
+            }
+        }
+        return result.ok_or(Error::MissingName);
+    }
+
+    fn get_full_name(rf: FontRef<'_>, path: &Path, index: u32) -> Result<String> {
+        static CANDIDATES: &[(&[NameId], &str)] = &[
+            (&[NameId::FULL_NAME], ""),
+            (
+                &[
+                    NameId::TYPOGRAPHIC_FAMILY_NAME,
+                    NameId::TYPOGRAPHIC_SUBFAMILY_NAME,
+                ],
+                "typographic family and subfamily",
+            ),
+            (
+                &[NameId::FAMILY_NAME, NameId::SUBFAMILY_NAME],
+                "family and subfamily",
+            ),
+            (&[NameId::POSTSCRIPT_NAME], "postscript name"),
+        ];
 
         let table = rf.name()?;
-        let records = table.name_record().iter().copied().filter(is_english);
+        let mut s = String::new();
+        'outer: for (candidate, desc) in CANDIDATES {
+            let parts = candidate
+                .iter()
+                .map(|id| Self::get_record(&table, *id))
+                .collect::<Result<Vec<_>>>();
 
-        let mut sub_family = None;
-        let mut postscript = None;
-        for rec in records {
-            if rec.name_id() == NameId::FULL_NAME
-                && let Ok(name) = rec.string(table.string_data())
-            {
-                return Ok((NameId::FULL_NAME, name));
+            let Ok(parts) = parts else { continue };
+            s.clear();
+            for part in parts {
+                if !s.is_empty() {
+                    s.push(' ');
+                }
+                let Ok(_) = write!(&mut s, "{}", part) else {
+                    continue 'outer;
+                };
             }
 
-            if rec.name_id() == NameId::SUBFAMILY_NAME
-                && let Ok(name) = rec.string(table.string_data())
-            {
-                sub_family.replace((NameId::SUBFAMILY_NAME, name));
+            if !desc.is_empty() {
+                log::info!(
+                    "font {path:?}:{index} do not have a full name record, uses {desc}: {s}"
+                );
             }
 
-            if rec.name_id() == NameId::POSTSCRIPT_NAME
-                && let Ok(name) = rec.string(table.string_data())
-            {
-                postscript.replace((NameId::POSTSCRIPT_NAME, name));
-            }
+            return Ok(s);
         }
 
-        if let Some(sub) = sub_family {
-            Ok(sub)
-        } else if let Some(post) = postscript {
-            Ok(post)
-        } else {
-            Err(Error::MissingFamilyName)
-        }
+        Err(Error::MissingName)
     }
 }

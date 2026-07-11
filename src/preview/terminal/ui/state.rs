@@ -139,7 +139,7 @@ impl<'a> State<'a> {
         };
 
         let blob = self.database.data(info.id)?;
-        let bitmap = Rasterizer::new(blob.data(), info.index, height).and_then(|mut r| {
+        let bitmap = Rasterizer::new(blob.as_ref(), info.index, height).and_then(|mut r| {
             if let Some(scale) = scale {
                 r.set_hscale(scale);
             }
