@@ -47,30 +47,28 @@ fn init(arg: &Args) {
     log::info!("Start with argument: {arg:?}");
 }
 
-fn main() {
+fn main() -> Result<(), String> {
     let argument = args::get();
 
     init(&argument);
 
-    let database = Database::new(argument.system(), argument.custom_font_paths);
+    let database = Database::new(argument.system(), argument.custom_font_paths.iter());
 
-    let font_set = database.query(argument.char.0);
+    let font_set = database.query(argument.char.0, argument.dedup());
     let families = family::group_by_family_sort_by_name(&font_set);
     if families.is_empty() {
-        eprintln!(
+        println!(
             "No font support this character {}.",
             argument.char.description()
         );
-        return;
+        return Ok(());
     }
 
     let filtered = FilteredFamilies::new(families, argument.filter.unwrap_or_default());
 
     if argument.tui {
         let ui = UI::new(database, filtered).expect("family length checked before, must not empty");
-        if let Err(err) = ui.show() {
-            eprintln!("{err:?}");
-        };
+        ui.show().map_err(|e| e.to_string())
     } else {
         let builder = if argument.preview {
             Some(PreviewServerBuilder::from_iter(filtered.matched()))
@@ -89,6 +87,8 @@ fn main() {
                 .build_for(argument.char.0)
                 .run_until(show_preview_addr_and_wait);
         }
+
+        Ok(())
     }
 }
 

@@ -54,6 +54,10 @@ pub struct Args {
     #[arg(short = 'I', long = "include", name = "PATH", action = clap::ArgAction::Append)]
     pub custom_font_paths: Vec<PathBuf>,
 
+    /// Do not deduplicate fonts
+    #[arg(long = "no-dedup")]
+    no_dedup: bool,
+
     /// Only show fonts whose family name contains the filter string
     #[arg(short = 'f', long = "filter", name = "FILTER", value_parser = no_newline_string_parser())]
     pub filter: Option<String>,
@@ -66,6 +70,10 @@ pub struct Args {
 impl Args {
     pub fn system(&self) -> bool {
         !self.no_system
+    }
+
+    pub fn dedup(&self) -> bool {
+        !self.no_dedup
     }
 }
 

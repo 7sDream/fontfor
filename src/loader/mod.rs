@@ -75,14 +75,14 @@ impl Database {
         font.load(Some(&mut cache))
     }
 
-    pub fn query(&self, c: char) -> Vec<FaceInfo> {
+    pub fn query(&self, c: char, dedup: bool) -> Vec<FaceInfo> {
         let names = self.names();
         log::info!("family count: {}", names.len());
 
         let mut collection = self.collection.borrow_mut();
         let mut cache = self.cache.borrow_mut();
 
-        let mut dedup = HashSet::new();
+        let mut dedup = dedup.then(HashSet::new);
         let mut result = Vec::new();
 
         for name in names {
@@ -96,7 +96,9 @@ impl Database {
                 continue;
             };
             for (i, font) in family.fonts().iter().enumerate() {
-                if let SourceKind::Path(path) = font.source().kind() {
+                if let Some(ref mut dedup) = dedup
+                    && let SourceKind::Path(path) = font.source().kind()
+                {
                     let k = (Arc::clone(path), font.index());
                     if dedup.contains(&k) {
                         log::debug!("family '{name}' font {i} skipped due to dedup");
